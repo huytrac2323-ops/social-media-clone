@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import './Modal.css';
 
-// Bỏ hằng số API_URL
-// const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5000/api';
 
-function EditProfileModal({ user, onClose, navigate }) {
+function EditProfileModal({ user, onClose, navigate, setCurrentUser }) { // Nhận setCurrentUser
   const [username, setUsername] = useState(user.username);
   const [bio, setBio] = useState(user.bio || '');
   const [avatarFile, setAvatarFile] = useState(null);
@@ -22,45 +21,53 @@ function EditProfileModal({ user, onClose, navigate }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    let updatedUsername = user.username;
+    let finalUserData = null;
 
     try {
-      // Sửa ở đây
-      const textResponse = await fetch(`/api/profile`, {
+      // --- Cập nhật thông tin text (username, bio) ---
+      const textResponse = await fetch(`${API_URL}/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, bio }),
+        body: JSON.stringify({ username, bio, user_id: user.user_id }),
       });
       const textData = await textResponse.json();
       if (!textResponse.ok) throw new Error(textData.message || 'Lỗi cập nhật thông tin');
-      updatedUsername = textData.username;
-    } catch (err) {
-      setError(err.message);
-      return;
-    }
+      
+      // Lưu trữ dữ liệu người dùng đã cập nhật từ phản hồi
+      finalUserData = textData.user;
 
-    if (avatarFile) {
-      try {
+      // --- Cập nhật avatar nếu có ---
+      if (avatarFile) {
         const formData = new FormData();
         formData.append('avatar', avatarFile);
-        // Sửa ở đây
-        const avatarResponse = await fetch(`/api/profile/avatar`, {
+        formData.append('user_id', user.user_id);
+        
+        const avatarResponse = await fetch(`${API_URL}/profile/avatar`, {
           method: 'POST',
           body: formData,
         });
-        if (!avatarResponse.ok) throw new Error('Lỗi cập nhật avatar');
-      } catch (err) {
-        setError(err.message);
-        return;
+        
+        const avatarData = await avatarResponse.json();
+        if (!avatarResponse.ok) throw new Error(avatarData.message || 'Lỗi cập nhật avatar');
+
+        // Cập nhật URL ảnh đại diện trong dữ liệu người dùng cuối cùng
+        finalUserData.profile_photo_url = avatarData.profile_photo_url;
       }
-    }
 
-    onClose();
+      // --- Cập nhật state và điều hướng ---
+      setCurrentUser(finalUserData); // Cập nhật state ở App.jsx
+      onClose(); // Đóng modal
 
-    if (updatedUsername !== user.username) {
-      navigate(`/profile/${updatedUsername}`);
-    } else {
-      window.location.reload();
+      // Điều hướng nếu username thay đổi
+      if (finalUserData.username !== user.username) {
+        navigate(`/profile/${finalUserData.username}`);
+      } else {
+        // Không cần reload, vì state đã được cập nhật và component sẽ re-render
+        // Nếu cần fetch lại dữ liệu profile, có thể truyền thêm một hàm refresh
+      }
+
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -74,8 +81,7 @@ function EditProfileModal({ user, onClose, navigate }) {
         <form onSubmit={handleSubmit}>
           <div className="form-group avatar-group">
             <img
-              // Sửa ở đây
-              src={previewAvatar || (user.profile_photo_url ? user.profile_photo_url : 'https://picsum.photos/100')}
+              src={previewAvatar || (user.profile_photo_url ? `http://localhost:5000${user.profile_photo_url}` : 'https://picsum.photos/100')}
               alt="Avatar"
               className="modal-avatar-preview"
             />
@@ -92,22 +98,11 @@ function EditProfileModal({ user, onClose, navigate }) {
           </div>
           <div className="form-group">
             <label htmlFor="username">Tên người dùng</label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+            <input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
           <div className="form-group">
             <label htmlFor="bio">Tiểu sử</label>
-            <textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows="3"
-            />
+            <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows="3" />
           </div>
           {error && <p className="error-message">{error}</p>}
           <div className="modal-footer">

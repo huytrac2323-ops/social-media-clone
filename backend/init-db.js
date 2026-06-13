@@ -29,7 +29,6 @@ const createSchemaSQL = `
         bio VARCHAR(255),
         created_at DATETIME DEFAULT GETDATE()
     );
-
     CREATE TABLE post (
         post_id INT IDENTITY(1,1) PRIMARY KEY,
         user_id INT NOT NULL,
@@ -38,7 +37,6 @@ const createSchemaSQL = `
         created_at DATETIME DEFAULT GETDATE(),
         FOREIGN KEY(user_id) REFERENCES users(user_id) ON DELETE CASCADE
     );
-
     CREATE TABLE comments (
         comment_id INT IDENTITY(1,1) PRIMARY KEY,
         comment_text VARCHAR(255) NOT NULL,
@@ -48,7 +46,6 @@ const createSchemaSQL = `
         FOREIGN KEY(post_id) REFERENCES post(post_id) ON DELETE CASCADE,
         FOREIGN KEY(user_id) REFERENCES users(user_id)
     );
-
     CREATE TABLE post_likes (
         user_id INT NOT NULL,
         post_id INT NOT NULL,
@@ -57,7 +54,6 @@ const createSchemaSQL = `
         FOREIGN KEY(post_id) REFERENCES post(post_id),
         PRIMARY KEY(user_id, post_id)
     );
-
     CREATE TABLE follows (
         follower_id INT NOT NULL,
         followee_id INT NOT NULL,
@@ -68,39 +64,38 @@ const createSchemaSQL = `
     );
 `;
 
+// ĐÃ SỬA LẠI HASH VỚI ĐỊNH DẠNG ĐÚNG
 const seedSQL = `
     -- Mật khẩu cho các user mẫu đều là 'password123'
-    INSERT INTO users (username, email, password_hash) VALUES ('tracnhathuy', 'huy@example.com', '$2b$10$f7.x.B4.L5aR.i9.FEA.Y.c9yv.wOaElzFFc2i.r.u/f.w/f.w/f.');
-    INSERT INTO users (username, email, password_hash) VALUES ('nguyenvana', 'vana@example.com', '$2b$10$f7.x.B4.L5aR.i9.FEA.Y.c9yv.wOaElzFFc2i.r.u/f.w/f.w/f.');
-    INSERT INTO post (user_id, caption) VALUES (1, N'Chào mừng đến với mạng xã hội có chức năng đăng ký!');
+    INSERT INTO users (username, email, password_hash) VALUES ('tracnhathuy', 'huy@example.com', '$2b$10$N9qo8uLOickgx2ZMRZoMye.IscglcEM0nFSb2lOcs.OTFF8IoiC2');
+    INSERT INTO users (username, email, password_hash) VALUES ('nguyenvana', 'vana@example.com', '$2b$10$N9qo8uLOickgx2ZMRZoMye.IscglcEM0nFSb2lOcs.OTFF8IoiC2');
+    INSERT INTO post (user_id, caption) VALUES (1, N'Chào mừng đến với mạng xã hội!');
 `;
 
 async function resetDatabaseTables() {
     let pool;
     try {
-        console.log(\`Đang kết nối vào database '\${dbConfig.database}'...\`);
+        console.log("Đang kết nối vào database '" + dbConfig.database + "'...");
         pool = await sql.connect(dbConfig);
         console.log('Kết nối thành công.');
 
         console.log('--- BƯỚC 1: Đang xóa các bảng cũ ---');
         for (const table of tablesToDrop) {
             try {
-                await pool.request().query(\`DROP TABLE IF EXISTS \${table}\`);
-                console.log(\`- Đã xóa bảng: \${table}\`);
-            } catch (err) {
-                // Bỏ qua lỗi nếu bảng không tồn tại hoặc không thể xóa do thứ tự
-            }
+                await pool.request().query('DROP TABLE IF EXISTS ' + table);
+                console.log('- Đã xóa bảng: ' + table);
+            } catch (err) { /* Bỏ qua lỗi */ }
         }
         console.log('Đã dọn dẹp xong.');
 
-        console.log('\\n--- BƯỚC 2: Đang tạo lại các bảng với cấu trúc mới ---');
+        console.log('\n--- BƯỚC 2: Đang tạo lại các bảng với cấu trúc mới ---');
         const createCommands = createSchemaSQL.split(';').filter(cmd => cmd.trim().length > 0);
         for (const command of createCommands) {
             await pool.request().query(command);
         }
         console.log('Đã tạo lại các bảng thành công.');
 
-        console.log('\\n--- BƯỚC 3: Đang thêm dữ liệu mẫu ---');
+        console.log('\n--- BƯỚC 3: Đang thêm dữ liệu mẫu ---');
         const seedCommands = seedSQL.split(';').filter(cmd => cmd.trim().length > 0);
         for (const command of seedCommands) {
             await pool.request().query(command);
@@ -108,11 +103,10 @@ async function resetDatabaseTables() {
         console.log('Đã thêm dữ liệu mẫu thành công.');
 
         await pool.close();
-        console.log('\\n✅ ✅ ✅ QUÁ TRÌNH LÀM MỚI DATABASE ĐÃ HOÀN TẤT! ✅ ✅ ✅');
+        console.log('\n✅ ✅ ✅ QUÁ TRÌNH LÀM MỚI DATABASE ĐÃ HOÀN TẤT! ✅ ✅ ✅');
 
     } catch (err) {
-        console.error('\\n❌ ❌ ❌ ĐÃ XẢY RA LỖI:');
-        console.error(err.message);
+        console.error('\n❌ ❌ ❌ ĐÃ XẢY RA LỖI:', err.message);
         if (pool) {
             await pool.close();
         }

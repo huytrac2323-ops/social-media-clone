@@ -1,0 +1,2 @@
+    node init-db.js
+    

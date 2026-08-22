@@ -35,12 +35,8 @@ function HomePage({ posts, allUsers, onLike, onCommentSubmit, onPostCreated }) {
       </main>
       <aside className="fb-rightbar">
         <h3>Gợi ý cho bạn</h3>
-        {allUsers.filter(u => !currentUser || u.user_id !== currentUser.user_id).map(user => (
-          <Link key={user.user_id} to={`/profile/${user.username}`} className="contact-item" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Avatar user={user} className="mini-avatar" />
-            <span>{user.username}</span>
-          </Link>
-        ))}
+          .filter(user => user.user_id !== currentUser.user_id)
+          .slice(0, 5);
       </aside>
     </div>
   );

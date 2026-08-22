@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // Chuỗi '/api' là tiền tố của các request bạn muốn proxy
       '/api': {
-        target: 'http://localhost:5000', // Địa chỉ của backend server
+        target: 'https://social-media-clone-di9z.onrender.com/api', // Địa chỉ của backend server
         changeOrigin: true, // Cần thiết cho các virtual hosted sites
         secure: false,      // Không yêu cầu https
       },

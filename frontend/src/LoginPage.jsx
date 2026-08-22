@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
 import { useAuth } from './AuthContext'; // Import useAuth
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function LoginPage() { // Bỏ prop setCurrentUser
   const [email, setEmail] = useState('');

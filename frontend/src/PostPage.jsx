@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import PostCard from './PostCard';
 import { useAuth } from './AuthContext';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function PostPage() {
   const { postId } = useParams();
@@ -30,7 +30,7 @@ function PostPage() {
           author: data.username,
           time: data.created_at,
           content: data.caption,
-          imageUrl: data.photo_url ? `http://localhost:5000${data.photo_url}` : null,
+          imageUrl: data.photo_url ? `https://social-media-clone-di9z.onrender.com/api${data.photo_url}` : null,
           likes: data.like_count,
           isLiked: data.is_liked_by_user,
           comments: data.comments || [],

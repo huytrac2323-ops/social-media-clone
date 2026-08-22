@@ -5,7 +5,7 @@ import EditProfileModal from './EditProfileModal';
 import CreatePost from './CreatePost';
 import { useAuth } from './AuthContext';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function ProfilePage() {
   const { username } = useParams();
@@ -79,7 +79,7 @@ function ProfilePage() {
       <div className="profile-container">
         <header className="profile-header">
           <div className="profile-avatar-section">
-            <div className="profile-avatar-large" style={{ backgroundImage: `url(${profile_photo_url ? `http://localhost:5000${profile_photo_url}` : 'https://picsum.photos/150'})`, backgroundSize: 'cover' }}>
+            <div className="profile-avatar-large" style={{ backgroundImage: `url(${profile_photo_url ? `https://social-media-clone-di9z.onrender.com/api${profile_photo_url}` : 'https://picsum.photos/150'})`, backgroundSize: 'cover' }}>
               {!profile_photo_url && username[0].toUpperCase()}
             </div>
           </div>
@@ -126,7 +126,7 @@ function ProfilePage() {
                 style={{ cursor: 'pointer' }}
               >
                 {post.photo_url ? (
-                  <img src={`http://localhost:5000${post.photo_url}`} alt={post.caption || 'Bài viết'} />
+                  <img src={`https://social-media-clone-di9z.onrender.com/api{post.photo_url}`} alt={post.caption || 'Bài viết'} />
                 ) : (
                   <div className="grid-post-content">{post.caption}</div>
                 )}

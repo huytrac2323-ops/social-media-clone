@@ -5,7 +5,7 @@ import Avatar from './Avatar';
 import EditPostModal from './EditPostModal';
 import { STRINGS } from './constants/strings'; // Import tệp strings
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated }) {
   const { currentUser } = useAuth();

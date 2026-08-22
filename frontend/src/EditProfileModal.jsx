@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import './Modal.css';
+import { useAuth } from './AuthContext'; // Import useAuth
 
 const API_URL = 'http://localhost:5000/api';
 
-function EditProfileModal({ user, onClose, navigate, setCurrentUser }) { // Nhận setCurrentUser
+function EditProfileModal({ user, onClose, navigate }) { // Bỏ setCurrentUser
+  const { updateUser } = useAuth(); // Lấy hàm updateUser từ context
   const [username, setUsername] = useState(user.username);
   const [bio, setBio] = useState(user.bio || '');
   const [avatarFile, setAvatarFile] = useState(null);
@@ -33,7 +35,6 @@ function EditProfileModal({ user, onClose, navigate, setCurrentUser }) { // Nh�
       const textData = await textResponse.json();
       if (!textResponse.ok) throw new Error(textData.message || 'Lỗi cập nhật thông tin');
       
-      // Lưu trữ dữ liệu người dùng đã cập nhật từ phản hồi
       finalUserData = textData.user;
 
       // --- Cập nhật avatar nếu có ---
@@ -50,20 +51,15 @@ function EditProfileModal({ user, onClose, navigate, setCurrentUser }) { // Nh�
         const avatarData = await avatarResponse.json();
         if (!avatarResponse.ok) throw new Error(avatarData.message || 'Lỗi cập nhật avatar');
 
-        // Cập nhật URL ảnh đại diện trong dữ liệu người dùng cuối cùng
         finalUserData.profile_photo_url = avatarData.profile_photo_url;
       }
 
       // --- Cập nhật state và điều hướng ---
-      setCurrentUser(finalUserData); // Cập nhật state ở App.jsx
-      onClose(); // Đóng modal
+      updateUser(finalUserData); // Sử dụng hàm updateUser từ context
+      onClose();
 
-      // Điều hướng nếu username thay đổi
       if (finalUserData.username !== user.username) {
         navigate(`/profile/${finalUserData.username}`);
-      } else {
-        // Không cần reload, vì state đã được cập nhật và component sẽ re-render
-        // Nếu cần fetch lại dữ liệu profile, có thể truyền thêm một hàm refresh
       }
 
     } catch (err) {

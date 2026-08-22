@@ -1,6 +1,6 @@
 const express = require('express');
 const sql = require('mssql');
-const cors = require('cors');
+const cors =require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -15,13 +15,25 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 const corsOptions = { origin: ['http://localhost:3000', 'http://localhost:5173'], optionsSuccessStatus: 200 };
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(express.static('public'));
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'public/uploads/'),
   filename: (req, file, cb) => cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
 });
 const upload = multer({ storage: storage });
-const dbConfig = { user: process.env.DB_USER, password: process.env.DB_PASSWORD, server: process.env.DB_SERVER, database: process.env.DB_DATABASE, options: { encrypt: false, trustServerCertificate: true }};
+
+// SỬA LỖI: Thêm options.useUTC = false để đảm bảo Unicode được xử lý đúng
+const dbConfig = { 
+    user: process.env.DB_USER, 
+    password: process.env.DB_PASSWORD, 
+    server: process.env.DB_SERVER, 
+    database: process.env.DB_DATABASE, 
+    options: { 
+        encrypt: false, 
+        trustServerCertificate: true,
+        useUTC: false // Bắt buộc driver xử lý đúng kiểu NVarChar
+    }
+};
 
 let poolPromise;
 
@@ -85,6 +97,37 @@ app.get('/api/posts', async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
     }
 });
+
+app.get('/api/posts/:postId', async (req, res) => {
+    const { postId } = req.params;
+    const currentUserId = req.query.currentUserId || null;
+    try {
+        const pool = await poolPromise;
+        const request = pool.request().input('post_id', sql.Int, postId);
+        if (currentUserId) {
+            request.input('current_user_id', sql.Int, currentUserId);
+        }
+        const query = `
+            SELECT
+                p.post_id, p.caption, p.photo_url, p.created_at,
+                u.user_id, u.username, u.profile_photo_url,
+                (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                ${currentUserId ? `CAST(CASE WHEN EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = @current_user_id) THEN 1 ELSE 0 END AS BIT) AS is_liked_by_user` : 'CAST(0 AS BIT) as is_liked_by_user'},
+                (SELECT c.comment_id, c.comment_text, c.created_at, cu.user_id, cu.username FROM comments c JOIN users cu ON c.user_id = cu.user_id WHERE c.post_id = p.post_id ORDER BY c.created_at ASC FOR JSON PATH) AS comments
+            FROM post p JOIN users u ON p.user_id = u.user_id
+            WHERE p.post_id = @post_id
+        `;
+        const result = await request.query(query);
+        if (result.recordset.length === 0) {
+            return res.status(404).send({ message: 'Không tìm thấy bài viết.' });
+        }
+        const post = { ...result.recordset[0], comments: result.recordset[0].comments ? JSON.parse(result.recordset[0].comments) : [] };
+        res.json(post);
+    } catch (err) {
+        res.status(500).send({ message: "Lỗi server khi lấy bài viết chi tiết", error: err.message });
+    }
+});
+
 app.post('/api/posts', upload.single('postImage'), async (req, res) => {
     const { caption, user_id } = req.body;
     const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
@@ -97,6 +140,62 @@ app.post('/api/posts', upload.single('postImage'), async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi đăng bài", error: err.message });
     }
 });
+
+app.patch('/api/posts/:postId', async (req, res) => {
+    const { postId } = req.params;
+    const { caption, user_id } = req.body;
+    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id để xác thực.' });
+    try {
+        const pool = await poolPromise;
+        const request = pool.request().input('post_id', sql.Int, postId);
+        
+        const postResult = await request.query('SELECT user_id FROM post WHERE post_id = @post_id');
+        if (postResult.recordset.length === 0) return res.status(404).send({ message: 'Bài viết không tồn tại.' });
+        if (postResult.recordset[0].user_id !== user_id) return res.status(403).send({ message: 'Bạn không có quyền sửa bài viết này.' });
+
+        await request.input('caption', sql.NVarChar, caption).query('UPDATE post SET caption = @caption WHERE post_id = @post_id');
+        
+        res.status(200).json({ message: 'Cập nhật bài viết thành công!', caption });
+    } catch (err) {
+        res.status(500).send({ message: "Lỗi server khi cập nhật bài viết", error: err.message });
+    }
+});
+
+app.delete('/api/posts/:postId', async (req, res) => {
+    const { postId } = req.params;
+    const { user_id } = req.body;
+    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id để xác thực.' });
+    
+    const pool = await poolPromise;
+    const transaction = new sql.Transaction(pool);
+    try {
+        await transaction.begin();
+        const request = new sql.Request(transaction);
+        request.input('post_id', sql.Int, postId);
+
+        const postResult = await request.query('SELECT user_id FROM post WHERE post_id = @post_id');
+        if (postResult.recordset.length === 0) {
+            await transaction.rollback();
+            return res.status(404).send({ message: 'Bài viết không tồn tại.' });
+        }
+        if (postResult.recordset[0].user_id !== user_id) {
+            await transaction.rollback();
+            return res.status(403).send({ message: 'Bạn không có quyền xóa bài viết này.' });
+        }
+
+        await request.query('DELETE FROM post_likes WHERE post_id = @post_id');
+        await request.query('DELETE FROM comments WHERE post_id = @post_id');
+        await request.query('DELETE FROM post WHERE post_id = @post_id');
+
+        await transaction.commit();
+        res.status(200).json({ message: 'Xóa bài viết thành công.' });
+    } catch (err) {
+        await transaction.rollback();
+        res.status(500).send({ message: "Lỗi server khi xóa bài viết", error: err.message });
+    }
+});
+
+
 app.post('/api/posts/:postId/like', async (req, res) => {
     const { postId } = req.params;
     const { user_id } = req.body;
@@ -145,23 +244,17 @@ app.get('/api/users', async (req, res) => {
 
 app.get('/api/users/:username', async (req, res) => {
     const { username } = req.params;
-    console.log(`Bắt đầu lấy thông tin cho user: ${username}`);
     try {
         const pool = await poolPromise;
-        console.log("1. Lấy thông tin user...");
         const userResult = await pool.request().input('username', sql.VarChar, username).query('SELECT user_id, username, bio, profile_photo_url FROM users WHERE username = @username');
         if (userResult.recordset.length === 0) {
             return res.status(404).send({ message: 'Không tìm thấy người dùng.' });
         }
         const userProfile = userResult.recordset[0];
-        console.log("   => User ID:", userProfile.user_id);
 
-        console.log("2. Lấy bài viết của user...");
         const postsResult = await pool.request().input('user_id', sql.Int, userProfile.user_id).query('SELECT post_id, photo_url, caption FROM post WHERE user_id = @user_id ORDER BY created_at DESC');
         userProfile.posts = postsResult.recordset;
-        console.log(`   => Tìm thấy ${postsResult.recordset.length} bài viết.`);
 
-        console.log("3. Lấy số liệu thống kê...");
         const statsResult = await pool.request()
             .input('user_id', sql.Int, userProfile.user_id)
             .query(`
@@ -171,13 +264,9 @@ app.get('/api/users/:username', async (req, res) => {
                     (SELECT COUNT(*) FROM follows WHERE follower_id = @user_id) as following_count
             `);
         userProfile.stats = statsResult.recordset[0];
-        console.log("   => Stats:", userProfile.stats);
 
-        console.log("Hoàn tất, trả về dữ liệu.");
         res.json(userProfile);
     } catch (err) {
-        console.error(`--- LỖI CHI TIẾT KHI LẤY PROFILE CỦA ${username} ---`);
-        console.error(err);
         res.status(500).send({ message: "Lỗi server khi lấy thông tin người dùng", error: err.message });
     }
 });
@@ -189,17 +278,14 @@ app.patch('/api/profile', async (req, res) => {
         const pool = await poolPromise;
         const request = pool.request().input('user_id', sql.Int, user_id);
 
-        // 1. Cập nhật thông tin
         await request
             .input('username', sql.VarChar, username)
             .input('bio', sql.NVarChar, bio)
             .query('UPDATE users SET username = @username, bio = @bio WHERE user_id = @user_id');
 
-        // 2. Lấy lại thông tin người dùng đầy đủ
         const result = await request.query('SELECT * FROM users WHERE user_id = @user_id');
         const updatedUser = result.recordset[0];
 
-        // 3. Loại bỏ mật khẩu và trả về
         const { password_hash, ...userWithoutPassword } = updatedUser;
         res.status(200).json({ message: 'Cập nhật thông tin thành công!', user: userWithoutPassword });
 
@@ -221,6 +307,9 @@ app.post('/api/profile/avatar', upload.single('avatar'), async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi cập nhật avatar", error: err.message });
     }
 });
+
+// --- PHỤC VỤ FILE TĨNH ---
+app.use(express.static('public'));
 
 // =================================================================
 // --- KHỞI ĐỘNG SERVER ---

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
+import { useAuth } from './AuthContext'; // Import useAuth
 
-const API_URL = 'http://localhost:5000/api'; // Khôi phục lại URL đầy đủ
+const API_URL = 'http://localhost:5000/api';
 
-function LoginPage({ setCurrentUser }) {
+function LoginPage() { // Bỏ prop setCurrentUser
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth(); // Lấy hàm login từ context
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +29,7 @@ function LoginPage({ setCurrentUser }) {
         throw new Error(data.message || 'Đăng nhập thất bại.');
       }
 
-      setCurrentUser(data);
+      login(data); // Sử dụng hàm login từ context
       navigate('/');
 
     } catch (err) {

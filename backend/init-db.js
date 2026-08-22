@@ -2,6 +2,7 @@ const sql = require('mssql');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
+// SỬA LỖI: Thêm options.useUTC = false để đảm bảo Unicode được xử lý đúng
 const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -9,7 +10,8 @@ const dbConfig = {
     database: process.env.DB_DATABASE,
     options: {
         encrypt: false,
-        trustServerCertificate: true
+        trustServerCertificate: true,
+        useUTC: false // Bắt buộc driver xử lý đúng kiểu NVarChar
     }
 };
 
@@ -25,8 +27,8 @@ const createSchemaSQL = `
         username VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        profile_photo_url VARCHAR(255) DEFAULT 'https://picsum.photos/100',
-        bio VARCHAR(255),
+        profile_photo_url VARCHAR(255),
+        bio NVARCHAR(255),
         created_at DATETIME DEFAULT GETDATE()
     );
     CREATE TABLE post (
@@ -39,7 +41,7 @@ const createSchemaSQL = `
     );
     CREATE TABLE comments (
         comment_id INT IDENTITY(1,1) PRIMARY KEY,
-        comment_text VARCHAR(255) NOT NULL,
+        comment_text NVARCHAR(255) NOT NULL,
         post_id INT NOT NULL,
         user_id INT NOT NULL,
         created_at DATETIME DEFAULT GETDATE(),
@@ -64,12 +66,11 @@ const createSchemaSQL = `
     );
 `;
 
-// ĐÃ SỬA LẠI HASH VỚI ĐỊNH DẠNG ĐÚNG
 const seedSQL = `
-    -- Mật khẩu cho các user mẫu đều là 'password123'
-    INSERT INTO users (username, email, password_hash) VALUES ('tracnhathuy', 'huy@example.com', '$2b$10$N9qo8uLOickgx2ZMRZoMye.IscglcEM0nFSb2lOcs.OTFF8IoiC2');
-    INSERT INTO users (username, email, password_hash) VALUES ('nguyenvana', 'vana@example.com', '$2b$10$N9qo8uLOickgx2ZMRZoMye.IscglcEM0nFSb2lOcs.OTFF8IoiC2');
-    INSERT INTO post (user_id, caption) VALUES (1, N'Chào mừng đến với mạng xã hội!');
+    INSERT INTO users (username, email, password_hash, bio) VALUES ('tracnhathuy', 'huy@example.com', '$2b$10$N9qo8uLOickgx2ZMRZoMye.IscglcEM0nFSb2lOcs.OTFF8IoiC2', N'Xin chào, đây là tiểu sử của tôi!');
+    INSERT INTO users (username, email, password_hash, bio) VALUES ('nguyenvana', 'vana@example.com', '$2b$10$N9qo8uLOickgx2ZMRZoMye.IscglcEM0nFSb2lOcs.OTFF8IoiC2', N'Một người dùng khác.');
+    INSERT INTO post (user_id, caption) VALUES (1, N'Chào mừng đến với mạng xã hội! Đây là bài viết đầu tiên có dấu.');
+    INSERT INTO comments (post_id, user_id, comment_text) VALUES (1, 2, N'Bình luận này cũng có dấu tiếng Việt.');
 `;
 
 async function resetDatabaseTables() {

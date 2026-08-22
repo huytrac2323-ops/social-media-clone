@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Auth.css';
+import { useAuth } from './AuthContext'; // Import useAuth
 
-const API_URL = 'http://localhost:5000/api'; // Khôi phục lại URL đầy đủ
+const API_URL = 'http://localhost:5000/api';
 
-function RegisterPage({ onRegisterSuccess, setCurrentUser }) {
+function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth(); // Lấy hàm login từ context
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +33,16 @@ function RegisterPage({ onRegisterSuccess, setCurrentUser }) {
 
       setSuccess('Đăng ký thành công! Đang tự động đăng nhập...');
       
-      setCurrentUser(newUser);
+      // Tự động đăng nhập người dùng mới
+      const loginResponse = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const loginData = await loginResponse.json();
+      if(!loginResponse.ok) throw new Error(loginData.message || "Lỗi khi tự động đăng nhập.");
+
+      login(loginData); // Sử dụng hàm login từ context
 
       if (onRegisterSuccess) {
         onRegisterSuccess();

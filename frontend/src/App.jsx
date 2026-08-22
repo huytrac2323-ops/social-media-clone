@@ -7,6 +7,7 @@ import LoginPage from './LoginPage';
 import HomePage from './HomePage';
 import PostPage from './PostPage';
 import { AuthProvider, useAuth } from './AuthContext';
+import.meta.env.VITE_API_URL
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 function App() {

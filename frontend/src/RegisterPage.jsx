@@ -20,7 +20,7 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
     setSuccess('');
 
     try {
-      const response = await fetch(`${API_URL}/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -34,7 +34,7 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
       setSuccess('Đăng ký thành công! Đang tự động đăng nhập...');
       
       // Tự động đăng nhập người dùng mới
-      const loginResponse = await fetch(`${API_URL}/login`, {
+      const loginResponse = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

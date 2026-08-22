@@ -8,8 +8,7 @@ import HomePage from './HomePage';
 import PostPage from './PostPage';
 import { AuthProvider, useAuth } from './AuthContext';
 
-const API_URL = 'http://localhost:5000/api';
-
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 function App() {
   return (
     <Router>

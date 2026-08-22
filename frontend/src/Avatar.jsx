@@ -1,6 +1,6 @@
 import React from 'react';
 
-const API_BASE_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_BASE_URL = 'https://social-media-clone-di9z.onrender.com/uploads';
 
 const Avatar = ({ user, className = '' }) => {
   const imageUrl = user.profile_photo_url ? `${API_BASE_URL}${user.profile_photo_url}` : null;

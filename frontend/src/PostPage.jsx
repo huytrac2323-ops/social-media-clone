@@ -30,7 +30,7 @@ function PostPage() {
           author: data.username,
           time: data.created_at,
           content: data.caption,
-          imageUrl: data.photo_url ? `https://social-media-clone-di9z.onrender.com/api${data.photo_url}` : null,
+          imageUrl: data.photo_url ? `https://social-media-clone-di9z.onrender.com/uploads${data.photo_url}` : null,
           likes: data.like_count,
           isLiked: data.is_liked_by_user,
           comments: data.comments || [],

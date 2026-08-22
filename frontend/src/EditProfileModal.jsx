@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './Modal.css';
 import { useAuth } from './AuthContext'; // Import useAuth
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/uploads';
 
 function EditProfileModal({ user, onClose, navigate }) { // Bỏ setCurrentUser
   const { updateUser } = useAuth(); // Lấy hàm updateUser từ context

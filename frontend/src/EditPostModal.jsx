@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
 import './Modal.css';
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/uploads';
 
 function EditPostModal({ post, onClose, onPostUpdated }) {
   const { currentUser } = useAuth();

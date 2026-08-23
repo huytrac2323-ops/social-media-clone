@@ -34,7 +34,7 @@ function AppContent() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const userIdQuery = currentUser ? `?currentUserId=${currentUser.user_id}` : '';
+        const userIdQuery = currentUser ? `?currentUserId=${currentUser.id}` : '';
         const response = await fetch(`${API_URL}/posts${userIdQuery}`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();

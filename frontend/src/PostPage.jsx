@@ -30,8 +30,7 @@ function PostPage() {
           author: data.username,
           time: data.created_at,
           content: data.caption,
-          imageUrl: data.photo_url ? `https://social-media-clone-di9z.onrender.com/uploads${data.photo_url}` : null,
-          likes: data.like_count,
+          imageUrl: data.photo_url || null, // SỬA DÒNG NÀY: Bỏ phần ghép chuỗi https://...          likes: data.like_count,
           isLiked: data.is_liked_by_user,
           comments: data.comments || [],
           authorAvatar: data.profile_photo_url // Đảm bảo lấy avatar

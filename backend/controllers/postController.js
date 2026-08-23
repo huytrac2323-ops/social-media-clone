@@ -59,14 +59,14 @@ const getPostById = async (req, res) => {
 
 // Tạo bài viết mới
 const createPost = async (req, res) => {
-    const { caption, user_id } = req.body;
+    const { caption, user_id,photo_url  } = req.body;
     const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
         // ĐÚNG: Chỉ truyền các trường cần thiết
         const result = await pool.query(
             'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
-            [userId, caption, photoUrl]
+            [user_Id, caption, photo_Url, ]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {

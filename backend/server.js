@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-
+const app = express();
 // Thêm import poolPromise từ db.js
 const { poolPromise } = require('./config/db');
 
@@ -14,6 +14,15 @@ const app = express();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors());
 app.use(express.json());
+// CẤU HÌNH CORS ĐÚNG CÁCH CHO RENDER:
+app.use(cors({
+    // Điền đúng cái link Frontend của bạn vào đây (Lưu ý: Không có dấu / ở cuối)
+    origin: 'https://social-media-frontend-brxn.onrender.com',
+    credentials: true, // Nếu API của bạn có dùng cookie/session thì cần cái này
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+}));
+app.use(express.json());
+
 
 // Nạp các Routes
 app.use('/api/auth', authRoutes);

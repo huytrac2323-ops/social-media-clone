@@ -71,7 +71,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
     username: post.author,
     profile_photo_url: post.authorAvatar
   };
-
+    console.log("Dữ liệu PostCard nhận được:", post);
   return (
     <>
       {isEditModalOpen && (

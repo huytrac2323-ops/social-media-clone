@@ -44,8 +44,7 @@ function AppContent() {
           author: post.username,
           time: post.created_at,
           content: post.caption,
-          imageUrl: post.photo_url ? `https://social-media-clone-di9z.onrender.com/uploads${post.photo_url}` : null,
-          likes: post.like_count,
+          imageUrl: post.photo_url || null,          likes: post.like_count,
           isLiked: post.is_liked_by_user,
           comments: post.comments || [],
           authorAvatar: post.profile_photo_url

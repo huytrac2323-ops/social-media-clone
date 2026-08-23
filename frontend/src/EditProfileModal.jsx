@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './Modal.css';
 import { useAuth } from './AuthContext'; // Import useAuth
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/uploads';
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function EditProfileModal({ user, onClose, navigate }) { // Bỏ setCurrentUser
   const { updateUser } = useAuth(); // Lấy hàm updateUser từ context
@@ -76,11 +76,11 @@ function EditProfileModal({ user, onClose, navigate }) { // Bỏ setCurrentUser
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group avatar-group">
-            <img
-              src={previewAvatar || (user.profile_photo_url ? `https://social-media-clone-di9z.onrender.com/api/upload/${user.profile_photo_url}` : 'https://picsum.photos/100')}
-              alt="Avatar"
-              className="modal-avatar-preview"
-            />
+              <img
+                  src={previewAvatar || user.profile_photo_url || 'https://picsum.photos/100'}
+                  alt="Avatar"
+                  className="modal-avatar-preview"
+              />
             <label htmlFor="avatar-upload" className="btn-change-avatar">
               Đổi ảnh đại diện
             </label>

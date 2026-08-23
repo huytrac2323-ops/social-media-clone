@@ -66,7 +66,7 @@ const createPost = async (req, res) => {
         // ĐÚNG: Chỉ truyền các trường cần thiết
         const result = await pool.query(
             'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
-            [user_Id, caption, photo_Url, ]
+            [user_id, caption, photo_url, ]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {

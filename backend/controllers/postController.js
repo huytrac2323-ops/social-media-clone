@@ -137,10 +137,12 @@ const deletePost = async (req, res) => {
     try {
         await client.query('BEGIN');
         const postResult = await client.query('SELECT user_id FROM post WHERE post_id = $1', [postId]);
+
         if (postResult.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).send({ message: 'Bài viết không tồn tại.' });
         }
+        console.log("ID người tạo bài:", postResult.rows[0].user_id, "| ID người bấm xóa:", Number(user_id));
         if (postResult.rows[0].user_id !== Number(user_id)) {
             await client.query('ROLLBACK');
             return res.status(403).send({ message: 'Bạn không có quyền xóa bài viết này.' });

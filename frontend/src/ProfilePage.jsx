@@ -15,6 +15,10 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const getAvatarUrl = (url) => {
+    if (!url) return 'https://picsum.photos/150';
+    return url.startsWith('http') ? url : `https://social-media-clone-di9z.onrender.com${url}`;
+  };
 
   // Sử dụng useCallback để hàm fetchUserProfile không bị tạo lại mỗi lần render
   // trừ khi username (từ URL) thay đổi.
@@ -65,7 +69,7 @@ function ProfilePage() {
 
   const { stats = {}, bio, posts = [], profile_photo_url } = userProfile;
   const isOwnProfile = currentUser ? currentUser.user_id === userProfile.user_id : false;
-
+  console.log("Link Avatar gốc lấy từ Backend:", userProfile?.profile_photo_url);
   return (
     <>
       {isEditModalOpen && (
@@ -79,8 +83,7 @@ function ProfilePage() {
       <div className="profile-container">
         <header className="profile-header">
           <div className="profile-avatar-section">
-            <div className="profile-avatar-large" style={{ backgroundImage: `url(${profile_photo_url || 'https://picsum.photos/150'})`, backgroundSize: 'cover' }}>
-              {!profile_photo_url && username[0].toUpperCase()}
+            <div className="profile-avatar-large" style={{ backgroundImage: `url(${getAvatarUrl(profile_photo_url)})`, backgroundSize: 'cover' }}>              {!profile_photo_url && username[0].toUpperCase()}
             </div>
           </div>
           <section className="profile-info-section">

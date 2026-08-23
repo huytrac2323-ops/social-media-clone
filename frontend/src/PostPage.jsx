@@ -31,6 +31,7 @@ function PostPage() {
           time: data.created_at,
           content: data.caption,
           imageUrl: data.photo_url || null, //
+          likes: data.like_count, // BẠN HÃY BỔ SUNG LẠI DÒNG NÀY
           isLiked: data.is_liked_by_user,
           comments: data.comments || [],
           authorAvatar: data.profile_photo_url // Đảm bảo lấy avatar

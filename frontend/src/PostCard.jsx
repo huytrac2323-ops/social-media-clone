@@ -112,7 +112,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
         
         <ClickableContent>
           {post.content && <p className="post-content">{post.content}</p>}
-            {post.photo_url && <img src={post.photo_url} alt="Nội dung bài viết" className="post-image" />}
+            {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
         </ClickableContent>
 
         <div className="post-stats">

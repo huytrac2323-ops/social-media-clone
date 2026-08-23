@@ -9,7 +9,6 @@ const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 
-const app = express();
 // Cho phép người ngoài truy cập vào thư mục uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

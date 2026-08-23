@@ -36,13 +36,14 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
   };
 
   const handleDelete = async () => {
+
     if (!window.confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) return;
     
     try {
         const response = await fetch(`${API_URL}/posts/${post.id}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: currentUser.user_id })
+            body: JSON.stringify({ user_id: currentUser.id })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Xóa bài viết thất bại.');

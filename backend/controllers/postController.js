@@ -63,10 +63,10 @@ const createPost = async (req, res) => {
     const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
-        // Dùng RETURNING * thay cho OUTPUT inserted.* của SQL Server
+        // ĐÚNG: Chỉ truyền các trường cần thiết
         const result = await pool.query(
-            'INSERT INTO post (caption, photo_url, user_id) VALUES ($1, $2, $3) RETURNING *',
-            [caption, photoUrl, user_id]
+            'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
+            [userId, caption, photoUrl]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {

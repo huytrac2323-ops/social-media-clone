@@ -12,7 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 // Cho phép người ngoài truy cập vào thư mục uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(cors());
+
 app.use(express.json());
 // CẤU HÌNH CORS ĐÚNG CÁCH CHO RENDER:
 app.use(cors({
@@ -21,7 +21,6 @@ app.use(cors({
     credentials: true, // Nếu API của bạn có dùng cookie/session thì cần cái này
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
-app.use(express.json());
 
 
 // Nạp các Routes

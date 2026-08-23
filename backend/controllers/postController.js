@@ -1,5 +1,15 @@
 // File: controllers/postController.js
 const pool = require('../config/db');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+
+// Cấu hình Cloudinary (Khai báo các biến này trong file .env trên Render)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {
@@ -59,17 +69,43 @@ const getPostById = async (req, res) => {
 
 // Tạo bài viết mới
 const createPost = async (req, res) => {
-    const { caption, user_id,photo_url  } = req.body;
-    const photoUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    // Chỉ lấy caption và user_id từ body
+    const { caption, user_id } = req.body;
+
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
+
+    let finalPhotoUrl = null;
+
     try {
-        // ĐÚNG: Chỉ truyền các trường cần thiết
+        // Kiểm tra nếu có file ảnh được đính kèm qua Multer
+        if (req.file) {
+            // Upload file từ thư mục tạm lên Cloudinary
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'social-media-clone-posts' // Gom nhóm ảnh gọn gàng trên Cloudinary
+            });
+
+            // Lấy đường link ảnh public
+            finalPhotoUrl = uploadResult.secure_url;
+
+            // Xóa file ảnh tạm ở server cục bộ (tránh đầy bộ nhớ ổ cứng)
+            fs.unlinkSync(req.file.path);
+        } else if (req.body.photo_url) {
+            // Hỗ trợ trường hợp phụ: client gửi sẵn URL
+            finalPhotoUrl = req.body.photo_url;
+        }
+
+        // Lưu dữ liệu vào database
         const result = await pool.query(
-            'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
-            [user_id, caption, photo_url, ]
-        );
+        'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
+        [user_id, caption, finalPhotoUrl]
+    );
+
         res.status(201).json(result.rows[0]);
     } catch (err) {
+        // Dọn dẹp file tạm nếu quá trình upload hoặc lưu database bị lỗi
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
         res.status(500).send({ message: "Lỗi server khi đăng bài", error: err.message });
     }
 };

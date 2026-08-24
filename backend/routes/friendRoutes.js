@@ -14,5 +14,4 @@ router.delete('/unfriend', friendController.unfriendOrReject);
 // Route Lấy danh sách bạn bè (GET)
 router.get('/:user_id/list', friendController.getFriendsList);
 // Thêm dòng này vào friendRoutes.js
-router.get('/status/:user1/:user2', friendController.checkFriendStatus);
 module.exports = router;

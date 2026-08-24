@@ -103,41 +103,38 @@ const checkFriendStatus = async (req, res) => {
     const { user1, user2 } = req.params;
     try {
         const result = await pool.query(
-            `SELECT * FROM friendships 
-             WHERE (requester_id = $1 AND addressee_id = $2) 
+            `SELECT * FROM friendships
+             WHERE (requester_id = $1 AND addressee_id = $2)
                 OR (requester_id = $2 AND addressee_id = $1)`,
             [user1, user2]
         );
 
         if (result.rows.length === 0) {
-            return res.json({ status: 'NONE' }); // Chưa có quan hệ gì
+            return res.json({ status: 'NONE' });
         }
 
         const relation = result.rows[0];
         if (relation.status === 'ACCEPTED') {
-            return res.json({ status: 'ACCEPTED' }); // Đã là bạn bè
+            return res.json({ status: 'ACCEPTED' });
         }
 
         if (relation.status === 'PENDING') {
-            // Kiểm tra xem ai là người gửi lời mời
             if (relation.requester_id == user1) {
-                return res.json({ status: 'PENDING_SENT' }); // Mình đã gửi lời mời cho họ
+                return res.json({ status: 'PENDING_SENT' });
             } else {
-                return res.json({ status: 'PENDING_RECEIVED' }); // Họ gửi lời mời cho mình
+                return res.json({ status: 'PENDING_RECEIVED' });
             }
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-};
 
-module.exports = {
-    // ... các hàm cũ
-    checkFriendStatus
 };
 module.exports = {
     sendFriendRequest,
     acceptFriendRequest,
     unfriendOrReject,
-    getFriendsList
+    getFriendsList,
+    checkFriendStatus
+
 };

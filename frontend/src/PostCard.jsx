@@ -98,17 +98,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                   {(() => {
                       if (!post.time) return 'Vừa xong';
 
-                      // Nếu post.time là chuỗi SQL, đôi khi nó thiếu chữ 'Z' ở cuối khiến JS hiểu nhầm là giờ local rồi cộng tiếp múi giờ.
-                      // Ta thêm chữ Z nếu chưa có để ép nó hiểu đúng là chuẩn UTC từ database gửi lên.
-                      let timeStr = post.time;
-                      if (typeof timeStr === 'string' && !timeStr.endsWith('Z') && !timeStr.includes('+')) {
-                          timeStr += 'Z';
-                      }
-
-                      const date = new Date(timeStr);
+                      const date = new Date(post.time);
                       if (isNaN(date.getTime()) || date.getFullYear() === 1970) return 'Vừa xong';
 
-                      return date.toLocaleTimeString('vi-VN', {
+                      return date.toLocaleString('vi-VN', {
                           timeZone: 'Asia/Ho_Chi_Minh',
                           hour: '2-digit',
                           minute: '2-digit',

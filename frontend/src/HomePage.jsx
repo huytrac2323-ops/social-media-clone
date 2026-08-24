@@ -192,3 +192,4 @@ module.exports = {
     likePost,
     commentPost
 };
+export default HomePage;

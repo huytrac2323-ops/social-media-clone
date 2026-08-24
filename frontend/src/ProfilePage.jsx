@@ -79,16 +79,7 @@ function ProfilePage() {
           navigate={navigate}
         />
       )}
-      <div className="profile-header">
-        <img src={userProfile.profile_photo_url} alt="Avatar" />
-        <h2>{userProfile.username}</h2>
 
-        {/* Gắn nút bấm vào đây, truyền đúng ID của bạn và ID của người đang xem */}
-        <FriendButton
-            currentUserId={currentUser.user_id}
-            targetUserId={userProfile.user_id}
-        />
-      </div>
 
 
       <div className="profile-container">

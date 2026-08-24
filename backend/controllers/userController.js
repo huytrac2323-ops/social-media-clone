@@ -2,6 +2,14 @@
 const pool = require('../config/db');
 const {v2: cloudinary} = require("cloudinary"); // Dùng pool trực tiếp từ pg
 
+// Cấu hình Cloudinary (Khai báo các biến này trong file .env trên Render)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+
 // Lấy danh sách tất cả người dùng
 const getUsers = async (req, res) => {
     try {
@@ -67,14 +75,21 @@ const updateAvatar = async (req, res) => {
     if (!user_id) return res.status(400).send({ message: 'Yêu cầu không hợp lệ, thiếu user_id.' });
     if (!req.file) return res.status(400).send({ message: 'Vui lòng chọn một file ảnh.' });
 
-    const photoUrl = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'social-media-clone-posts' // Gom nhóm ảnh gọn gàng trên Cloudinary
-    });
     try {
+        // 1. Upload ảnh lên Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'social-media-clone-avatars' // Nên đặt tên folder khác với bài viết cho dễ quản lý
+        });
+
+        // 2. Lấy ĐÚNG ĐƯỜNG LINK ẢNH (secure_url) từ kết quả trả về
+        const photoUrl = result.secure_url;
+
+        // 3. Cập nhật Database
         await pool.query(
             'UPDATE users SET profile_photo_url = $1 WHERE user_id = $2',
             [photoUrl, user_id]
         );
+
         res.status(200).json({ message: 'Cập nhật avatar thành công!', profile_photo_url: photoUrl });
     } catch (err) {
         res.status(500).send({ message: "Lỗi server khi cập nhật avatar", error: err.message });

@@ -50,6 +50,7 @@ function AppContent() {
           comments: post.comments || [],
           authorAvatar: post.profile_photo_url
         }));
+          const sortedPosts = formattedPosts.sort((a, b) => b.id - a.id);
         setPosts(formattedPosts);
       } catch (error) { console.error("Lỗi khi lấy dữ liệu bài viết:", error); }
     };

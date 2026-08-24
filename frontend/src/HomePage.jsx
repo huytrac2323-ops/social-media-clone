@@ -175,14 +175,6 @@ const commentPost = async (req, res) => {
     }
 };
 
-module.exports = {
-    getPosts,
-    getPostById,
-    createPost,
-    updatePost,
-    deletePost,
-    likePost,
-    commentPost
 };
 export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     return (

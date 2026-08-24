@@ -99,9 +99,11 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                       if (!post.time) return 'Vừa xong';
 
                       const date = new Date(post.time);
-                      if (isNaN(date.getTime()) || date.getFullYear() === 1970) return 'Vừa xong';
 
-                      return date.toLocaleString('vi-VN', {
+                      // Nếu thời gian không hợp lệ, mới hiển thị Vừa xong
+                      if (isNaN(date.getTime())) return 'Vừa xong';
+
+                      return date.toLocaleTimeString('vi-VN', {
                           timeZone: 'Asia/Ho_Chi_Minh',
                           hour: '2-digit',
                           minute: '2-digit',

@@ -173,7 +173,7 @@ const commentPost = async (req, res) => {
     } catch (err) {
         res.status(500).send({ message: "Lỗi server khi bình luận", error: err.message });
     }
-};
+
 
 };
 export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {

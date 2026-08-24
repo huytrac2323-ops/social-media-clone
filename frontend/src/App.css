@@ -403,9 +403,11 @@ body {
 }
 
 .profile-avatar-large {
-  width: 150px;
-  height: 150px;
-  font-size: 60px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover; /* Đảm bảo ảnh không bị méo hoặc tràn khung */
+    background-color: #efefef;
 }
 
 .profile-info-section {

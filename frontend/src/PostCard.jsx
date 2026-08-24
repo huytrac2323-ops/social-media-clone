@@ -92,15 +92,17 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             <div className="post-meta">
               <h4 className="post-author">{post.author}</h4>
                 <span className="post-time">
-                  {post.time ? new Date(post.time).toLocaleString('vi-VN', {
-                      timeZone: 'Asia/Ho_Chi_Minh',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                  }) : 'Đang cập nhật'}
-                </span>
+  {post.time
+      ? new Date(post.time).toLocaleString('vi-VN', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+      })
+      : 'Chưa có thời gian'}
+</span>
                     </div>
           </Link>
           {isOwner && (

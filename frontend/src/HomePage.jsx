@@ -1,5 +1,6 @@
-import CreatePost from './CreatePost';
 import React from 'react';
+import CreatePost from './CreatePost';
+import PostCard from './PostCard';import React from 'react';
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;
@@ -179,9 +180,27 @@ const commentPost = async (req, res) => {
 };
 export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     return (
-        <div className="home-page-container">
-            {/* Nội dung giao diện trang chủ hiển thị danh sách bài viết (posts) ở đây */}
-            <h2>Trang chủ Huybook</h2>
+        <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+            {/* Hiển thị khung đăng bài */}
+            <CreatePost onPostCreated={onPostCreated} />
+
+            {/* Hiển thị danh sách bài viết */}
+            <div className="posts-list" style={{ marginTop: '20px' }}>
+                {posts && posts.length > 0 ? (
+                    posts.map(post => (
+                        <PostCard
+                            key={post.id}
+                            post={post}
+                            onLike={onLike}
+                            onCommentSubmit={onCommentSubmit}
+                            onPostDeleted={onPostDeleted}
+                            onPostUpdated={onPostUpdated}
+                        />
+                    ))
+                ) : (
+                    <p style={{ textAlign: 'center', color: '#888' }}>Chưa có bài viết nào.</p>
+                )}
+            </div>
         </div>
     );
 }

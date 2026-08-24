@@ -1,5 +1,6 @@
 // File: controllers/userController.js
-const pool = require('../config/db'); // Dùng pool trực tiếp từ pg
+const pool = require('../config/db');
+const {v2: cloudinary} = require("cloudinary"); // Dùng pool trực tiếp từ pg
 
 // Lấy danh sách tất cả người dùng
 const getUsers = async (req, res) => {
@@ -66,7 +67,9 @@ const updateAvatar = async (req, res) => {
     if (!user_id) return res.status(400).send({ message: 'Yêu cầu không hợp lệ, thiếu user_id.' });
     if (!req.file) return res.status(400).send({ message: 'Vui lòng chọn một file ảnh.' });
 
-    const photoUrl = `/uploads/${req.file.filename}`;
+    const photoUrl = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'social-media-clone-posts' // Gom nhóm ảnh gọn gàng trên Cloudinary
+    });
     try {
         await pool.query(
             'UPDATE users SET profile_photo_url = $1 WHERE user_id = $2',

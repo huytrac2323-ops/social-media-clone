@@ -130,14 +130,20 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
         </div>
         <hr />
         <div className="comments-section">
-          {post.comments.slice(0, 2).map(comment => (
-            <div key={comment.comment_id} className="comment-item">
-              <Link to={`/profile/${comment.username}`} className="comment-author-link">
-                <span className="comment-author">{comment.username}: </span>
-              </Link>
-              <span className="comment-text">{comment.comment_text}</span>
-            </div>
-          ))}
+            {post.comments.slice(0, 2).map(comment => (
+                <div key={comment.comment_id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Link to={`/profile/${comment.username}`} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {/* THÊM AVATAR VÀO ĐÂY */}
+                        <Avatar
+                            user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }}
+                            className="mini-avatar"
+                            style={{ width: '24px', height: '24px' }}
+                        />
+                        <span className="comment-author">{comment.username}: </span>
+                    </Link>
+                    <span className="comment-text">{comment.comment_text}</span>
+                </div>
+            ))}
           {post.comments.length > 2 && (
               <ClickableContent>
                   <p style={{ color: '#8e8e8e', cursor: 'pointer', marginTop: '10px' }}>

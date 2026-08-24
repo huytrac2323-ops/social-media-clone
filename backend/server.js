@@ -9,27 +9,33 @@ const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 
-// Cho phép người ngoài truy cập vào thư mục uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use(express.json());
-// CẤU HÌNH CORS ĐÚNG CÁCH CHO RENDER:
-app.use(cors({
-    // Điền đúng cái link Frontend của bạn vào đây (Lưu ý: Không có dấu / ở cuối)
-    origin: 'https://social-media-frontend-brxn.onrender.com',
-    credentials: true, // Nếu API của bạn có dùng cookie/session thì cần cái này
+const corsOptions = {
+    // Đưa cả 2 đường link vào một mảng (Lưu ý: Không có dấu / ở cuối link)
+    origin: [
+        'http://localhost:5173',
+        'https://social-media-frontend-brxn.onrender.com'
+    ],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-}));
+};
 
 
-// Nạp các Routes
-app.use('/api/auth', authRoutes);
-// Bổ sung nạp các routes còn thiếu
+
+
+// 3. STATIC FILES
+app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(cors(corsOptions));
+
+
+// 4. ROUTESapp.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api', userRoutes);
-
 app.use(express.static('public'));
 
+
+// 5. KHỞI ĐỘNG SERVER
 const startServer = async () => {
     try {
         await poolPromise;

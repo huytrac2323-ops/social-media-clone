@@ -42,8 +42,7 @@ function AppContent() {
           id: post.post_id,
           userId: post.user_id, // Thêm userId để xác thực quyền
           author: post.username,
-          time: post.created_at,
-          content: post.caption,
+          time: post.created_at || post.time || new Date().toISOString(),          content: post.caption,
           imageUrl: post.photo_url || null,
           likes: post.like_count,
           isLiked: post.is_liked_by_user,

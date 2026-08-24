@@ -144,7 +144,6 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             {post.comments.slice(0, 2).map(comment => (
                 <div key={comment.comment_id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Link to={`/profile/${comment.username}`} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {/* THÊM AVATAR VÀO ĐÂY */}
                         <Avatar
                             user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }}
                             className="mini-avatar"
@@ -153,6 +152,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                         <span className="comment-author">{comment.username}: </span>
                     </Link>
                     <span className="comment-text">{comment.comment_text}</span>
+                    {/* Thêm thời gian nhỏ bên cạnh bình luận nếu muốn */}
+                    <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
+            {comment.created_at ? new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+        </span>
                 </div>
             ))}
           {post.comments.length > 2 && (

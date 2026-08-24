@@ -95,24 +95,15 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             <div className="post-meta">
               <h4 className="post-author">{post.author}</h4>
                 <span className="post-time">
-                  {(() => {
-                      if (!post.time) return 'Vừa xong';
-
-                      const date = new Date(post.time);
-
-                      // Nếu thời gian không hợp lệ, mới hiển thị Vừa xong
-                      if (isNaN(date.getTime())) return 'Vừa xong';
-
-                      return date.toLocaleTimeString('vi-VN', {
-                          timeZone: 'Asia/Ho_Chi_Minh',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                      });
-                  })()}
-                </span>
+  {post.time ? new Date(post.time).toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+  }) : 'Đang cập nhật'}
+</span>
             </div>
           </Link>
           {isOwner && (

@@ -85,13 +85,25 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
         />
       )}
 
+
+
+
       <div className="post-card">
         <div className="post-header">
           <Link to={`/profile/${post.author}`} className="post-author-link">
             <Avatar user={authorUser} className="mini-avatar" />
             <div className="post-meta">
               <h4 className="post-author">{post.author}</h4>
-              <span className="post-time">{new Date(post.time).toLocaleString()}</span>
+                <span className="post-time">
+                  {post.time ? new Date(post.time).toLocaleString('vi-VN', {
+                      timeZone: 'Asia/Ho_Chi_Minh',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                  }) : 'Vừa xong'}
+                </span>
             </div>
           </Link>
           {isOwner && (

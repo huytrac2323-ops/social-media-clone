@@ -1,4 +1,4 @@
-
+import React from 'react';
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;
@@ -184,3 +184,11 @@ module.exports = {
     likePost,
     commentPost
 };
+export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
+    return (
+        <div className="home-page-container">
+            {/* Nội dung giao diện trang chủ hiển thị danh sách bài viết (posts) ở đây */}
+            <h2>Trang chủ Huybook</h2>
+        </div>
+    );
+}

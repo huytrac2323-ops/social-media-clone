@@ -1,6 +1,6 @@
 import React from 'react';
 import CreatePost from './CreatePost';
-import PostCard from './PostCard';import React from 'react';
+import PostCard from './PostCard';
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;

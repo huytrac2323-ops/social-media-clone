@@ -1,5 +1,4 @@
 
-
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;
@@ -185,4 +184,3 @@ module.exports = {
     likePost,
     commentPost
 };
-export default HomePage;

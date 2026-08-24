@@ -20,7 +20,8 @@ const getPosts = async (req, res) => {
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
                 (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
+                ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id
+                 = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
                 COALESCE(
                         (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text, 'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username))
                          FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
@@ -96,11 +97,13 @@ const createPost = async (req, res) => {
 
         // Lưu dữ liệu vào database
         const result = await pool.query(
-        'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
-        [user_id, caption, finalPhotoUrl]
-    );
-
+            'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
+            [user_id, caption, finalPhotoUrl]
+        );
+// Đảm bảo kết quả trả về JSON cho client có chứa trường created_at
         res.status(201).json(result.rows[0]);
+
+
     } catch (err) {
         // Dọn dẹp file tạm nếu quá trình upload hoặc lưu database bị lỗi
         if (req.file && fs.existsSync(req.file.path)) {

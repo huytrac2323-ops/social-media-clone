@@ -1,5 +1,4 @@
 // File: controllers/postController.js
-const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 // Cấu hình Cloudinary
 cloudinary.config({

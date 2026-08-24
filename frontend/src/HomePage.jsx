@@ -1,3 +1,4 @@
+import CreatePost from './CreatePost';
 import React from 'react';
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {

@@ -97,7 +97,7 @@ const createPost = async (req, res) => {
 
         // Lưu dữ liệu vào database
         const result = await pool.query(
-            'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
+            'INSERT INTO post (user_id, caption, photo_url, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *',
             [user_id, caption, finalPhotoUrl]
         );
 // Đảm bảo kết quả trả về JSON cho client có chứa trường created_at
@@ -190,13 +190,18 @@ const commentPost = async (req, res) => {
     const { comment_text, user_id } = req.body;
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
+        // Thêm NOW() để đảm bảo luôn có thời gian created_at
         const result = await pool.query(
-            'INSERT INTO comments (post_id, user_id, comment_text) VALUES ($1, $2, $3) RETURNING comment_id, comment_text, created_at, user_id',
+            'INSERT INTO comments (post_id, user_id, comment_text, created_at) VALUES ($1, $2, $3, NOW()) RETURNING comment_id, comment_text, created_at, user_id',
             [postId, user_id, comment_text]
         );
         const newComment = result.rows[0];
-        const userResult = await pool.query('SELECT username FROM users WHERE user_id = $1', [newComment.user_id]);
+
+        // Lấy cả username và profile_photo_url để hiển thị avatar bên phía giao diện
+        const userResult = await pool.query('SELECT username, profile_photo_url FROM users WHERE user_id = $1', [newComment.user_id]);
         newComment.username = userResult.rows[0].username;
+        newComment.profile_photo_url = userResult.rows[0].profile_photo_url;
+
         res.status(201).json(newComment);
     } catch (err) {
         res.status(500).send({ message: "Lỗi server khi bình luận", error: err.message });

@@ -83,7 +83,7 @@ const createPost = async (req, res) => {
             const uploadResult = await cloudinary.uploader.upload(req.file.path, {
                 folder: 'social-media-clone-posts' // Gom nhóm ảnh gọn gàng trên Cloudinary
             });
-
+//jj
             // Lấy đường link ảnh public
             finalPhotoUrl = uploadResult.secure_url;
 

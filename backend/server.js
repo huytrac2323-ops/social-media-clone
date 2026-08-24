@@ -8,7 +8,7 @@ const { poolPromise } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
-
+const friendRoutes = require('./routes/friendRoutes');
 
 const corsOptions = {
     // Đưa cả 2 đường link vào một mảng (Lưu ý: Không có dấu / ở cuối link)
@@ -27,7 +27,7 @@ const corsOptions = {
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors(corsOptions));
-
+app.use('/api/friends', friendRoutes);
 
 // 4. ROUTESapp.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);

@@ -23,7 +23,11 @@ const getPosts = async (req, res) => {
                 ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id
                  = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
                 COALESCE(
-                        (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text, 'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username))
+                        (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text,
+                                                           'created_at',
+                                                           c.created_at, 'user_id', cu.user_id, 'username',
+                                                           cu.username,'profile_photo_url',
+                                                           cu.profile_photo_url))
                          FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
                                   JOIN users cu ON c.user_id = cu.user_id),
                         '[]'::json) AS comments

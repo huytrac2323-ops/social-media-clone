@@ -215,37 +215,54 @@ const commentPost = async (req, res) => {
     }
 };
         // Chia sẻ bài viết
-        const sharePost = async (req, res) => {
-            const { postId } = req.params;
-            const user_id = req.user.id;
-            if (!user_id) return res.status(401).send({ message: 'Không xác định được người dùng.' });
+// Chia sẻ bài viết (Nâng cấp tạo bài viết mới lên tường)
+const sharePost = async (req, res) => {
+    const { postId } = req.params; // ID của bài gốc
+    const { caption } = req.body; // Lời tựa người dùng gõ thêm (VD: "Bài này hay quá")
+    const user_id = req.user.id; // ID của người bấm share lấy từ Token
 
-            try {
-                const shareExists = await pool.query('SELECT * FROM shares WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
+    if (!user_id) return res.status(401).send({ message: 'Không xác định được người dùng.' });
 
-                if (shareExists.rows.length > 0) {
-                    // Nếu đã share rồi thì có thể hủy share hoặc thông báo đã chia sẻ
-                    return res.status(400).json({ message: 'Bạn đã chia sẻ bài viết này rồi.' });
-                } else {
-                    // Thêm lượt share mới
-                    await pool.query('INSERT INTO shares (user_id, post_id, created_at) VALUES ($1, $2, NOW())', [user_id, postId]);
-``
-                    // Lấy tổng số lượng lượt share hiện tại của bài viết
-                    const countResult = await pool.query('SELECT COUNT(*) FROM shares WHERE post_id = $1', [postId]);
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN'); // Bắt đầu giao dịch bảo mật
 
-                    res.status(201).json({
-                        message: 'Chia sẻ bài viết thành công!',
-                        sharesCount: parseInt(countResult.rows[0].count)
-                    });
-                }
-            } catch (err) {
-                // 23505 là mã lỗi của PostgreSQL khi vi phạm Unique Constraint
-                if (err.code === '23505') {
-                    return res.status(400).json({ message: "Bạn đã chia sẻ bài viết này rồi (Spam click detected)." });
-                }
-                res.status(500).send({ message: "Lỗi server khi chia sẻ bài viết", error: err.message });
-            }
-        };
+        // 1. Kiểm tra xem người này đã share bài này chưa (Chống spam)
+        const shareExists = await client.query('SELECT * FROM shares WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
+        if (shareExists.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'Bạn đã chia sẻ bài viết này rồi.' });
+        }
+
+        // 2. Ghi nhận lượt share vào bảng shares (Để tăng số đếm)
+        await client.query('INSERT INTO shares (user_id, post_id, created_at) VALUES ($1, $2, NOW())', [user_id, postId]);
+
+        // 3. TẠO BÀI VIẾT MỚI TRÊN TƯỜNG CỦA NGƯỜI SHARE
+        // Bài viết này có caption mới, và có chứa shared_post_id trỏ về bài gốc
+        await client.query(
+            'INSERT INTO post (user_id, caption, shared_post_id, created_at) VALUES ($1, $2, $3, NOW())',
+            [user_id, caption || '', postId]
+        );
+
+        // 4. Lấy tổng số lượng lượt share hiện tại để cập nhật UI
+        const countResult = await client.query('SELECT COUNT(*) FROM shares WHERE post_id = $1', [postId]);
+
+        await client.query('COMMIT'); // Lưu tất cả vào Database
+
+        res.status(201).json({
+            message: 'Chia sẻ bài viết lên tường thành công!',
+            sharesCount: parseInt(countResult.rows[0].count)
+        });
+    } catch (err) {
+        await client.query('ROLLBACK'); // Hủy thao tác nếu có lỗi
+        if (err.code === '23505') {
+            return res.status(400).json({ message: "Bạn đã chia sẻ bài viết này rồi." });
+        }
+        res.status(500).send({ message: "Lỗi server khi chia sẻ bài viết", error: err.message });
+    } finally {
+        client.release();
+    }
+};
 
 module.exports = {
     getPosts,

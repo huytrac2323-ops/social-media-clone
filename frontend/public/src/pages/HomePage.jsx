@@ -1,7 +1,7 @@
 import React from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
-import { Button } from "@/components/ui/button"
+import { Button } from "../components/ui/button.jsx"
 
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {

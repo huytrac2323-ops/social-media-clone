@@ -20,6 +20,7 @@ const getPosts = async (req, res) => {
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
                 (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
+                (SELECT COUNT(*) FROM shares s WHERE s.post_id = p.post_id) AS sharesCount,
                 ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id
                  = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
                 COALESCE(
@@ -52,7 +53,9 @@ const getPostById = async (req, res) => {
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
                 (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
+                (SELECT COUNT(*) FROM shares s WHERE s.post_id = p.post_id) AS sharesCount,
+                ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2
+                ) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
                 COALESCE(
                     (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text, 'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username))
                      FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c 
@@ -211,6 +214,38 @@ const commentPost = async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi bình luận", error: err.message });
     }
 };
+        // Chia sẻ bài viết
+        const sharePost = async (req, res) => {
+            const { postId } = req.params;
+            const user_id = req.user.id;
+            if (!user_id) return res.status(401).send({ message: 'Không xác định được người dùng.' });
+
+            try {
+                const shareExists = await pool.query('SELECT * FROM shares WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
+
+                if (shareExists.rows.length > 0) {
+                    // Nếu đã share rồi thì có thể hủy share hoặc thông báo đã chia sẻ
+                    return res.status(400).json({ message: 'Bạn đã chia sẻ bài viết này rồi.' });
+                } else {
+                    // Thêm lượt share mới
+                    await pool.query('INSERT INTO shares (user_id, post_id, created_at) VALUES ($1, $2, NOW())', [user_id, postId]);
+``
+                    // Lấy tổng số lượng lượt share hiện tại của bài viết
+                    const countResult = await pool.query('SELECT COUNT(*) FROM shares WHERE post_id = $1', [postId]);
+
+                    res.status(201).json({
+                        message: 'Chia sẻ bài viết thành công!',
+                        sharesCount: parseInt(countResult.rows[0].count)
+                    });
+                }
+            } catch (err) {
+                // 23505 là mã lỗi của PostgreSQL khi vi phạm Unique Constraint
+                if (err.code === '23505') {
+                    return res.status(400).json({ message: "Bạn đã chia sẻ bài viết này rồi (Spam click detected)." });
+                }
+                res.status(500).send({ message: "Lỗi server khi chia sẻ bài viết", error: err.message });
+            }
+        };
 
 module.exports = {
     getPosts,
@@ -219,5 +254,6 @@ module.exports = {
     updatePost,
     deletePost,
     likePost,
-    commentPost
+    commentPost,
+    sharePost
 };

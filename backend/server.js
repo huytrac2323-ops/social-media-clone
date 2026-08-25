@@ -28,6 +28,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors(corsOptions));
 
+
 // 4. ROUTESapp.use('/api/auth', authRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);

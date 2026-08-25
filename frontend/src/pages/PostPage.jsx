@@ -16,7 +16,6 @@ function PostPage() {
     const fetchPost = async () => {
       setLoading(true);
       setError(null);
-      setPost(null);
       try {
         const userIdQuery = currentUser ? `?currentUserId=${currentUser.user_id}` : '';
         const response = await fetch(`${API_URL}/posts/${postId}${userIdQuery}`);
@@ -30,11 +29,12 @@ function PostPage() {
           author: data.username,
           time: data.created_at,
           content: data.caption,
-          imageUrl: data.photo_url || null, //
-          likes: data.like_count, // BẠN HÃY BỔ SUNG LẠI DÒNG NÀY
+          imageUrl: data.photo_url || null,
+          likes: parseInt(data.like_count) || 0,
+          shares: parseInt(data.share_count) || 0, // THÊM: Lấy số lượng share từ Backend
           isLiked: data.is_liked_by_user,
           comments: data.comments || [],
-          authorAvatar: data.profile_photo_url // Đảm bảo lấy avatar
+          authorAvatar: data.profile_photo_url
         };
         setPost(formattedPost);
       } catch (err) {
@@ -49,13 +49,20 @@ function PostPage() {
 
   const handleLike = async (postIdToLike) => {
     if (!currentUser) return alert('Vui lòng đăng nhập để thích bài viết.');
+    const token = localStorage.getItem('token'); // Lấy token
+
     try {
+      // Cập nhật UI trước cho mượt
+      setPost(p => ({ ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }));
+
       await fetch(`${API_URL}/posts/${postIdToLike}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.user_id })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // THÊM TOKEN VÀO HEADER
+        }
+        // Xóa body chứa user_id vì Backend đã tự lấy từ Token
       });
-      setPost(p => ({ ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }));
     } catch (err) {
       console.error("Lỗi khi thích bài viết:", err);
     }
@@ -63,11 +70,16 @@ function PostPage() {
 
   const handleCommentSubmit = async (postIdToComment, commentText) => {
     if (!currentUser) return alert('Vui lòng đăng nhập để bình luận.');
+    const token = localStorage.getItem('token');
+
     try {
       const response = await fetch(`${API_URL}/posts/${postIdToComment}/comment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comment_text: commentText, user_id: currentUser.user_id })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // THÊM TOKEN VÀO HEADER
+        },
+        body: JSON.stringify({ comment_text: commentText }) // Chỉ gửi nội dung comment
       });
       if (!response.ok) throw new Error('Lỗi khi bình luận');
       const newComment = await response.json();
@@ -77,20 +89,49 @@ function PostPage() {
     }
   };
 
+  // THÊM MỚI: Hàm xử lý chia sẻ bài viết
+  const handleShare = async (postIdToShare) => {
+    if (!currentUser) return alert('Vui lòng đăng nhập để chia sẻ bài viết.');
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(`${API_URL}/posts/${postIdToShare}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        return alert(errData.message || 'Có lỗi xảy ra khi chia sẻ');
+      }
+
+      const data = await response.json();
+      // Cập nhật lại số lượng share hiển thị trên UI
+      setPost(p => ({ ...p, shares: data.sharesCount }));
+      alert('Chia sẻ thành công!');
+    } catch (err) {
+      console.error("Lỗi khi chia sẻ bài viết:", err);
+    }
+  };
+
   if (loading) return <div style={{ textAlign: 'center', marginTop: '50px' }}>Đang tải bài viết...</div>;
   if (error) return <div style={{ textAlign: 'center', marginTop: '50px', color: 'red' }}>Lỗi: {error}</div>;
   if (!post) return <div style={{ textAlign: 'center', marginTop: '50px' }}>Không tìm thấy bài viết.</div>;
 
   return (
-    <div className="fb-body">
+      <div className="fb-body">
         <main className="fb-feed" style={{ justifyContent: 'center' }}>
-            <PostCard
-                post={post}
-                onLike={handleLike}
-                onCommentSubmit={handleCommentSubmit}
-            />
+          <PostCard
+              post={post}
+              onLike={handleLike}
+              onCommentSubmit={handleCommentSubmit}
+              onShare={handleShare} // TRUYỀN HÀM XUỐNG COMPONENT CON
+          />
         </main>
-    </div>
+      </div>
   );
 }
 

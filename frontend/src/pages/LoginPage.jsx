@@ -30,14 +30,14 @@ function LoginPage() { // Bỏ prop setCurrentUser
         throw new Error(data.message || 'Đăng nhập thất bại.');
       }
       // NẾU THÀNH CÔNG SẼ CHẠY XUỐNG DƯỚI NÀY:
-      // 1. Lưu thông tin user
+      // 1. Lưu thông tin user (Chỉ lấy đúng phần 'user' trong 'data' thôi)
       localStorage.setItem('currentUser', JSON.stringify(data.user));
 
-      // 2. Lưu Token vào Local Storage
+      // 2. Lưu Token
       localStorage.setItem('token', data.token);
 
-      // 3. Gọi hàm login từ AuthContext và chuyển trang
-      login(data);
+      // 3. Truyền ĐÚNG phần user vào hàm login (Lúc trước bạn để là login(data) nên bị lỗi)
+      login(data.user);
       navigate('/');
 
     } catch (err) {

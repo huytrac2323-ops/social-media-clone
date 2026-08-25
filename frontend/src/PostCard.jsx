@@ -102,73 +102,68 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
       )}
 
 
-      <div className="post-card">
-        <div className="post-header">
-          <Link to={`/profile/${post.author}`} className="post-author-link">
-            <Avatar user={authorUser} className="mini-avatar" />
-            <div className="post-meta">
-                <div className="post-stats">
-                    <span>♥️ {post.likes} Lượt thích</span>
-                    <span>💬 {post.comments.length} Bình luận</span>
-                    <span>↗️ {post.sharesCount || 0} Lượt chia sẻ</span>
-                </div>
-                <div className="post-actions">
-                    <button className={`action-btn ${post.isLiked ? 'liked' : ''}`} onClick={() => onLike(post.id)}>
-                        {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
-                    </button>
-                    <Link to={`/post/${post.id}`} className="action-btn">💬 Bình luận</Link>
-                    <button className="action-btn" onClick={handleShare}>↗️ Chia sẻ</button>
-                </div>
-              <h4 className="post-author">{post.author}</h4>
-                <span className="post-time">
-                  {post.time
-                      ? new Date(post.time).toLocaleString('vi-VN', {
-                          timeZone: 'Asia/Ho_Chi_Minh',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                      })
-                      : 'Chưa có thời gian'}
-                </span>
+        <div className="post-card">
+            <div className="post-header">
+                <Link to={`/profile/${post.author}`} className="post-author-link">
+                    <Avatar user={authorUser} className="mini-avatar" />
+                    <div className="post-meta">
+                        <h4 className="post-author">{post.author}</h4>
+                        <span className="post-time">
+                {post.time
+                    ? new Date(post.time).toLocaleString('vi-VN', {
+                        timeZone: 'Asia/Ho_Chi_Minh',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    })
+                    : 'Chưa có thời gian'}
+              </span>
                     </div>
-          </Link>
-          {isOwner && (
-            <div className="post-menu-container" ref={menuRef}>
-              <button className="post-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
-                •••
-              </button>
-              {menuOpen && (
-                <div className="post-menu-dropdown">
-                  {/* Sử dụng chuỗi từ tệp strings.js */}
-                  <button onClick={() => { setIsEditModalOpen(true); setMenuOpen(false); }}>{STRINGS.EDIT}</button>
-                  <button onClick={handleDelete} className="delete">{STRINGS.DELETE}</button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        <ClickableContent>
-          {post.content && <p className="post-content">{post.content}</p>}
-            {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
-        </ClickableContent>
+                </Link>
 
-        <div className="post-stats">
-          <span>♥️ {post.likes} {STRINGS.LIKES}</span>
-          <ClickableContent>
-              <span>{post.comments.length} {STRINGS.COMMENTS}</span>
-          </ClickableContent>
-        </div>
-        <hr />
-        <div className="post-actions">
-          <button className={`action-btn ${post.isLiked ? 'liked' : ''}`} onClick={() => onLike(post.id)}>
-            {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
-          </button>
-          <Link to={`/post/${post.id}`} className="action-btn">💬 {STRINGS.COMMENTS.charAt(0).toUpperCase() + STRINGS.COMMENTS.slice(1)}</Link>
-        </div>
-        <hr />
+                {/* Nút menu 3 chấm của chủ bài viết */}
+                {isOwner && (
+                    <div className="post-menu-container" ref={menuRef}>
+                        <button className="post-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
+                            •••
+                        </button>
+                        {menuOpen && (
+                            <div className="post-menu-dropdown">
+                                <button onClick={() => { setIsEditModalOpen(true); setMenuOpen(false); }}>{STRINGS.EDIT}</button>
+                                <button onClick={handleDelete} className="delete">{STRINGS.DELETE}</button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Nội dung bài viết và hình ảnh nằm ở đây */}
+            <ClickableContent>
+                {post.content && <p className="post-content">{post.content}</p>}
+                {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
+            </ClickableContent>
+
+            {/* THỐNG KÊ LƯỢT THÍCH, BÌNH LUẬN, CHIA SẺ (Nằm dưới nội dung ảnh/chữ) */}
+            <div className="post-stats">
+                <span>♥️ {post.likes} Lượt thích</span>
+                <ClickableContent>
+                    <span>💬 {post.comments.length} {STRINGS.COMMENTS}</span>
+                </ClickableContent>
+                <span>↗️ {post.sharesCount || 0} Lượt chia sẻ</span>
+            </div>
+            <hr />
+
+            {/* CÁC NÚT HÀNH ĐỘNG THÍCH, BÌNH LUẬN, CHIA SẺ */}
+            <div className="post-actions">
+                <button className={`action-btn ${post.isLiked ? 'liked' : ''}`} onClick={() => onLike(post.id)}>
+                    {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
+                </button>
+                <Link to={`/post/${post.id}`} className="action-btn">💬 {STRINGS.COMMENTS.charAt(0).toUpperCase() + STRINGS.COMMENTS.slice(1)}</Link>
+                <button className="action-btn" onClick={handleShare}>↗️ Chia sẻ</button>
+            </div>
+            <hr />
         <div className="comments-section">
             {post.comments.slice(0, 2).map(comment => (
                 <div key={comment.comment_id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

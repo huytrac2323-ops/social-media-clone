@@ -26,10 +26,18 @@ function LoginPage() { // Bỏ prop setCurrentUser
       const data = await response.json();
 
       if (!response.ok) {
+
         throw new Error(data.message || 'Đăng nhập thất bại.');
       }
+      // NẾU THÀNH CÔNG SẼ CHẠY XUỐNG DƯỚI NÀY:
+      // 1. Lưu thông tin user
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
 
-      login(data); // Sử dụng hàm login từ context
+      // 2. Lưu Token vào Local Storage
+      localStorage.setItem('token', data.token);
+
+      // 3. Gọi hàm login từ AuthContext và chuyển trang
+      login(data);
       navigate('/');
 
     } catch (err) {

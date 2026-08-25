@@ -149,17 +149,17 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             </div>
 
             {/* Nội dung bài viết và hình ảnh nằm ở đây */}
-            <ClickableContent>
+
                 {post.content && <p className="post-content">{post.content}</p>}
                 {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
-            </ClickableContent>
+
 
             {/* THỐNG KÊ LƯỢT THÍCH, BÌNH LUẬN, CHIA SẺ (Nằm dưới nội dung ảnh/chữ) */}
             <div className="post-stats">
                 <span>♥️ {post.likes} Lượt thích</span>
-                <ClickableContent>
+
                     <span>💬 {post.comments.length} {STRINGS.COMMENTS}</span>
-                </ClickableContent>
+
                 <span>↗️ {post.sharesCount || 0} Lượt chia sẻ</span>
             </div>
             <hr />
@@ -192,11 +192,11 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                 </div>
             ))}
           {post.comments.length > 2 && (
-              <ClickableContent>
+
                   <p style={{ color: '#8e8e8e', cursor: 'pointer', marginTop: '10px' }}>
                       {STRINGS.VIEW_ALL_COMMENTS} {post.comments.length} {STRINGS.COMMENTS}
                   </p>
-              </ClickableContent>
+
           )}
           {currentUser && (
             <form onSubmit={handleCommentFormSubmit} className="comment-form">

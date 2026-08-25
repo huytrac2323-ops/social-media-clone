@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import './styles/App.css';
-import ProfilePage from './pages/ProfilePage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import HomePage from './pages/HomePage.jsx';
-import PostPage from './pages/PostPage.jsx';
-import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import '../styles/App.css';
+import ProfilePage from '../pages/ProfilePage.jsx';
+import RegisterPage from '../pages/RegisterPage.jsx';
+import LoginPage from '../pages/LoginPage.jsx';
+import HomePage from '../pages/HomePage.jsx';
+import PostPage from '../pages/PostPage.jsx';
+import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import.meta.env.VITE_API_URL
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';

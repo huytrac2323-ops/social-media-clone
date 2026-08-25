@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import '../Modal.css';
+import '../styles/Modal.css';
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 

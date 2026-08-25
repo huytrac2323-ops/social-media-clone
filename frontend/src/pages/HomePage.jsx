@@ -1,6 +1,8 @@
 import React from 'react';
-import CreatePost from '../CreatePost.jsx';
-import PostCard from '../PostCard.jsx';
+import CreatePost from '../modals/CreatePost.jsx';
+import PostCard from '../components/PostCard.jsx';
+import { Button } from "@/components/ui/button"
+
 // Lấy danh sách tất cả bài viết
 const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;
@@ -201,6 +203,10 @@ export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onP
                     <p style={{ textAlign: 'center', color: '#888' }}>Chưa có bài viết nào.</p>
                 )}
             </div>
+            <div>
+                <Button variant="outline">Click me</Button>
+            </div>
         </div>
+
     );
 }

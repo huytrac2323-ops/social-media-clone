@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './App.css';
-import EditProfileModal from './EditProfileModal';
-import CreatePost from './CreatePost';
-import { useAuth } from './AuthContext';
-import FriendButton from './FriendButton.jsx';
+import '../App.css';
+import EditProfileModal from '../EditProfileModal.jsx';
+import CreatePost from '../CreatePost.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import FriendButton from '../FriendButton.jsx';
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function ProfilePage() {

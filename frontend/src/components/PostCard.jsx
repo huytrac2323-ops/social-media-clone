@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import Avatar from './Avatar';
-import EditPostModal from './EditPostModal';
-import { STRINGS } from './constants/strings'; // Import tệp strings
+import { useAuth } from '../context/AuthContext.jsx';
+import Avatar from './Avatar.jsx';
+import EditPostModal from '../modals/EditPostModal.jsx';
+import { STRINGS } from '../constants/strings.js'; // Import tệp strings
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 

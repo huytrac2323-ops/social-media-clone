@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import PostCard from './PostCard';
-import { useAuth } from './AuthContext';
+import PostCard from '../PostCard.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 

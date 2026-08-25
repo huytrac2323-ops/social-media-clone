@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 

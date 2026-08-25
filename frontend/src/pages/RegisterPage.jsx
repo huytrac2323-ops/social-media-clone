@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Auth.css';
-import { useAuth } from './AuthContext'; // Import useAuth
+import '../Auth.css';
+import { useAuth } from '../context/AuthContext.jsx'; // Import useAuth
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 

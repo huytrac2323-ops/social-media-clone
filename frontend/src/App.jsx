@@ -67,7 +67,10 @@ function AppContent() {
     fetchAllUsers();
   }, [dataVersion, currentUser]);
 
+    const [isLiking, setIsLiking] = useState(false);
     const handleLike = async (postId) => {
+        if (isLiking) return; // Nếu đang xử lý thì bỏ qua lượt click tiếp theo
+        setIsLiking(true);
         if (!currentUser) {
             alert("Vui lòng đăng nhập để thích bài viết!");
             return;
@@ -84,20 +87,22 @@ function AppContent() {
             if (!response.ok) throw new Error(data.message);
 
             // CẬP NHẬT LẠI STATE NGAY LẬP TỨC TRÊN GIAO DIỆN
+            // Cập nhật state chuẩn xác cho 1 lần tăng/giảm
             setPosts(prevPosts => prevPosts.map(post => {
                 if (post.id === postId) {
                     const isCurrentlyLiked = post.isLiked;
                     return {
                         ...post,
                         isLiked: !isCurrentlyLiked,
-                        likes: isCurrentlyLiked ? post.likes - 1 : post.likes + 1
+                        likes: isCurrentlyLiked ? Math.max(0, post.likes - 1) : post.likes + 1
                     };
                 }
                 return post;
             }));
-
         } catch (error) {
-            alert(`Lỗi khi thích bài viết: ${error.message}`);
+            alert(`Lỗi: ${error.message}`);
+        } finally {
+            setIsLiking(false); // Mở khóa nút sau khi hoàn tất
         }
     };
 

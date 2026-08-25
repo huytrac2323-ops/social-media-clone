@@ -61,25 +61,34 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
     }
   };
 
-  const ClickableContent = ({ children }) => (
-    <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-      {children}
-    </Link>
-  );
-    const handleShare = async () => {
-        try {
-            const response = await fetch(`${API_URL}/posts/${post.id}/share`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentUser.user_id })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message);
+    const handleShare = async (postIdToShare) => {
+        // 1. Lấy vé từ trong ví (Local Storage) ra
+        const token = localStorage.getItem('token');
 
-            alert(data.message);
-            // Có thể gọi callback để cập nhật lại state số lượng share trên giao diện nếu cần
-        } catch (error) {
-            alert(`Lỗi: ${error.message}`);
+        if (!token) {
+            return alert('Vui lòng đăng nhập để chia sẻ bài viết.');
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/posts/${postIdToShare}/share`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 2. DÒNG QUAN TRỌNG NHẤT: Đính kèm vé vào Header
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                return alert(errData.message || 'Có lỗi xảy ra khi chia sẻ');
+            }
+
+            // Xử lý cập nhật giao diện khi share thành công
+            // ... (Code cập nhật UI của bạn)
+            alert('Chia sẻ thành công!');
+        } catch (err) {
+            console.error("Lỗi khi chia sẻ bài viết:", err);
         }
     };
 

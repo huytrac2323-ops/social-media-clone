@@ -62,21 +62,24 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
   };
 
     const handleShare = async (postIdToShare) => {
-        // 1. Lấy vé từ trong ví (Local Storage) ra
         const token = localStorage.getItem('token');
+        if (!token) return alert('Vui lòng đăng nhập để chia sẻ bài viết.');
 
-        if (!token) {
-            return alert('Vui lòng đăng nhập để chia sẻ bài viết.');
-        }
+        // 1. Hiển thị hộp thoại cho phép nhập lời tựa (caption)
+        const userCaption = window.prompt("Nhập nội dung chia sẻ của bạn (Có thể để trống):");
+
+        // 2. Nếu người dùng bấm "Hủy" (Cancel), biến sẽ là null -> Dừng lại không share nữa
+        if (userCaption === null) return;
 
         try {
             const response = await fetch(`${API_URL}/posts/${postIdToShare}/share`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // 2. DÒNG QUAN TRỌNG NHẤT: Đính kèm vé vào Header
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                // 3. Gửi caption mà người dùng vừa gõ lên cho Backend
+                body: JSON.stringify({ caption: userCaption })
             });
 
             if (!response.ok) {
@@ -84,9 +87,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                 return alert(errData.message || 'Có lỗi xảy ra khi chia sẻ');
             }
 
-            // Xử lý cập nhật giao diện khi share thành công
-            // ... (Code cập nhật UI của bạn)
-            alert('Chia sẻ thành công!');
+            alert('Chia sẻ thành công! Tải lại trang để xem bài viết mới.');
         } catch (err) {
             console.error("Lỗi khi chia sẻ bài viết:", err);
         }
@@ -152,6 +153,18 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             <div className="post-body">
                 {post.content && <p className="post-content">{post.content}</p>}
                 {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
+
+                {/* NẾU LÀ BÀI CHIA SẺ -> VẼ KHUNG BÀI GỐC Ở ĐÂY */}
+                {post.shared_post && (
+                    <div className="shared-post-container" style={{ border: '1px solid #444', padding: '12px', borderRadius: '8px', marginTop: '15px', backgroundColor: '#242526' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <img src={post.shared_post.profile_photo_url} alt="avatar" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                            <strong>{post.shared_post.username}</strong>
+                        </div>
+                        {post.shared_post.caption && <p style={{ fontSize: '14px' }}>{post.shared_post.caption}</p>}
+                        {post.shared_post.photo_url && <img src={post.shared_post.photo_url} alt="Shared content" style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                    </div>
+                )}
             </div>
 
             {/* THỐNG KÊ LƯỢT THÍCH, BÌNH LUẬN, CHIA SẺ (Nằm dưới nội dung ảnh/chữ) */}

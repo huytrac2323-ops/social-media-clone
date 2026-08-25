@@ -34,7 +34,8 @@ function PostPage() {
           shares: parseInt(data.share_count) || 0, // THÊM: Lấy số lượng share từ Backend
           isLiked: data.is_liked_by_user,
           comments: data.comments || [],
-          authorAvatar: data.profile_photo_url
+          authorAvatar: data.profile_photo_url,
+          shared_post: data.shared_post,
         };
         setPost(formattedPost);
       } catch (err) {

@@ -66,6 +66,22 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
       {children}
     </Link>
   );
+    const handleShare = async () => {
+        try {
+            const response = await fetch(`${API_URL}/posts/${post.id}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser.user_id })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+
+            alert(data.message);
+            // Có thể gọi callback để cập nhật lại state số lượng share trên giao diện nếu cần
+        } catch (error) {
+            alert(`Lỗi: ${error.message}`);
+        }
+    };
 
   const authorUser = {
     username: post.author,
@@ -85,11 +101,24 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
         />
       )}
 
+
       <div className="post-card">
         <div className="post-header">
           <Link to={`/profile/${post.author}`} className="post-author-link">
             <Avatar user={authorUser} className="mini-avatar" />
             <div className="post-meta">
+                <div className="post-stats">
+                    <span>♥️ {post.likes} Lượt thích</span>
+                    <span>💬 {post.comments.length} Bình luận</span>
+                    <span>↗️ {post.sharesCount || 0} Lượt chia sẻ</span>
+                </div>
+                <div className="post-actions">
+                    <button className={`action-btn ${post.isLiked ? 'liked' : ''}`} onClick={() => onLike(post.id)}>
+                        {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
+                    </button>
+                    <Link to={`/post/${post.id}`} className="action-btn">💬 Bình luận</Link>
+                    <button className="action-btn" onClick={handleShare}>↗️ Chia sẻ</button>
+                </div>
               <h4 className="post-author">{post.author}</h4>
                 <span className="post-time">
                   {post.time

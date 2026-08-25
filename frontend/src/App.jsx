@@ -67,17 +67,39 @@ function AppContent() {
     fetchAllUsers();
   }, [dataVersion, currentUser]);
 
-  const handleLike = async (postId) => {
-    if (!currentUser) return alert('Vui lòng đăng nhập để thích bài viết.');
-    try {
-      await fetch(`${API_URL}/posts/${postId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.user_id })
-      });
-      refreshData();
-    } catch (error) { console.error("Lỗi khi thích bài viết:", error); }
-  };
+    const handleLike = async (postId) => {
+        if (!currentUser) {
+            alert("Vui lòng đăng nhập để thích bài viết!");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/posts/${postId}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser.user_id })
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+
+            // CẬP NHẬT LẠI STATE NGAY LẬP TỨC TRÊN GIAO DIỆN
+            setPosts(prevPosts => prevPosts.map(post => {
+                if (post.id === postId) {
+                    const isCurrentlyLiked = post.isLiked;
+                    return {
+                        ...post,
+                        isLiked: !isCurrentlyLiked,
+                        likes: isCurrentlyLiked ? post.likes - 1 : post.likes + 1
+                    };
+                }
+                return post;
+            }));
+
+        } catch (error) {
+            alert(`Lỗi khi thích bài viết: ${error.message}`);
+        }
+    };
 
   const handleCommentSubmit = async (postId, commentText) => {
     if (!currentUser) return alert('Vui lòng đăng nhập để bình luận.');

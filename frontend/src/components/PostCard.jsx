@@ -149,10 +149,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             </div>
 
             {/* Nội dung bài viết và hình ảnh nằm ở đây */}
-
+            <div className="post-body">
                 {post.content && <p className="post-content">{post.content}</p>}
                 {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
-
+            </div>
 
             {/* THỐNG KÊ LƯỢT THÍCH, BÌNH LUẬN, CHIA SẺ (Nằm dưới nội dung ảnh/chữ) */}
             <div className="post-stats">
@@ -170,7 +170,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                     {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
                 </button>
                 <Link to={`/post/${post.id}`} className="action-btn">💬 {STRINGS.COMMENTS.charAt(0).toUpperCase() + STRINGS.COMMENTS.slice(1)}</Link>
-                <button className="action-btn" onClick={handleShare}>↗️ Chia sẻ</button>
+                <button className="action-btn" onClick={() => handleShare(post.id)}>↗️ Chia sẻ</button>
             </div>
             <hr />
         <div className="comments-section">

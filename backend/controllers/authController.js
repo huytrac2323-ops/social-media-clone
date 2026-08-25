@@ -1,4 +1,5 @@
 // File: controllers/authController.js
+const jwt = require('jsonwebtoken'); // Nhớ khai báo cái này ở đầu file nếu chưa có
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 
@@ -22,6 +23,7 @@ const register = async (req, res) => {
     }
 };
 
+
 const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).send({ message: 'Vui lòng điền email và mật khẩu.' });
@@ -36,7 +38,21 @@ const login = async (req, res) => {
         if (!isMatch) return res.status(401).send({ message: 'Email hoặc mật khẩu không chính xác.' });
 
         const { password_hash, ...userWithoutPassword } = user;
-        res.json(userWithoutPassword);
+
+        // 1. TẠO TOKEN NGAY TẠI ĐÂY
+        // Mã hóa user_id vào token để sau này Middleware verifyToken có thể đọc được
+        const token = jwt.sign(
+            { id: user.user_id },
+            process.env.JWT_SECRET || 'chuoi_bi_mat_cua_ban', // Secret key
+            { expiresIn: '7d' } // Token có hạn trong 7 ngày
+        );
+
+        // 2. TRẢ VỀ CẢ USER LẪN TOKEN CHO FRONTEND
+        res.status(200).json({
+            message: "Đăng nhập thành công",
+            user: userWithoutPassword,
+            token: token // Đây là cái mà nãy giờ Frontend đang "khát"!
+        });
     } catch (err) {
         res.status(500).send({ message: err.message });
     }

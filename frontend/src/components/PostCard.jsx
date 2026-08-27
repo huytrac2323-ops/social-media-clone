@@ -5,7 +5,10 @@ import Avatar from './Avatar.jsx';
 import EditPostModal from '../modals/EditPostModal.jsx';
 import { STRINGS } from '../constants/strings.js'; // Import tệp strings
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+
+const API_URL = import.meta.env.DEV
+    ? 'http://localhost:5000/api'
+    : 'https://social-media-clone-di9z.onrender.com/api';
 
 function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated }) {
   const { currentUser } = useAuth();
@@ -14,7 +17,8 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
   const [menuOpen, setMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const menuRef = useRef(null);
-
+  const [isSaved, setIsSaved] = useState(post.isSaved || false);
+  const [loading, setLoading] = useState(false);
   const isOwner = currentUser && currentUser.user_id === post.userId;
 
   useEffect(() => {
@@ -92,12 +96,50 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             console.error("Lỗi khi chia sẻ bài viết:", err);
         }
     };
+    // Thêm hàm xử lý gọi API lưu bài viết
+    const handleSavePost = async (postId) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            return alert('Vui lòng đăng nhập để lưu bài viết.');
+        }
+
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_URL}/posts/${postId}/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ user_id: currentUser?.user_id })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || 'Lỗi thao tác từ server');
+            }
+
+            // Đổi trạng thái qua lại: Nếu chưa lưu thì thành đã lưu, và ngược lại
+            setIsSaved(!isSaved);
+            alert(data.message || 'Thành công!');
+        } catch (err) {
+            console.error('Lỗi chi tiết:', err);
+            alert(`Lỗi: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
 
   const authorUser = {
     username: post.author,
     profile_photo_url: post.authorAvatar
   };
     console.log("Dữ liệu PostCard nhận được:", post);
+
+
   return (
     <>
       {isEditModalOpen && (
@@ -110,6 +152,8 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
           }}
         />
       )}
+
+
 
 
         <div className="post-card">
@@ -182,10 +226,24 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                 <button className={`action-btn ${post.isLiked ? 'liked' : ''}`} onClick={() => onLike(post.id)}>
                     {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
                 </button>
+                <button
+                    onClick={() => handleSavePost(post.id)}
+                    disabled={loading}
+                    style={{
+                        background: isSaved ? '#2d88ff' : 'transparent',
+                        border: 'none',
+                        color: 'inherit',
+                        cursor: 'pointer',
+                        fontWeight: isSaved ? 'bold' : 'normal'
+                    }}
+                >
+                    {loading ? '⏳ Đang xử lý...' : (isSaved ? '🔖 Đã lưu' : '🔖 Lưu bài viết')}
+                </button>
                 <Link to={`/post/${post.id}`} className="action-btn">💬 {STRINGS.COMMENTS.charAt(0).toUpperCase() + STRINGS.COMMENTS.slice(1)}</Link>
                 <button className="action-btn" onClick={() => handleShare(post.id)}>↗️ Chia sẻ</button>
             </div>
             <hr />
+
         <div className="comments-section">
             {post.comments.slice(0, 2).map(comment => (
                 <div key={comment.comment_id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -200,9 +258,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                     <span className="comment-text">{comment.comment_text}</span>
                     {/* Thêm thời gian nhỏ bên cạnh bình luận nếu muốn */}
                     <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
-            {comment.created_at ? new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
-        </span>
+                    {comment.created_at ? new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
                 </div>
+
             ))}
           {post.comments.length > 2 && (
 

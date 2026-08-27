@@ -1,7 +1,7 @@
 // File: controllers/authController.js
+const pool = require('../config/db');
 const jwt = require('jsonwebtoken'); // Nhớ khai báo cái này ở đầu file nếu chưa có
 const bcrypt = require('bcryptjs');
-const pool = require('../config/db');
 
 const register = async (req, res) => {
     const { username, email, password } = req.body;

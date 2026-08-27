@@ -1,189 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
-import { Button } from "../components/ui/button.jsx"
+import { Button } from "../components/ui/button.jsx";
+import NotificationDropdown from "../components/NotificationDropdown.jsx";
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
-// Lấy danh sách tất cả bài viết
-const getPosts = async (req, res) => {
-    const currentUserId = req.query.currentUserId || null;
-    try {
-        let query = `
-            SELECT
-                p.post_id, p.caption, p.photo_url, p.created_at,
-                u.user_id, u.username, u.profile_photo_url,
-                (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
-                COALESCE(
-                    (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text, 'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username, 'profile_photo_url', cu.profile_photo_url)))
-                     FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c 
-                     JOIN users cu ON c.user_id = cu.user_id), 
-                '[]'::json) AS comments
-            FROM post p JOIN users u ON p.user_id = u.user_id
-            ORDER BY p.created_at DESC
-        `;
-        const params = currentUserId ? [currentUserId] : [];
-        const result = await pool.query(query, params);
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
-    }
-};
+export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
+    const { currentUser } = useAuth();
 
-// Lấy chi tiết 1 bài viết
-const getPostById = async (req, res) => {
-    const { postId } = req.params;
-    const currentUserId = req.query.currentUserId || null;
-    try {
-        let query = `
-            SELECT
-                p.post_id, p.caption, p.photo_url, p.created_at,
-                u.user_id, u.username, u.profile_photo_url,
-                (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $2) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
-                COALESCE(
-                    (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text, 'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username, 'profile_photo_url', cu.profile_photo_url)))
-                     FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c 
-                     JOIN users cu ON c.user_id = cu.user_id), 
-                '[]'::json) AS comments
-            FROM post p JOIN users u ON p.user_id = u.user_id
-            WHERE p.post_id = $1
-        `;
-        const params = currentUserId ? [postId, currentUserId] : [postId];
-        const result = await pool.query(query, params);
-        if (result.rows.length === 0) {
-            return res.status(404).send({ message: 'Không tìm thấy bài viết.' });
-        }
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).send({ message: "Lỗi server khi lấy bài viết chi tiết", error: err.message });
-    }
-};
+    // 👇 Thêm state và useEffect để lấy danh sách người đã từng nhắn tin
+    const [conversations, setConversations] = useState([]);
 
-// Tạo bài viết mới
-const createPost = async (req, res) => {
-    const { caption, user_id } = req.body;
-    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
-    let finalPhotoUrl = null;
+    useEffect(() => {
+        if (!currentUser) return;
+        const fetchConversations = async () => {
+            try {
+                const res = await fetch(`http://localhost:5000/api/conversations/${currentUser.user_id}`);
+                const data = await res.json();
+                if (res.ok) setConversations(data);
+            } catch (err) {
+                console.error("Lỗi tải trò chuyện gần đây:", err);
+            }
+        };
+        fetchConversations();
+        const interval = setInterval(fetchConversations, 3000); // 👈 Kiểm tra tin nhắn/cuộc trò chuyện mới mỗi 3 giây
+        return () => clearInterval(interval);
+    }, [currentUser]);
 
-    try {
-        if (req.file) {
-            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'social-media-clone-posts'
-            });
-            finalPhotoUrl = uploadResult.secure_url;
-            fs.unlinkSync(req.file.path);
-        } else if (req.body.photo_url) {
-            finalPhotoUrl = req.body.photo_url;
-        }
-
-        const result = await pool.query(
-            'INSERT INTO post (user_id, caption, photo_url) VALUES ($1, $2, $3) RETURNING *',
-            [user_id, caption, finalPhotoUrl]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-        res.status(500).send({ message: "Lỗi server khi đăng bài", error: err.message });
-    }
-};
-
-// Cập nhật bài viết
-const updatePost = async (req, res) => {
-    const { postId } = req.params;
-    const { caption, user_id } = req.body;
-    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id để xác thực.' });
-    try {
-        const postResult = await pool.query('SELECT user_id FROM post WHERE post_id = $1', [postId]);
-        if (postResult.rows.length === 0) return res.status(404).send({ message: 'Bài viết không tồn tại.' });
-        if (postResult.rows[0].user_id !== Number(user_id)) return res.status(403).send({ message: 'Bạn không có quyền sửa bài viết này.' });
-
-        await pool.query('UPDATE post SET caption = $1 WHERE post_id = $2', [caption, postId]);
-        res.status(200).json({ message: 'Cập nhật bài viết thành công!', caption });
-    } catch (err) {
-        res.status(500).send({ message: "Lỗi server khi cập nhật bài viết", error: err.message });
-    }
-};
-
-// Xóa bài viết
-const deletePost = async (req, res) => {
-    const { postId } = req.params;
-    const { user_id } = req.body;
-    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id để xác thực.' });
-
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        const postResult = await client.query('SELECT user_id FROM post WHERE post_id = $1', [postId]);
-
-        if (postResult.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).send({ message: 'Bài viết không tồn tại.' });
-        }
-        if (postResult.rows[0].user_id !== Number(user_id)) {
-            await client.query('ROLLBACK');
-            return res.status(403).send({ message: 'Bạn không có quyền xóa bài viết này.' });
-        }
-
-        // Đã sửa từ post_likes thành post_reactions
-        await client.query('DELETE FROM post_reactions WHERE post_id = $1', [postId]);
-        await client.query('DELETE FROM comments WHERE post_id = $1', [postId]);
-        await client.query('DELETE FROM post WHERE post_id = $1', [postId]);
-
-        await client.query('COMMIT');
-        res.status(200).json({ message: 'Xóa bài viết thành công.' });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        res.status(500).send({ message: "Lỗi server khi xóa bài viết", error: err.message });
-    } finally {
-        client.release();
-    }
-};
-
-// Thích bài viết (Sửa sang post_reactions)
-const likePost = async (req, res) => {
-    const { postId } = req.params;
-    const { user_id } = req.body;
-    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
-    try {
-        const likeExists = await pool.query('SELECT * FROM post_reactions WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
-        if (likeExists.rows.length > 0) {
-            await pool.query('DELETE FROM post_reactions WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
-            res.json({ message: 'Unliked' });
-        } else {
-            await pool.query('INSERT INTO post_reactions (user_id, post_id) VALUES ($1, $2)', [user_id, postId]);
-            res.json({ message: 'Liked' });
-        }
-    } catch (err) {
-        res.status(500).send({ message: "Lỗi server khi thích bài viết", error: err.message });
-    }
-};
-
-// Bình luận bài viết
-const commentPost = async (req, res) => {
-    const { postId } = req.params;
-    const { comment_text, user_id } = req.body;
-    if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
-    try {
-        const result = await pool.query(
-            'INSERT INTO comments (post_id, user_id, comment_text) VALUES ($1, $2, $3) RETURNING comment_id, comment_text, created_at, user_id',
-            [postId, user_id, comment_text]
-        );
-        const newComment = result.rows[0];
-        const userResult = await pool.query('SELECT username FROM users WHERE user_id = $1', [newComment.user_id]);
-        newComment.username = userResult.rows[0].username;
-        res.status(201).json(newComment);
-    } catch (err) {
-        res.status(500).send({ message: "Lỗi server khi bình luận", error: err.message });
-    }
-
-
-};
-export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-            {/* Hiển thị khung đăng bài */}
+            {/* Thanh công cụ phía trên gồm nút Đã lưu và Dropdown thông báo */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <Link
+                    to="/saved-posts"
+                    style={{ color: '#fff', textDecoration: 'none', background: '#3a3b3c', padding: '8px 12px', borderRadius: '6px', fontSize: '14px', fontWeight: 'bold' }}
+                >
+                    🔖 Bài viết đã lưu
+                </Link>
+
+                <NotificationDropdown />
+            </div>
+
             <CreatePost onPostCreated={onPostCreated} />
 
             {/* Hiển thị danh sách bài viết */}
@@ -191,7 +49,7 @@ export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onP
                 {posts && posts.length > 0 ? (
                     posts.map(post => (
                         <PostCard
-                            key={post.id}
+                            key={post.post_id || post.id}
                             post={post}
                             onLike={onLike}
                             onCommentSubmit={onCommentSubmit}
@@ -203,10 +61,49 @@ export default function HomePage({ posts, allUsers, onLike, onCommentSubmit, onP
                     <p style={{ textAlign: 'center', color: '#888' }}>Chưa có bài viết nào.</p>
                 )}
             </div>
-            <div>
+
+            <div style={{ marginTop: '20px' }}>
                 <Button variant="outline">Click me</Button>
             </div>
-        </div>
 
+            {/* Cố định danh sách trò chuyện gần đây ở góc trên bên phải */}
+            <div className="home-chat-sidebar" style={{
+                position: 'fixed',
+                top: '80px',
+                right: '20px',
+                width: '260px',
+                background: '#242526',
+                padding: '15px',
+                borderRadius: '8px',
+                color: 'white',
+                zIndex: 100,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+            }}>
+                <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>💬 Trò chuyện gần đây</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
+                    {/* 👇 Đã thay thế allUsers bằng conversations */}
+                    {conversations && conversations.length > 0 ? (
+                        conversations.map(u => (
+                            <div
+                                key={u.user_id}
+                                onClick={() => {
+                                    localStorage.setItem('activeChatUser', JSON.stringify({
+                                        user_id: u.user_id,
+                                        username: u.username
+                                    }));
+                                    window.dispatchEvent(new Event('open-chat'));
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '6px', borderRadius: '6px', background: '#3a3b3c' }}
+                            >
+                                <img src={u.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
+                                <span style={{ fontSize: '14px' }}>{u.username}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <p style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>Chưa có cuộc trò chuyện nào</p>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 }

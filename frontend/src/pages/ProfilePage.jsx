@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link} from 'react-router-dom';
 import '../styles/App.css';
 import EditProfileModal from '../modals/EditProfileModal.jsx';
 import CreatePost from '../modals/CreatePost.jsx';
@@ -117,7 +117,44 @@ function ProfilePage() {
 
         <div className="profile-tabs">
           <div className="profile-tab active">☰ BÀI VIẾT</div>
-          <div className="profile-tab">💾 ĐÃ LƯU</div>
+
+          {/* Căn chỉnh lại để chữ ĐÃ LƯU nằm giữa và thẳng hàng với các tab khác */}
+          {isOwnProfile ? (
+              <Link
+                  to="/saved-posts"
+                  className="profile-tab"
+                  style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+              >
+                💾 ĐÃ LƯU
+              </Link>
+          ) : (
+              <div className="profile-tab" style={{ opacity: 0.5, cursor: 'not-allowed' }}>💾 ĐÃ LƯU</div>
+          )}
+          {/* Thêm nút nhắn tin cạnh nút chỉnh sửa hoặc nút kết bạn */}
+          {!isOwnProfile && currentUser && (
+              <button
+                  className="btn-chat"
+                  onClick={() => {
+                    // Lưu ID và tên người đang muốn chat vào localStorage hoặc State tổng để hiển thị khung chat
+                    localStorage.setItem('activeChatUser', JSON.stringify({
+                      user_id: userProfile.user_id,
+                      username: userProfile.username
+                    }));
+                    // Hoặc điều hướng trực tiếp nếu bạn có trang chat riêng, hoặc bật state ChatBox
+                    window.dispatchEvent(new Event('open-chat'));
+                  }}
+                  style={{ background: '#0084ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
+              >
+                💬 Nhắn tin
+              </button>
+          )}
+
           <div className="profile-tab">👤 ĐƯỢC GẮN THẺ</div>
         </div>
 

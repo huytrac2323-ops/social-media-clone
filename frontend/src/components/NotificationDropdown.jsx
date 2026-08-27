@@ -1,19 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function NotificationDropdown() {
+    const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState([
-        // Dữ liệu giả lập để hiển thị giao diện
-        { id: 1, content: 'Nhất Huy đã bình luận về bài viết của bạn', isRead: false },
-        { id: 2, content: 'Trần Văn A đã thả tim ảnh của bạn', isRead: true }
-    ]);
+    const [notifications, setNotifications] = useState([]);
+    const dropdownRef = useRef(null);
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            if (!currentUser || !currentUser.user_id) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch(`${API_URL}/notifications/${currentUser.user_id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setNotifications(data);
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải thông báo:", error);
+            }
+        };
+
+        fetchNotifications();
+    }, [currentUser]);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [dropdownRef]);
+
+    const unreadCount = notifications.filter(n => n.isRead === false || n.is_read === false).length;
 
     return (
-        <div style={{ position: 'relative' }}>
-            {/* Nút Quả chuông */}
+        <div className="notification-container" ref={dropdownRef} style={{ position: 'relative' }}>
             <button
+                className="notification-btn"
                 onClick={() => setIsOpen(!isOpen)}
                 style={{ background: '#3a3b3c', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', position: 'relative' }}
             >
@@ -25,9 +64,8 @@ function NotificationDropdown() {
                 )}
             </button>
 
-            {/* Hộp thoại thả xuống */}
             {isOpen && (
-                <div style={{ position: 'absolute', top: '50px', right: '0', width: '320px', background: '#242526', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', padding: '10px', zIndex: 1000, color: 'white' }}>
+                <div className="notification-dropdown" style={{ position: 'absolute', top: '50px', right: '0', width: '320px', background: '#242526', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', padding: '10px', zIndex: 1000, color: 'white' }}>
                     <h3 style={{ margin: '0 0 10px 0', paddingBottom: '10px', borderBottom: '1px solid #3e4042' }}>Thông báo</h3>
 
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -35,7 +73,7 @@ function NotificationDropdown() {
                             <p style={{ textAlign: 'center', color: '#b0b3b8' }}>Không có thông báo mới.</p>
                         ) : (
                             notifications.map(noti => (
-                                <div key={noti.id} style={{ padding: '10px', marginBottom: '5px', borderRadius: '8px', background: noti.isRead ? 'transparent' : '#3a3b3c', cursor: 'pointer' }}>
+                                <div key={noti.id || noti.notification_id} style={{ padding: '10px', marginBottom: '5px', borderRadius: '8px', background: (noti.isRead || noti.is_read) ? 'transparent' : '#3a3b3c', cursor: 'pointer' }}>
                                     <p style={{ margin: 0, fontSize: '14px' }}>{noti.content}</p>
                                 </div>
                             ))

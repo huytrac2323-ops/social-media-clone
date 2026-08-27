@@ -1,77 +1,94 @@
-import React, { useState } from 'react';
-import io from 'socket.io-client';
+import React, { useState, useEffect, useRef } from 'react';
 
-const socket = io.connect("http://localhost:5000");
+const API_URL = import.meta.env.DEV
+    ? 'http://localhost:5000/api'
+    : 'https://social-media-clone-di9z.onrender.com/api';
 
-function ChatBox({ friendName = "Người dùng ẩn danh" }) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function ChatBox({ currentUser, friendId, friendName }) {
     const [messages, setMessages] = useState([]);
-    const [inputText, setInputText] = useState('');
+    const [text, setText] = useState('');
+    const messagesEndRef = useRef(null);
 
-    // Lắng nghe tin nhắn mới từ Server gửi về
+    // Lấy lịch sử trò chuyện
     useEffect(() => {
-        socket.on("receive_message", (data) => {
-            setMessages((prev) => [...prev, data]);
-        });
-
-        // Dọn dẹp kết nối khi tắt component
-        return () => socket.off("receive_message");
-    }, []);
-
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!inputText.trim()) return;
-
-        const messageData = {
-            id: Date.now(),
-            sender: 'me', // Gửi từ mình
-            text: inputText
+        if (!currentUser || !friendId) return;
+        const fetchMessages = async () => {
+            try {
+                const res = await fetch(`${API_URL}/messages/${currentUser.user_id}/${friendId}`);
+                const data = await res.json();
+                if (res.ok) setMessages(data);
+            } catch (err) {
+                console.error("Lỗi tải tin nhắn:", err);
+            }
         };
+        fetchMessages();
+        const interval = setInterval(fetchMessages, 3000); // Poll tin nhắn mỗi 3 giây
+        return () => clearInterval(interval);
+    }, [currentUser, friendId]);
 
-        // Gửi tin nhắn lên Server Node.js ngay lập tức!
-        socket.emit("send_message", messageData);
-
-        setInputText('');
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    if (!isOpen) {
-        return (
-            <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#0084ff', color: 'white', border: 'none', borderRadius: '50%', width: '50px', height: '50px', cursor: 'pointer', fontSize: '20px', boxShadow: '0 4px 8px rgba(0,0,0,0.3)', zIndex: 9999 }}>
-                💬
-            </button>
-        );
-    }
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    // Gửi tin nhắn
+    const handleSend = async (e) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+
+        try {
+            const res = await fetch(`${API_URL}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sender_id: currentUser.user_id,
+                    receiver_id: friendId,
+                    message_text: text
+                })
+            });
+            const newMessage = await res.json();
+            if (res.ok) {
+                setMessages([...messages, newMessage]);
+                setText('');
+            }
+        } catch (err) {
+            console.error("Lỗi gửi tin nhắn:", err);
+        }
+    };
 
     return (
-        <div style={{ position: 'fixed', bottom: '0', right: '20px', width: '300px', background: '#242526', borderRadius: '8px 8px 0 0', boxShadow: '0 0 15px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', zIndex: 9999, color: 'white', border: '1px solid #3e4042' }}>
-            {/* Header Box Chat */}
-            <div style={{ padding: '10px', background: '#3a3b3c', borderRadius: '8px 8px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '15px' }}>{friendName}</strong>
-                <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontSize: '16px' }}>✖</button>
+        <div style={{ width: '300px', background: '#242526', border: '1px solid #3e4042', borderRadius: '8px', color: 'white', padding: '10px' }}>
+            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #3e4042', paddingBottom: '5px' }}>
+                Chat với {friendName}
             </div>
 
-            {/* Khung hiển thị tin nhắn */}
-            <div style={{ height: '250px', overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {messages.map(msg => (
-                    <div key={msg.id} style={{ alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start', background: msg.sender === 'me' ? '#0084ff' : '#3e4042', padding: '8px 12px', borderRadius: '15px', maxWidth: '75%', fontSize: '14px', wordWrap: 'break-word' }}>
-                        {msg.text}
+            {/* Khung chứa danh sách tin nhắn */}
+            <div style={{ height: '200px', overflowY: 'auto', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {messages.map((msg) => (
+                    <div key={msg.message_id} style={{
+                        alignSelf: msg.sender_id === currentUser.user_id ? 'flex-end' : 'flex-start',
+                        background: msg.sender_id === currentUser.user_id ? '#0084ff' : '#3a3b3c',
+                        padding: '6px 10px', borderRadius: '10px', maxWidth: '80%', fontSize: '14px', color: 'white'
+                    }}>
+                        {msg.message_text}
                     </div>
                 ))}
+                <div ref={messagesEndRef} />
             </div>
 
-            {/* Ô nhập tin nhắn */}
-            <form onSubmit={handleSendMessage} style={{ padding: '10px', borderTop: '1px solid #3e4042', display: 'flex', gap: '5px' }}>
+            <form onSubmit={handleSend} style={{ display: 'flex', gap: '5px' }}>
                 <input
                     type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Aa"
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: '20px', border: 'none', background: '#3a3b3c', color: 'white', outline: 'none' }}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Nhập tin nhắn..."
+                    style={{ flex: 1, background: '#3a3b3c', border: 'none', color: 'white', padding: '6px', borderRadius: '4px' }}
                 />
-                <button type="submit" style={{ background: 'transparent', border: 'none', color: '#0084ff', cursor: 'pointer', fontWeight: 'bold' }}>Gửi</button>
+                <button type="submit" style={{ background: '#0084ff', border: 'none', color: 'white', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>Gửi</button>
             </form>
         </div>
     );
-}
-
-export default ChatBox;
+    }

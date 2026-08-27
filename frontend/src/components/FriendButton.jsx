@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 // Nhớ đổi lại thành link Render của bạn khi đẩy lên mạng nhé
-const API_URL = 'http://localhost:5000/api';
-
-export default function FriendButton({ currentUserId, targetUserId }) {
+const API_URL = import.meta.env.DEV
+    ? 'http://localhost:5000/api'
+    : 'https://social-media-clone-di9z.onrender.com/api';export default function FriendButton({ currentUserId, targetUserId }) {
     const [status, setStatus] = useState('NONE');
     const [loading, setLoading] = useState(true);
 

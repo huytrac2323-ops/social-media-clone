@@ -1,5 +1,5 @@
 // File: controllers/postController.js
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 
@@ -277,5 +277,6 @@ module.exports = {
     deletePost,
     likePost,
     commentPost,
-    sharePost
+    sharePost,
+
 };

@@ -16,7 +16,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const [conversations, setConversations] = useState([]);
 
     useEffect(() => {
-        // 👈 Bắt buộc phải thêm "!currentUser.user_id" vào đây
+        // Chặn tuyệt đối việc gọi API nếu chưa tải xong user_id
         if (!currentUser || !currentUser.user_id) return;
 
         const fetchConversations = async () => {
@@ -30,10 +30,14 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         };
 
         fetchConversations();
-        const interval = setInterval(fetchConversations, 3000);
+
+        // Bọc hàm async lại để làm hài lòng trình kiểm tra lỗi (linter)
+        const interval = setInterval(() => {
+            fetchConversations();
+        }, 3000);
+
         return () => clearInterval(interval);
     }, [currentUser]);
-
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
             {/* Thanh công cụ phía trên gồm nút Đã lưu và Dropdown thông báo */}

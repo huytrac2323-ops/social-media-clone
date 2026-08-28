@@ -11,7 +11,27 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
     const [text, setText] = useState('');
     const messagesEndRef = useRef(null);
 
+    useEffect(() => {
+        // Chặn gọi API nếu chưa có ID người gửi hoặc người nhận
+        if (!currentUser || !currentUser.user_id || !friendId) return;
 
+        const fetchMessages = async () => {
+            try {
+                // Thay đổi đường dẫn này cho khớp với khai báo route ở Backend của bạn
+                const res = await fetch(`${API_URL}/messages/${currentUser.user_id}/${friendId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMessages(data);
+                }
+            } catch (err) {
+                console.error("Lỗi tải tin nhắn:", err);
+            }
+        };
+
+        fetchMessages();
+        const interval = setInterval(fetchMessages, 3000);
+        return () => clearInterval(interval);
+    }, [currentUser, friendId]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

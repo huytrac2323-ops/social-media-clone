@@ -87,7 +87,8 @@ function PostPage() {
       if (!response.ok) throw new Error('Lỗi khi bình luận');
       const newComment = await response.json();
       setPost(p => ({ ...p, comments: [...p.comments, newComment] }));
-      setCommentText('');
+
+      // Dòng setCommentText(''); đã bị xóa bỏ
     } catch (err) {
       console.error("Lỗi khi bình luận:", err);
     }

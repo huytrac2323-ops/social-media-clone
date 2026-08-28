@@ -11,8 +11,8 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
     ? 'http://localhost:5000/api'
     : 'https://social-media-clone-di9z.onrender.com/api';
 
-function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated }) {
-  const { currentUser } = useAuth();
+
+function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated, onDeleteComment }) {  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [commentText, setCommentText] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -164,17 +164,17 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                     <div className="post-meta">
                         <h4 className="post-author">{post.author}</h4>
                         <span className="post-time">
-                {post.time
-                    ? new Date(comment.created_at).toLocaleString('vi-VN', {
-                        timeZone: 'Asia/Ho_Chi_Minh',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                    })
-                    : 'Chưa có thời gian'}
-              </span>
+                        {post.time
+                            ? new Date(post.time).toLocaleString('vi-VN', { // 👈 Đổi comment.created_at thành post.time
+                                timeZone: 'Asia/Ho_Chi_Minh',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                            })
+                            : 'Chưa có thời gian'}
+                    </span>
                     </div>
                 </Link>
 

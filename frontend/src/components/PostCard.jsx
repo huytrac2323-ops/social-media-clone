@@ -161,7 +161,6 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             <div className="post-header">
                 <Link
                     to={(post.author || post.username) ? `/profile/${post.author || post.username}` : '#'} >
-                    className="post-author-link"
                     <Avatar user={authorUser} className="mini-avatar" />
                     <div className="post-meta">
                         <h4 className="post-author">{post.author}</h4>

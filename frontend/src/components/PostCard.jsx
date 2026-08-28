@@ -134,10 +134,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
 
 
 
-  const authorUser = {
-    username: post.author,
-    profile_photo_url: post.authorAvatar
-  };
+    const authorUser = {
+        username: post.author || post.username,
+        profile_photo_url: post.authorAvatar || post.profile_photo_url
+    };
     console.log("Dữ liệu PostCard nhận được:", post);
 
 
@@ -159,7 +159,9 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
 
         <div className="post-card">
             <div className="post-header">
-                <Link to={`/profile/${post.author}`} className="post-author-link">
+                <Link
+                    to={(post.author || post.username) ? `/profile/${post.author || post.username}` : '#'} >
+                    className="post-author-link"
                     <Avatar user={authorUser} className="mini-avatar" />
                     <div className="post-meta">
                         <h4 className="post-author">{post.author}</h4>
@@ -248,8 +250,11 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
         <div className="comments-section">
             {post.comments.slice(0, 2).map(comment => (
                 <div key={comment.comment_id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Link to={`/profile/${comment.username}`} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Avatar
+                    <Link
+                        to={comment.username ? `/profile/${comment.username}` : '#'}
+                        className="comment-author-link"
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Avatar
                             user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }}
                             className="mini-avatar"
                             style={{ width: '24px', height: '24px' }}

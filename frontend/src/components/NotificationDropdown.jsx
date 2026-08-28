@@ -13,33 +13,7 @@ function NotificationDropdown() {
     const [notifications, setNotifications] = useState([]);
     const dropdownRef = useRef(null);
 
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            if (!currentUser || !currentUser.user_id) return;
 
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) return;
-
-                const response = await fetch(`${API_URL}/notifications/${currentUser.user_id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setNotifications(data);
-                }
-            } catch (error) {
-                console.error("Lỗi khi tải thông báo:", error);
-            }
-        };
-
-        fetchNotifications();
-    }, [currentUser]);
 
     useEffect(() => {
         function handleClickOutside(event) {

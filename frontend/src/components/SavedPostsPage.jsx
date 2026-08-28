@@ -12,27 +12,7 @@ function SavedPostsPage() {
     const [savedPosts, setSavedPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchSavedPosts = async () => {
-            if (!currentUser || !currentUser.user_id) return;
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_URL}/posts/saved/${currentUser.user_id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    setSavedPosts(data);
-                }
-            } catch (error) {
-                console.error("Lỗi tải bài viết đã lưu:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
 
-        fetchSavedPosts();
-    }, [currentUser]);
 
     return (
         <div className="saved-posts-page" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>

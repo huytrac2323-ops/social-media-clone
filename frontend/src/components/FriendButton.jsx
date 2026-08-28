@@ -9,26 +9,7 @@ export default function FriendButton({ currentUserId, targetUserId }) {
     const [status, setStatus] = useState('NONE');
     const [loading, setLoading] = useState(true);
 
-    // 1. Lấy trạng thái mối quan hệ ngay khi load component
-    useEffect(() => {
-        if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
-            setLoading(false);
-            return;
-        }
 
-        const fetchStatus = async () => {
-            try {
-                const res = await fetch(`${API_URL}/friends/status/${currentUserId}/${targetUserId}`);
-                const data = await res.json();
-                setStatus(data.status);
-            } catch (err) {
-                console.error("Lỗi lấy trạng thái bạn bè:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStatus();
-    }, [currentUserId, targetUserId]);
 
     // 2. Xử lý Gửi lời mời
     const handleSendRequest = async () => {

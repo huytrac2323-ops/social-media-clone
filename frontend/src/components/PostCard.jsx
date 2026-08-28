@@ -37,7 +37,6 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
     e.preventDefault();
     if (!commentText.trim()) return;
     onCommentSubmit(post.id, commentText);
-    setCommentText('');
   };
 
   const handleDelete = async () => {

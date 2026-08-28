@@ -482,7 +482,7 @@ body {
   height: 52px;
   letter-spacing: 1px;
   margin-top: -1px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .profile-tab.active {

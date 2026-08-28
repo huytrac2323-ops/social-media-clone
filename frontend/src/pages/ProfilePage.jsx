@@ -40,10 +40,7 @@ function ProfilePage() {
     }
   }, [username]);
 
-  // Effect này chỉ chạy khi component được mount lần đầu hoặc khi URL (username) thay đổi.
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
+
 
   // *** SỬA LỖI VÒNG LẶP VÔ HẠN ***
   // Effect này sẽ chạy khi `currentUser` từ context thay đổi (ví dụ: sau khi chỉnh sửa profile).

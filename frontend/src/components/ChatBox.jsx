@@ -11,22 +11,7 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
     const [text, setText] = useState('');
     const messagesEndRef = useRef(null);
 
-    // Lấy lịch sử trò chuyện
-    useEffect(() => {
-        if (!currentUser || !friendId) return;
-        const fetchMessages = async () => {
-            try {
-                const res = await fetch(`${API_URL}/messages/${currentUser.user_id}/${friendId}`);
-                const data = await res.json();
-                if (res.ok) setMessages(data);
-            } catch (err) {
-                console.error("Lỗi tải tin nhắn:", err);
-            }
-        };
-        fetchMessages();
-        const interval = setInterval(fetchMessages, 3000); // Poll tin nhắn mỗi 3 giây
-        return () => clearInterval(interval);
-    }, [currentUser, friendId]);
+
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -1,5 +1,5 @@
 // File: controllers/userController.js
-const pool = require('../config/db');
+const { pool } = require('../config/db'); // 👈 Đúng
 const {v2: cloudinary} = require("cloudinary"); // Dùng pool trực tiếp từ pg
 
 // Cấu hình Cloudinary (Khai báo các biến này trong file .env trên Render)

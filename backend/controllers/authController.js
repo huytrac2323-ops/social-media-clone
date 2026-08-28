@@ -1,5 +1,5 @@
 // File: controllers/authController.js
-const pool = require('../config/db');
+const { pool } = require('../config/db'); // 👈 Đúng
 const jwt = require('jsonwebtoken'); // Nhớ khai báo cái này ở đầu file nếu chưa có
 const bcrypt = require('bcryptjs');
 

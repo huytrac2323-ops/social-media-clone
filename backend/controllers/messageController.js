@@ -1,5 +1,4 @@
-const pool = require('../config/db');
-
+const { pool } = require('../config/db'); // 👈 Đúng
 const getMessages = async (req, res) => {
     const { friendId } = req.params;
     const { currentUserId } = req.query; // Sẽ lấy từ URL: ?currentUserId=...

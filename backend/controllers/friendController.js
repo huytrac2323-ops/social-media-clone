@@ -1,5 +1,4 @@
-const pool = require('../config/db');
-
+const { pool } = require('../config/db'); // 👈 Đúng
 // 1. GỬI LỜI MỜI KẾT BẠN
 const sendFriendRequest = async (req, res) => {
     const { requester_id, addressee_id } = req.body;

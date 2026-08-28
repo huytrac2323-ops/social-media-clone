@@ -42,7 +42,13 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
       const loginData = await loginResponse.json();
       if(!loginResponse.ok) throw new Error(loginData.message || "Lỗi khi tự động đăng nhập.");
 
-      login(loginData); // Sử dụng hàm login từ context
+// Lưu token vào trình duyệt để các API fetch sau này hoạt động được
+      if (loginData.token) {
+        localStorage.setItem('token', loginData.token);
+      }
+
+// 👈 Chỉ truyền đúng object user vào context
+      login(loginData.user || loginData);
 
       if (onRegisterSuccess) {
         onRegisterSuccess();

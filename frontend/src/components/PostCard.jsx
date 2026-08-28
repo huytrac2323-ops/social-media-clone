@@ -166,7 +166,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                         <h4 className="post-author">{post.author}</h4>
                         <span className="post-time">
                 {post.time
-                    ? new Date(post.time).toLocaleString('vi-VN', {
+                    ? new Date(comment.created_at).toLocaleString('vi-VN', {
                         timeZone: 'Asia/Ho_Chi_Minh',
                         hour: '2-digit',
                         minute: '2-digit',

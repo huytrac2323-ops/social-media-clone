@@ -119,6 +119,19 @@ function PostPage() {
     } catch (err) {
       console.error("Lỗi khi chia sẻ bài viết:", err);
     }
+  }
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa bình luận này?")) return;
+    try {
+      const response = await fetch(`${API_URL}/comments/${commentId}`, { // Sửa lại URL khớp với route Backend của bạn
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        // Gọi lại hàm lấy dữ liệu bài viết để cập nhật giao diện
+        setPost(p => ({ ...p, comments: p.comments.filter(c => c.comment_id !== commentId) }));      }
+    } catch (error) {
+      console.error("Lỗi xóa bình luận:", error);
+    }
   };
 
   if (loading) return <div style={{ textAlign: 'center', marginTop: '50px' }}>Đang tải bài viết...</div>;
@@ -132,7 +145,8 @@ function PostPage() {
               post={post}
               onLike={handleLike}
               onCommentSubmit={handleCommentSubmit}
-              onShare={handleShare} // TRUYỀN HÀM XUỐNG COMPONENT CON
+              onShare={handleShare}
+              onDeleteComment={handleDeleteComment}
           />
         </main>
       </div>

@@ -32,12 +32,13 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
       }
 
       setSuccess('Đăng ký thành công! Đang tự động đăng nhập...');
-      
+
       // Tự động đăng nhập người dùng mới
       const loginResponse = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        // 👈 Thay chữ email thành username để đồng bộ
+        body: JSON.stringify({ username, password }),
       });
       const loginData = await loginResponse.json();
       if(!loginResponse.ok) throw new Error(loginData.message || "Lỗi khi tự động đăng nhập.");

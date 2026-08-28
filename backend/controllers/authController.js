@@ -25,11 +25,14 @@ const register = async (req, res) => {
 
 
 const login = async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).send({ message: 'Vui lòng điền email và mật khẩu.' });
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).send({ message: 'Vui lòng điền email và mật khẩu.' });
 
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await pool.query(
+            'SELECT * FROM users WHERE username = $1',
+            [username]
+        );
 
         if (result.rows.length === 0) return res.status(401).send({ message: 'Email hoặc mật khẩu không chính xác.' });
 

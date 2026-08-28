@@ -30,7 +30,20 @@ function AppContent() {
     const [dataVersion, setDataVersion] = useState(0);
     const [activeChat, setActiveChat] = useState(null);
 
+    useEffect(() => {
+        const handleOpenChat = () => {
+            const chatData = localStorage.getItem('activeChatUser');
+            if (chatData) {
+                setActiveChat(JSON.parse(chatData));
+            }
+        };
 
+        // Lắng nghe sự kiện open-chat từ ProfilePage hoặc HomePage
+        window.addEventListener('open-chat', handleOpenChat);
+
+        // Dọn dẹp sự kiện khi component unmount
+        return () => window.removeEventListener('open-chat', handleOpenChat);
+    }, []);
 
     const refreshData = () => setDataVersion(v => v + 1);
 

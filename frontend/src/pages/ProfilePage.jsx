@@ -141,12 +141,11 @@ function ProfilePage() {
               <button
                   className="btn-chat"
                   onClick={() => {
-                    // Lưu ID và tên người đang muốn chat vào localStorage hoặc State tổng để hiển thị khung chat
+                    // Cập nhật dòng này: Lấy dự phòng cả user_id hoặc id
                     localStorage.setItem('activeChatUser', JSON.stringify({
-                      user_id: userProfile.user_id,
+                      user_id: userProfile.user_id || userProfile.id,
                       username: userProfile.username
                     }));
-                    // Hoặc điều hướng trực tiếp nếu bạn có trang chat riêng, hoặc bật state ChatBox
                     window.dispatchEvent(new Event('open-chat'));
                   }}
                   style={{ background: '#0084ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}

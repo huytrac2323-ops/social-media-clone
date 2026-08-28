@@ -80,11 +80,14 @@ function PostPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` // THÊM TOKEN VÀO HEADER
         },
-        body: JSON.stringify({ comment_text: commentText }) // Chỉ gửi nội dung comment
+        body: JSON.stringify(
+            { comment_text: commentText,
+              user_id: currentUser.user_id}) // Chỉ gửi nội dung comment
       });
       if (!response.ok) throw new Error('Lỗi khi bình luận');
       const newComment = await response.json();
       setPost(p => ({ ...p, comments: [...p.comments, newComment] }));
+      setCommentText('');
     } catch (err) {
       console.error("Lỗi khi bình luận:", err);
     }

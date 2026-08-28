@@ -248,21 +248,15 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             <div className="comments-section">
                 {post.comments.slice(0, 2).map(comment => (
                     <div key={comment.comment_id || comment.id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                        <Link
-                            to={comment.username ? `/profile/${comment.username}` : '#'}
-                            className="comment-author-link"
-                            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Avatar
-                                user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }}
-                                className="mini-avatar"
-                                style={{ width: '24px', height: '24px' }}
-                            />
+
+                        <Link to={comment.username ? `/profile/${comment.username}` : '#'} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Avatar user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }} className="mini-avatar" style={{ width: '24px', height: '24px' }} />
                             <span className="comment-author">{comment.username}: </span>
                         </Link>
 
                         <span className="comment-text">{comment.comment_text || comment.content}</span>
 
-                        {/* Thời gian hiển thị chuẩn giờ Việt Nam */}
+                        {/* THỜI GIAN BẮT BUỘC NẰM Ở ĐÂY */}
                         <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
                 {comment.created_at
                     ? new Date(comment.created_at).toLocaleString('vi-VN', {
@@ -273,7 +267,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                     : ''}
             </span>
 
-                        {/* Nút Xóa chỉ hiện khi người dùng là chủ của bình luận */}
+                        {/* NÚT XÓA BẮT BUỘC NẰM Ở ĐÂY */}
                         {currentUser && currentUser.user_id === comment.user_id && onDeleteComment && (
                             <button
                                 onClick={() => onDeleteComment(comment.comment_id || comment.id)}
@@ -282,14 +276,17 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
                                 Xóa
                             </button>
                         )}
+
                     </div>
-                ))}
+                ))} {/* 👈 DẤU ĐÓNG VÒNG LẶP PHẢI NẰM SAU CÙNG */}
 
                 {post.comments.length > 2 && (
                     <p style={{ color: '#8e8e8e', cursor: 'pointer', marginTop: '10px' }}>
                         {STRINGS.VIEW_ALL_COMMENTS} {post.comments.length} {STRINGS.COMMENTS}
                     </p>
                 )}
+
+
 
 
           {currentUser && (

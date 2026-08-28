@@ -246,35 +246,53 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated 
             </div>
             <hr />
 
-        <div className="comments-section">
-            {post.comments.slice(0, 2).map(comment => (
-                <div key={comment.comment_id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Link
-                        to={comment.username ? `/profile/${comment.username}` : '#'}
-                        className="comment-author-link"
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Avatar
-                            user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }}
-                            className="mini-avatar"
-                            style={{ width: '24px', height: '24px' }}
-                        />
-                        <span className="comment-author">{comment.username}: </span>
-                    </Link>
-                    <span className="comment-text">{comment.comment_text}</span>
-                    {/* Thêm thời gian nhỏ bên cạnh bình luận nếu muốn */}
-                    <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
-                    {comment.created_at ? new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
-                    </span>
-                </div>
+            <div className="comments-section">
+                {post.comments.slice(0, 2).map(comment => (
+                    <div key={comment.comment_id || comment.id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                        <Link
+                            to={comment.username ? `/profile/${comment.username}` : '#'}
+                            className="comment-author-link"
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Avatar
+                                user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }}
+                                className="mini-avatar"
+                                style={{ width: '24px', height: '24px' }}
+                            />
+                            <span className="comment-author">{comment.username}: </span>
+                        </Link>
 
-            ))}
-          {post.comments.length > 2 && (
+                        <span className="comment-text">{comment.comment_text || comment.content}</span>
 
-                  <p style={{ color: '#8e8e8e', cursor: 'pointer', marginTop: '10px' }}>
-                      {STRINGS.VIEW_ALL_COMMENTS} {post.comments.length} {STRINGS.COMMENTS}
-                  </p>
+                        {/* Thời gian hiển thị chuẩn giờ Việt Nam */}
+                        <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
+                {comment.created_at
+                    ? new Date(comment.created_at).toLocaleString('vi-VN', {
+                        timeZone: 'Asia/Ho_Chi_Minh',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    : ''}
+            </span>
 
-          )}
+                        {/* Nút Xóa chỉ hiện khi người dùng là chủ của bình luận */}
+                        {currentUser && currentUser.user_id === comment.user_id && onDeleteComment && (
+                            <button
+                                onClick={() => onDeleteComment(comment.comment_id || comment.id)}
+                                style={{ color: '#ff4d4f', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', marginLeft: '10px', padding: 0 }}
+                            >
+                                Xóa
+                            </button>
+                        )}
+                    </div>
+                ))}
+
+                {post.comments.length > 2 && (
+                    <p style={{ color: '#8e8e8e', cursor: 'pointer', marginTop: '10px' }}>
+                        {STRINGS.VIEW_ALL_COMMENTS} {post.comments.length} {STRINGS.COMMENTS}
+                    </p>
+                )}
+
+
           {currentUser && (
             <form onSubmit={handleCommentFormSubmit} className="comment-form">
               <input

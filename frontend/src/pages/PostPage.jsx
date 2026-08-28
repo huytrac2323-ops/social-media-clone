@@ -141,6 +141,7 @@ function PostPage() {
   return (
       <div className="fb-body">
         <main className="fb-feed" style={{ justifyContent: 'center' }}>
+          {/* BẠN CẦN THÊM LẠI KHỐI POSTCARD NÀY */}
           <PostCard
               post={post}
               onLike={handleLike}
@@ -152,5 +153,7 @@ function PostPage() {
       </div>
   );
 }
+
+export default PostPage;
 
 export default PostPage;

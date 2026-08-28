@@ -30,7 +30,7 @@ const login = async (req, res) => {
 
     try {
         const result = await pool.query(
-            'SELECT * FROM users WHERE username = $1',
+            'SELECT * FROM users WHERE username ILIKE $1',
             [username]
         );
 

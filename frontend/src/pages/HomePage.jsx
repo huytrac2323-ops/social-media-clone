@@ -16,10 +16,11 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const [conversations, setConversations] = useState([]);
 
     useEffect(() => {
-        if (!currentUser) return;
+        // 👈 Bắt buộc phải thêm "!currentUser.user_id" vào đây
+        if (!currentUser || !currentUser.user_id) return;
+
         const fetchConversations = async () => {
             try {
-                // Tự động thay đổi URL tùy theo bạn đang chạy ở máy hay trên mạng
                 const res = await fetch(`${API_URL}/conversations/${currentUser.user_id}`);
                 const data = await res.json();
                 if (res.ok) setConversations(data);
@@ -27,6 +28,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 console.error("Lỗi tải trò chuyện gần đây:", err);
             }
         };
+
         fetchConversations();
         const interval = setInterval(fetchConversations, 3000);
         return () => clearInterval(interval);

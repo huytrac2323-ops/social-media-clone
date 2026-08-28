@@ -66,21 +66,6 @@ app.get('/api/messages/:userId/:friendId', async (req, res) => {
     }
 });
 /// Thêm API này vào server.js của backend
-app.get('/api/conversations/:userId', async (req, res) => {
-    const { userId } = req.params;
-    try {
-        const result = await pool.query(
-            `SELECT DISTINCT u.user_id, u.username, u.profile_photo_url
-             FROM users u
-                      JOIN messages m ON u.user_id = m.sender_id OR u.user_id = m.receiver_id
-             WHERE (m.sender_id = $1 OR m.receiver_id = $1) AND u.user_id != $1`,
-            [userId]
-        );
-        res.status(200).json(result.rows);
-    } catch (error) {
-        res.status(500).json({ error: "Lỗi Server" });
-    }
-});
 app.post('/api/messages', async (req, res) => {
     const { sender_id, receiver_id, message_text } = req.body;
     try {
@@ -130,22 +115,20 @@ io.on('connection', (socket) => {
 
     socket.on('send_message', async (data) => {
         try {
-            // 1. Lưu tin nhắn vào bảng messages trong PostgreSQL
+            // 1. Đã sửa tên cột: content -> message_text
+            // 2. Dùng RETURNING * để lấy chính xác mọi cột tự động (bao gồm id và created_at)
             const result = await pool.query(
-                'INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3) RETURNING id, sent_at',
-                [data.senderId, data.receiverId, data.content]
+                'INSERT INTO messages (sender_id, receiver_id, message_text) VALUES ($1, $2, $3) RETURNING *',
+                [data.sender_id, data.receiver_id, data.message_text]
             );
 
-            const savedMessage = {
-                ...data,
-                id: result.rows[0].id,
-                created_at: result.rows[0].sent_at
-            };
+            // Gán luôn object tin nhắn hoàn chỉnh vừa được Database tạo ra
+            const savedMessage = result.rows[0];
 
-            // 2. Phát tin nhắn đến tất cả các client đang kết nối
+            // 3. Phát tin nhắn chuẩn xác đến các client
             io.emit('receive_message', savedMessage);
         } catch (error) {
-            console.error("❌ Lỗi khi lưu tin nhắn Socket vào DB:", error);
+            console.error("❌ Lỗi khi lưu tin nhắn Socket vào DB:", error.message);
         }
     });
 
@@ -153,7 +136,6 @@ io.on('connection', (socket) => {
         console.log(`🔌 Người dùng đã ngắt kết nối: ${socket.id}`);
     });
 });
-
 
 
 // 5. KHỞI ĐỘNG SERVER & KIỂM TRA KẾT NỐI DB

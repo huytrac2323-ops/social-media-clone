@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
 
-// Tự động nhận diện môi trường Localhost hay Online
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000/api'
-    : 'https://social-media-clone-di9z.onrender.com/api';
+// Tự động nhận diện môi trường để kết nối API và Socket
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_URL = IS_LOCAL ? 'http://localhost:5000/api' : 'https://social-media-clone-di9z.onrender.com/api';
+const SOCKET_URL = IS_LOCAL ? 'http://localhost:5000' : 'https://social-media-clone-di9z.onrender.com';
 
+// Khởi tạo kết nối Socket ở ngoài component để tránh render lại nhiều lần
+const socket = io(SOCKET_URL);
 
 export default function ChatBox({ currentUser, friendId, friendName }) {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
     const messagesEndRef = useRef(null);
 
+    // 1. Tải lịch sử tin nhắn ban đầu (Chỉ gọi 1 lần, bỏ setInterval)
     useEffect(() => {
-        // Chặn gọi API nếu chưa có ID người gửi hoặc người nhận
         if (!currentUser || !currentUser.user_id || !friendId) return;
 
         const fetchMessages = async () => {
             try {
-                // Thay đổi đường dẫn này cho khớp với khai báo route ở Backend của bạn
                 const res = await fetch(`${API_URL}/messages/${currentUser.user_id}/${friendId}`);
                 if (res.ok) {
                     const data = await res.json();
@@ -29,10 +31,30 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
         };
 
         fetchMessages();
-        const interval = setInterval(fetchMessages, 3000);
-        return () => clearInterval(interval);
     }, [currentUser, friendId]);
 
+    // 2. Lắng nghe tin nhắn mới từ Socket.io theo thời gian thực
+    useEffect(() => {
+        const handleReceiveMessage = (newMessage) => {
+            // Kiểm tra xem tin nhắn nhận được có đúng là của cuộc hội thoại này không
+            const isRelevant =
+                (newMessage.sender_id === currentUser?.user_id && newMessage.receiver_id === friendId) ||
+                (newMessage.sender_id === friendId && newMessage.receiver_id === currentUser?.user_id);
+
+            if (isRelevant) {
+                setMessages((prev) => [...prev, newMessage]);
+            }
+        };
+
+        socket.on('receive_message', handleReceiveMessage);
+
+        // Hủy lắng nghe khi đóng khung chat để tránh trùng lặp tin nhắn
+        return () => {
+            socket.off('receive_message', handleReceiveMessage);
+        };
+    }, [currentUser, friendId]);
+
+    // Cuộn xuống cuối khi có tin nhắn mới
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -41,29 +63,20 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
         scrollToBottom();
     }, [messages]);
 
-    // Gửi tin nhắn
-    const handleSend = async (e) => {
+    // 3. Gửi tin nhắn qua Socket thay vì Fetch API
+    const handleSend = (e) => {
         e.preventDefault();
         if (!text.trim()) return;
 
-        try {
-            const res = await fetch(`${API_URL}/messages`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sender_id: currentUser.user_id,
-                    receiver_id: friendId,
-                    message_text: text
-                })
-            });
-            const newMessage = await res.json();
-            if (res.ok) {
-                setMessages([...messages, newMessage]);
-                setText('');
-            }
-        } catch (err) {
-            console.error("Lỗi gửi tin nhắn:", err);
-        }
+        // Bắn sự kiện lên Backend với đúng các trường dữ liệu
+        socket.emit("send_message", {
+            sender_id: currentUser.user_id,
+            receiver_id: friendId,
+            message_text: text
+        });
+
+        // Xóa ô nhập (Tin nhắn sẽ tự cập nhật vào mảng khi nhận lại từ 'receive_message')
+        setText('');
     };
 
     return (
@@ -72,12 +85,11 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                 Chat với {friendName}
             </div>
 
-            {/* Khung chứa danh sách tin nhắn */}
             <div style={{ height: '200px', overflowY: 'auto', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {messages.map((msg) => (
-                    <div key={msg.message_id} style={{
-                        alignSelf: msg.sender_id === currentUser.user_id ? 'flex-end' : 'flex-start',
-                        background: msg.sender_id === currentUser.user_id ? '#0084ff' : '#3a3b3c',
+                {messages.map((msg, index) => (
+                    <div key={msg.id || msg.message_id || index} style={{
+                        alignSelf: msg.sender_id === currentUser?.user_id ? 'flex-end' : 'flex-start',
+                        background: msg.sender_id === currentUser?.user_id ? '#0084ff' : '#3a3b3c',
                         padding: '6px 10px', borderRadius: '10px', maxWidth: '80%', fontSize: '14px', color: 'white'
                     }}>
                         {msg.message_text}
@@ -98,4 +110,4 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
             </form>
         </div>
     );
-    }
+}

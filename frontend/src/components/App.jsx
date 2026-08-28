@@ -30,25 +30,7 @@ function AppContent() {
     const [dataVersion, setDataVersion] = useState(0);
     const [activeChat, setActiveChat] = useState(null);
 
-    // Lắng nghe sự kiện mở khung chat từ trang cá nhân
-    useEffect(() => {
-        // 👈 Bắt buộc phải thêm "!currentUser.user_id" vào đây
-        if (!currentUser || !currentUser.user_id) return;
 
-        const fetchConversations = async () => {
-            try {
-                const res = await fetch(`${API_URL}/conversations/${currentUser.user_id}`);
-                const data = await res.json();
-                if (res.ok) setConversations(data);
-            } catch (err) {
-                console.error("Lỗi tải trò chuyện gần đây:", err);
-            }
-        };
-
-        fetchConversations();
-        const interval = setInterval(fetchConversations, 3000);
-        return () => clearInterval(interval);
-    }, [currentUser]);
 
     const refreshData = () => setDataVersion(v => v + 1);
 

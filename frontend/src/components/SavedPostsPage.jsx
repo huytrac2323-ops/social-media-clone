@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import PostCard from './PostCard';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Tự động nhận diện môi trường Localhost hay Online
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000/api'
+    : 'https://social-media-clone-di9z.onrender.com/api';
 
 function SavedPostsPage() {
     const { currentUser } = useAuth();

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const API_URL = import.meta.env.DEV
+// Tự động nhận diện môi trường Localhost hay Online
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000/api'
     : 'https://social-media-clone-di9z.onrender.com/api';
+
 
 export default function ChatBox({ currentUser, friendId, friendName }) {
     const [messages, setMessages] = useState([]);

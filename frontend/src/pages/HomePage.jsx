@@ -8,7 +8,10 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     const { currentUser } = useAuth();
-
+// Tự động nhận diện môi trường Localhost hay Online
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000/api'
+        : 'https://social-media-clone-di9z.onrender.com/api';
     // 👇 Thêm state và useEffect để lấy danh sách người đã từng nhắn tin
     const [conversations, setConversations] = useState([]);
 
@@ -16,7 +19,8 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         if (!currentUser) return;
         const fetchConversations = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/conversations/${currentUser.user_id}`);
+                // Tự động thay đổi URL tùy theo bạn đang chạy ở máy hay trên mạng
+                const res = await fetch(`${API_URL}/conversations/${currentUser.user_id}`);
                 const data = await res.json();
                 if (res.ok) setConversations(data);
             } catch (err) {
@@ -24,7 +28,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
             }
         };
         fetchConversations();
-        const interval = setInterval(fetchConversations, 3000); // 👈 Kiểm tra tin nhắn/cuộc trò chuyện mới mỗi 3 giây
+        const interval = setInterval(fetchConversations, 3000);
         return () => clearInterval(interval);
     }, [currentUser]);
 

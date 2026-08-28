@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Tự động nhận diện môi trường Localhost hay Online
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000/api'
+    : 'https://social-media-clone-di9z.onrender.com/api';
+
 
 function NotificationDropdown() {
     const { currentUser } = useAuth();

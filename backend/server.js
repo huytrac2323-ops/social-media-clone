@@ -24,15 +24,7 @@ const userRoutes = require('./routes/userRoutes');
 const friendRoutes = require('./routes/friendRoutes');
 const {savePost, unsavePost} = require("./controllers/SavedPostController");
 
-// 2. CẤU HÌNH CORS
-const corsOptions = {
-    origin: [
-        'http://localhost:5173',
-        'https://social-media-frontend-brxn.onrender.com'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-};
+
 
 // 2. CẤU HÌNH CORS CHUẨN DUY NHẤT
 const corsOptions = {

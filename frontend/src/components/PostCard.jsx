@@ -240,14 +240,20 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                             src={post.imageUrl}
                             alt="Nội dung bài viết"
                             className="post-image"
-                            onClick={() => setIsImageViewerOpen(true)}
+                            onClick={(e) => {
+                                e.stopPropagation(); // 👈 Chặn không cho sự kiện lan ra ngoài khung bài viết
+                                setIsImageViewerOpen(true);
+                            }}
                             style={{ cursor: 'zoom-in' }}
                         />
 
                         {/* Modal hiển thị Full hình ảnh khi click vào */}
                         {isImageViewerOpen && (
                             <div
-                                onClick={() => setIsImageViewerOpen(false)}
+                                onClick={(e) => {
+                                    e.stopPropagation(); // 👈 Chặn lan truyền khi bấm vào nền tối của modal
+                                    setIsImageViewerOpen(false);
+                                }}
                                 style={{
                                     position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
                                     backgroundColor: 'rgba(0, 0, 0, 0.85)', display: 'flex',

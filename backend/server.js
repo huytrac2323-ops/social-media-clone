@@ -34,10 +34,24 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 };
 
+// 2. CẤU HÌNH CORS CHUẨN DUY NHẤT
+const corsOptions = {
+    origin: [
+        'http://localhost:5173',
+        'https://social-media-frontend-brxn.onrender.com'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+};
+
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static('public'));
+app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static('public'));
+
 
 // 3. ĐĂNG KÝ CÁC ROUTES
 app.use('/api/friends', friendRoutes);
@@ -115,23 +129,25 @@ io.on('connection', (socket) => {
 
     socket.on('send_message', async (data) => {
         try {
-            // 1. Đã sửa tên cột: content -> message_text
-            // 2. Dùng RETURNING * để lấy chính xác mọi cột tự động (bao gồm id và created_at)
+            // 👇 IN DÒNG NÀY RA ĐỂ KIỂM TRA XEM REACT CÓ GỬI ĐÚNG ID KHÔNG
+            console.log("Dữ liệu nhận từ Client:", data);
+
+            if (!data.sender_id || !data.receiver_id || !data.message_text) {
+                console.error("❌ Thiếu thông tin gửi tin nhắn (sender_id, receiver_id hoặc message_text)!");
+                return;
+            }
+
             const result = await pool.query(
                 'INSERT INTO messages (sender_id, receiver_id, message_text) VALUES ($1, $2, $3) RETURNING *',
                 [data.sender_id, data.receiver_id, data.message_text]
             );
 
-            // Gán luôn object tin nhắn hoàn chỉnh vừa được Database tạo ra
             const savedMessage = result.rows[0];
-
-            // 3. Phát tin nhắn chuẩn xác đến các client
             io.emit('receive_message', savedMessage);
         } catch (error) {
             console.error("❌ Lỗi khi lưu tin nhắn Socket vào DB:", error.message);
         }
     });
-
     socket.on('disconnect', () => {
         console.log(`🔌 Người dùng đã ngắt kết nối: ${socket.id}`);
     });

@@ -146,7 +146,7 @@ function ProfilePage() {
                       user_id: userProfile.user_id || userProfile.id,
                       username: userProfile.username
                     }));
-                    window.dispatchEvexnt(new Event('open-chat'));
+                    window.dispatchEvent(new Event('open-chat'));
                   }}
                   style={{ background: '#0084ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
               >

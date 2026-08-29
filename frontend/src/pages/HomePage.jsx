@@ -44,6 +44,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     }, [currentUser]);
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+
             {/* Thanh công cụ phía trên gồm nút Đã lưu và Dropdown thông báo */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <Link
@@ -53,7 +54,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                     🔖 Bài viết đã lưu
                 </Link>
 
-                <NotificationDropdown />
             </div>
 
             <CreatePost onPostCreated={onPostCreated} />

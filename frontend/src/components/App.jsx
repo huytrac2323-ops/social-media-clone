@@ -9,6 +9,7 @@ import PostPage from '../pages/PostPage.jsx';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import SavedPostsPage from '../components/SavedPostsPage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
+import NotificationDropdown from "../components/NotificationDropdown.jsx";
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -143,11 +144,14 @@ function AppContent() {
         <div className="fb-container">
             <nav className="fb-navbar">
                 <div className="nav-left">
-                    <Link to="/" style={{ textDecoration: 'none' }}><h1 className="fb-logo">huybook</h1></Link>
+
+                    <Link to="/" style={{ textDecoration: 'none' }}><h1 className="fb-logo">Dissipation</h1></Link>
                     {currentUser && <input type="text" placeholder="Tìm kiếm..." className="search-bar" />}
                 </div>
                 <div className="nav-right">
+                    <NotificationDropdown />
                     {currentUser ? (
+
                         <>
                             <Link to={`/profile/${currentUser.username}`} className="user-avatar-btn" style={{ textDecoration: 'none' }}>{currentUser.username}</Link>
                             <button onClick={handleLogout} className="btn-logout">Đăng xuất</button>
@@ -156,6 +160,8 @@ function AppContent() {
                         <>
                             <Link to="/login" className="btn-logout">Đăng nhập</Link>
                             <Link to="/register" className="user-avatar-btn" style={{ textDecoration: 'none' }}>Đăng ký</Link>
+
+
                         </>
                     )}
                 </div>

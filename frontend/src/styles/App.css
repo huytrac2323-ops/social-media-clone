@@ -755,3 +755,29 @@ body {
     @apply font-sans;
   }
 }
+/* Dành riêng cho điện thoại (Màn hình nhỏ hơn hoặc bằng 768px) */
+@media screen and (max-width: 768px) {
+  /* Cho các khung chứa (container) tràn full màn hình, bỏ lề thừa */
+  .post-card, .container {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Thu nhỏ khoảng cách, kích thước chữ cho vừa vặn màn hình điện thoại */
+  body {
+    font-size: 14px;
+  }
+
+  /* Ẩn các thanh sidebar phụ hai bên (như danh sách bạn bè, chat box nổi) để tối ưu không gian đọc bài */
+  .sidebar-left, .sidebar-right {
+    display: none !important;
+  }
+
+  /* Chuyển các nút hành động (Thích, Bình luận, Chia sẻ) thành dàn đều hoặc thu gọn icon */
+  .post-actions button {
+    font-size: 13px;
+    padding: 6px 4px;
+  }
+}

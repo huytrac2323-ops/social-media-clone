@@ -1,0 +1,19 @@
+/* Giới hạn kích thước ảnh trong bài viết chính */
+.post-image {
+    width: 100% !important;
+    max-height: 400px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+    display: block !important;
+    margin: 10px auto !important;
+}
+
+/* Giới hạn kích thước ảnh trong phần bài viết được chia sẻ */
+.shared-post-container img {
+    width: 100% !important;
+    max-height: 350px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+    display: block !important;
+    margin-top: 8px !important;
+}

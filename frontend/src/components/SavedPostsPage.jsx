@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import PostCard from './PostCard';
 import { useAuth } from '../context/AuthContext';
 
 // Tự động nhận diện môi trường Localhost hay Online

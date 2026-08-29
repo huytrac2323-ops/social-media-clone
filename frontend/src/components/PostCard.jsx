@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
 import EditPostModal from '../modals/EditPostModal.jsx';
 import { STRINGS } from '../constants/strings.js'; // Import tệp strings
+import '../styles/PostCard.css';
 
 
 // Tự động nhận diện môi trường Localhost hay Online
@@ -21,6 +22,9 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
   const [isSaved, setIsSaved] = useState(post.isSaved || false);
   const [loading, setLoading] = useState(false);
   const isOwner = currentUser && currentUser.user_id === post.userId;
+    const [isExpanded, setIsExpanded] = useState(false);
+    // Thêm state quản lý việc bật/tắt khung xem full ảnh
+    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -32,12 +36,32 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuRef]);
 
+    const maxLength = 250;
+    const shouldTruncate = post.content && post.content.length > maxLength;
+    const displayedContent = (isExpanded || !shouldTruncate)
+        ? post.content
+        : post.content.slice(0, maxLength) + '...';
+
+
 
   const handleCommentFormSubmit = (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
     onCommentSubmit(post.id, commentText);
   };
+    // Thêm hàm xử lý khi click vào thẻ bài viết để xem chi tiết
+    const handleCardClick = (e) => {
+        // Nếu người dùng bấm vào avatar, tên tác giả, nút 3 chấm hoặc các nút hành động thì không chuyển trang
+        if (
+            e.target.closest('a') ||
+            e.target.closest('button') ||
+            e.target.closest('.post-menu-container') ||
+            e.target.closest('.comments-section')
+        ) {
+            return;
+        }
+        navigate(`/post/${post.id}`);
+    };
 
   const handleDelete = async () => {
 
@@ -156,7 +180,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
 
 
 
-        <div className="post-card">
+          <div className="post-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
             <div className="post-header">
                 <Link
                     to={(post.author || post.username) ? `/profile/${post.author || post.username}` : '#'} >
@@ -196,8 +220,49 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
 
             {/* Nội dung bài viết và hình ảnh nằm ở đây */}
             <div className="post-body">
-                {post.content && <p className="post-content">{post.content}</p>}
-                {post.imageUrl && <img src={post.imageUrl} alt="Nội dung bài viết" className="post-image" />}
+                {post.content && (
+                    <div className="post-content-wrapper">
+                        <p className="post-content">{displayedContent}</p>
+                        {shouldTruncate && (
+                            <button
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                style={{ background: 'none', border: 'none', color: '#1877f2', cursor: 'pointer', padding: 0, fontWeight: 'bold', marginTop: '6px' }}
+                            >
+                                {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {post.imageUrl && (
+                    <>
+                        <img
+                            src={post.imageUrl}
+                            alt="Nội dung bài viết"
+                            className="post-image"
+                            onClick={() => setIsImageViewerOpen(true)}
+                            style={{ cursor: 'zoom-in' }}
+                        />
+
+                        {/* Modal hiển thị Full hình ảnh khi click vào */}
+                        {isImageViewerOpen && (
+                            <div
+                                onClick={() => setIsImageViewerOpen(false)}
+                                style={{
+                                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.85)', display: 'flex',
+                                    justifyContent: 'center', alignItems: 'center', zIndex: 9999, cursor: 'zoom-out'
+                                }}
+                            >
+                                <img
+                                    src={post.imageUrl}
+                                    alt="Full size"
+                                    style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '4px' }}
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
 
                 {/* NẾU LÀ BÀI CHIA SẺ -> VẼ KHUNG BÀI GỐC Ở ĐÂY */}
                 {post.shared_post && (

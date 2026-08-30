@@ -16,32 +16,71 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
 
     // 👇 Thêm state và useEffect để lấy danh sách người đã từng nhắn tin
     const [conversations, setConversations] = useState([]);
-
+    const [suggestions, setSuggestions] = useState([]);
 
 
     useEffect(() => {
-        // Chặn tuyệt đối việc gọi API nếu chưa tải xong user_id
-        if (!currentUser || !currentUser.user_id) return;
+        // Chặn gọi API nếu chưa có thông tin user
+        if (!currentUser?.user_id) return;
 
+        // 1. Hàm tải lịch sử trò chuyện (Cần cập nhật liên tục)
         const fetchConversations = async () => {
             try {
                 const res = await fetch(`${API_URL}/conversations/${currentUser.user_id}`);
-                const data = await res.json();
-                if (res.ok) setConversations(data);
+                if (res.ok) {
+                    const data = await res.json();
+                    setConversations(data);
+                }
             } catch (err) {
                 console.error("Lỗi tải trò chuyện gần đây:", err);
             }
         };
 
-        fetchConversations();
+        // 2. Hàm tải gợi ý kết bạn (Chỉ cần tải 1 lần)
+        const fetchSuggestions = async () => {
+            try {
+                const res = await fetch(`${API_URL}/suggestions/${currentUser.user_id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setSuggestions(data);
+                }
+            } catch (err) {
+                console.error("Lỗi tải gợi ý kết bạn:", err);
+            }
+        };
 
-        // Bọc hàm async lại để làm hài lòng trình kiểm tra lỗi (linter)
+        // Kích hoạt gọi dữ liệu ngay khi mở component
+        fetchConversations();
+        fetchSuggestions();
+
+        // Thiết lập vòng lặp 3 giây CHỈ DÀNH CHO trò chuyện
         const interval = setInterval(() => {
             fetchConversations();
         }, 3000);
 
+        // Dọn dẹp bộ nhớ khi thoát component
         return () => clearInterval(interval);
     }, [currentUser]);
+
+
+    const handleAddFriend = async (friendId) => {
+        await fetch(`${API_URL}/friends/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUser.user_id, friend_id: friendId })
+        });
+        alert("Đã thêm bạn! Tải lại trang để xem bài viết của họ.");
+        window.location.reload(); // Hoặc gọi hàm refreshData
+    };
+
+
+
+
+
+
+
+
+    ///////////////////////* Giao diện*//////////////////////////////////////
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
 
@@ -72,7 +111,23 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                         />
                     ))
                 ) : (
-                    <p style={{ textAlign: 'center', color: '#888' }}>Chưa có bài viết nào.</p>
+                    <div style={{ textAlign: 'center', background: '#242526', padding: '20px', borderRadius: '8px', color: 'white' }}>
+                        <h3 style={{ marginBottom: '15px' }}>Bảng tin trống. Hãy kết bạn để xem bài viết!</h3>
+                        <h4>Gợi ý kết bạn:</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                            {suggestions.map(user => (
+                                <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '10px', borderRadius: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <img src={user.profile_photo_url || 'https://via.placeholder.com/40'} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                                        <span>{user.username}</span>
+                                    </div>
+                                    <button onClick={() => handleAddFriend(user.user_id)} style={{ background: '#0084ff', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}>
+                                        Thêm bạn
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 )}
             </div>
 

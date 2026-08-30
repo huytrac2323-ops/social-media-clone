@@ -69,19 +69,34 @@ app.get('/api/messages/:userId/:friendId', async (req, res) => {
         res.status(500).json({ error: "Lỗi Server", details: error.message });
     }
 });
-/// Thêm API này vào server.js của backend
-app.post('/api/messages', async (req, res) => {
-    const { sender_id, receiver_id, message_text } = req.body;
+app.get('/api/suggestions/:userId', async (req, res) => {
+    const { userId } = req.params;
     try {
-        const result = await pool.query(
-            `INSERT INTO messages (sender_id, receiver_id, message_text)
-             VALUES ($1, $2, $3) RETURNING *`,
-            [sender_id, receiver_id, message_text]
+        const query = `
+            SELECT user_id, username, profile_photo_url FROM users 
+            WHERE user_id != $1 
+            AND user_id NOT IN (SELECT friend_id FROM friends WHERE user_id = $1)
+            AND user_id NOT IN (SELECT user_id FROM friends WHERE friend_id = $1)
+            LIMIT 5;
+        `;
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/// Thêm API này vào server.js của backend
+app.post('/api/friends/add', async (req, res) => {
+    const { user_id, friend_id } = req.body;
+    try {
+        await pool.query(
+            'INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)',
+            [user_id, friend_id]
         );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error("Lỗi gửi tin nhắn:", error.message);
-        res.status(500).json({ error: "Lỗi Server" });
+        res.status(200).json({ message: "Gửi kết bạn thành công!" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

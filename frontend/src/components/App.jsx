@@ -11,9 +11,17 @@ import SavedPostsPage from '../components/SavedPostsPage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
 import NotificationDropdown from "../components/NotificationDropdown.jsx";
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { io } from 'socket.io-client';
+
 
 CapacitorUpdater.notifyAppReady();
 
+const SOCKET_URL = 'https://social-media-clone-di9z.onrender.com';
+const socket = io(SOCKET_URL, {
+    secure: true,
+    transports: ['websocket', 'polling']
+});
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -51,6 +59,46 @@ function AppContent() {
         // Dọn dẹp sự kiện khi component unmount
         return () => window.removeEventListener('open-chat', handleOpenChat);
     }, []);
+
+
+    useEffect(() => {
+        // 1. Yêu cầu người dùng cấp quyền hiển thị thông báo khi vừa mở app
+        const requestPermissions = async () => {
+            await LocalNotifications.requestPermissions();
+        };
+        requestPermissions();
+
+        // 2. Lắng nghe tin nhắn mới từ máy chủ
+        const handleNewMessage = async (newMessage) => {
+            // Kiểm tra xem tin nhắn có phải gửi cho mình không
+            const isForMe = newMessage.receiver_id === currentUser?.user_id;
+
+            // Kiểm tra xem mình có đang mở khung chat với người đó không
+            // Nếu đang mở chat rồi thì không cần ting ting nữa
+            const isChattingWithThem = activeChat?.user_id === newMessage.sender_id;
+
+            if (isForMe && !isChattingWithThem) {
+                // Hiển thị thông báo nổi trên điện thoại
+                await LocalNotifications.schedule({
+                    notifications: [
+                        {
+                            title: "Bạn có tin nhắn mới",
+                            body: newMessage.message_text,
+                            id: Math.floor(Math.random() * 100000), // ID ngẫu nhiên để không bị đè thông báo
+                        }
+                    ]
+                });
+            }
+        };
+
+        // Đăng ký sự kiện lắng nghe
+        socket.on('receive_message', handleNewMessage);
+
+        return () => {
+            // Hủy lắng nghe khi thoát app để tránh trùng lặp
+            socket.off('receive_message', handleNewMessage);
+        };
+    }, [currentUser, activeChat]);
 
     const refreshData = () => setDataVersion(v => v + 1);
 

@@ -2,10 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 // Tự động nhận diện môi trường để kết nối API và Socket
-const API_URL = import.meta.env.VITE_API_URL;
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
-
-
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const SOCKET_URL = 'https://social-media-clone-di9z.onrender.com';
 
 // Khởi tạo kết nối Socket ở ngoài component để tránh render lại nhiều lần
 const socket = io(SOCKET_URL);

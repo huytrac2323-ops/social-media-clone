@@ -201,13 +201,20 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                     </div>
                 </Link>
                 {/* 👇 THÊM NÚT KẾT BẠN Ở ĐÂY (Kế bên tên tác giả) */}
-                {currentUser && currentUser.user_id !== post.user_id && (
+                {currentUser && currentUser.user_id !== (post.user_id || post.userId || post.authorId) && (
                     <button
                         onClick={async () => {
+                            // Lấy linh hoạt mọi trường có thể chứa ID của tác giả bài viết
+                            const targetId = post.user_id || post.userId || post.authorId;
+
+                            if (!targetId) {
+                                return alert("Không tìm thấy mã định danh của tác giả bài viết này!");
+                            }
+
                             const res = await fetch(`${API_URL}/friends/request`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: post.user_id })
+                                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: targetId })
                             });
                             const data = await res.json();
                             alert(data.message || data.error);
@@ -217,7 +224,6 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                         ➕ Thêm bạn
                     </button>
                 )}
-
                 {/* Nút menu 3 chấm của chủ bài viết */}
                 {isOwner && (
                     <div className="post-menu-container" ref={menuRef}>

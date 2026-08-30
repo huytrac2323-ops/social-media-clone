@@ -153,6 +153,22 @@ app.get('/api/conversations/:userId', async (req, res) => {
     }
 });
 
+app.post('/api/friends/request', async (req, res) => {
+    const { user_id, friend_id } = req.body;
+    try {
+        await pool.query(
+            `INSERT INTO friends (user_id, friend_id, status) 
+             VALUES ($1, $2, 'pending') 
+             ON CONFLICT (user_id, friend_id) DO NOTHING`,
+            [user_id, friend_id]
+        );
+        res.status(200).json({ message: "Đã gửi yêu cầu kết bạn!" });
+    } catch (err) {
+        console.error("Lỗi gửi yêu cầu kết bạn:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 // 4. Cấu hình Socket.io CORS tương ứng
 

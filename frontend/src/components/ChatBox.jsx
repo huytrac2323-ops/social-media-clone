@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 const SOCKET_URL = 'https://social-media-clone-di9z.onrender.com';
 
+
 // Khởi tạo kết nối Socket ở ngoài component để tránh render lại nhiều lần
 const socket = io(SOCKET_URL);
 

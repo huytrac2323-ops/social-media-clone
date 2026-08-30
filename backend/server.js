@@ -58,21 +58,6 @@ app.get('/api/notifications/:userId', getNotifications);
 
 
 
-let query = `
-    SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
-    (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-    EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user
-    FROM post p JOIN users u ON p.user_id = u.user_id
-    WHERE p.user_id = $1 
-       OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') 
-       OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
-    ORDER BY p.created_at DESC
-`;
-
-
-
-
-
 app.get('/api/messages/:userId/:friendId', async (req, res) => {
     const { userId, friendId } = req.params;
     try {
@@ -106,15 +91,17 @@ app.get('/api/suggestions/:userId', async (req, res) => {
     }
 });
 
-/// Thêm API này vào server.js của backend
-app.post('/api/friends/request', async (req, res) => {
-    const { user_id, friend_id } = req.body;
+app.get('/api/friends/requests/:userId', async (req, res) => {
+    const { userId } = req.params;
     try {
-        await pool.query(
-            'INSERT INTO friends (user_id, friend_id, status) VALUES ($1, $2, \'pending\') ON CONFLICT DO NOTHING',
-            [user_id, friend_id]
-        );
-        res.status(200).json({ message: "Đã gửi yêu cầu kết bạn!" });
+        const query = `
+            SELECT f.id, u.user_id, u.username, u.profile_photo_url 
+            FROM friends f
+            JOIN users u ON f.user_id = u.user_id
+            WHERE f.friend_id = $1 AND f.status = 'pending';
+        `;
+        const result = await pool.query(query, [userId]);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -122,6 +109,7 @@ app.post('/api/friends/request', async (req, res) => {
 
 app.post('/api/friends/accept', async (req, res) => {
     const { user_id, friend_id } = req.body;
+    // user_id: người đang đăng nhập (chấp nhận), friend_id: người gửi lời mời
     try {
         await pool.query(
             'UPDATE friends SET status = \'accepted\' WHERE user_id = $2 AND friend_id = $1',

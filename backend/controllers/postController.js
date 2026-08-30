@@ -55,22 +55,18 @@ const getPostById = async (req, res) => {
     try {
         // Thay thế đoạn let query = `...` trong getPosts của bạn thành:
         let query = `
-            SELECT
-                p.post_id, p.caption, p.photo_url, p.created_at,
-                u.user_id, u.username, u.profile_photo_url,
-                (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
-                COALESCE(
-                        (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text, 'user_id', cu.user_id, 'username', cu.username))
-                         FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
-                                  JOIN users cu ON c.user_id = cu.user_id),
-                        '[]'::json) AS comments
+            SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
+                   (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
+                   EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user
             FROM post p JOIN users u ON p.user_id = u.user_id
-            WHERE p.user_id = $1 -- Lấy bài của mình
-               OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') -- Lấy bài người mình kết bạn
-               OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted') -- Lấy bài người kết bạn với mình
+            WHERE p.user_id = $1
+               OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted')
+               OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
             ORDER BY p.created_at DESC
         `;
+
+
+
 // Nếu mảng params của bạn đang rỗng, hãy đảm bảo truyền currentUserId vào:
 // const params = currentUserId ? [currentUserId] : [0];
         const params = currentUserId ? [postId, currentUserId] : [postId];

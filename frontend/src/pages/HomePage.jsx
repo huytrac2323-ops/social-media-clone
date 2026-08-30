@@ -97,6 +97,24 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
 
             <CreatePost onPostCreated={onPostCreated} />
 
+
+            <div style={{ textAlign: 'center', background: '#242526', padding: '20px', borderRadius: '8px', color: 'white' }}>
+                <h3 style={{ marginBottom: '15px' }}>Bảng tin trống. Hãy kết bạn để xem bài viết!</h3>
+                <h4>Gợi ý kết bạn:</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                    {suggestions.map(user => (
+                        <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '10px', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <img src={user.profile_photo_url || 'https://via.placeholder.com/40'} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                                <span>{user.username}</span>
+                            </div>
+                            <button onClick={() => handleAddFriend(user.user_id)} style={{ background: '#0084ff', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}>
+                                Thêm bạn
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
             {/* Hiển thị danh sách bài viết */}
             <div className="posts-list" style={{ marginTop: '20px' }}>
                 {posts && posts.length > 0 ? (
@@ -111,23 +129,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                         />
                     ))
                 ) : (
-                    <div style={{ textAlign: 'center', background: '#242526', padding: '20px', borderRadius: '8px', color: 'white' }}>
-                        <h3 style={{ marginBottom: '15px' }}>Bảng tin trống. Hãy kết bạn để xem bài viết!</h3>
-                        <h4>Gợi ý kết bạn:</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                            {suggestions.map(user => (
-                                <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '10px', borderRadius: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <img src={user.profile_photo_url || 'https://via.placeholder.com/40'} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-                                        <span>{user.username}</span>
-                                    </div>
-                                    <button onClick={() => handleAddFriend(user.user_id)} style={{ background: '#0084ff', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}>
-                                        Thêm bạn
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <p style={{ textAlign: 'center', color: '#888' }}>Chưa có bài viết nào.</p>
                 )}
             </div>
 

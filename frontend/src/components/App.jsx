@@ -10,6 +10,10 @@ import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import SavedPostsPage from '../components/SavedPostsPage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
 import NotificationDropdown from "../components/NotificationDropdown.jsx";
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+
+CapacitorUpdater.notifyAppReady();
+
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -38,6 +42,7 @@ function AppContent() {
                 setActiveChat(JSON.parse(chatData));
             }
         };
+
 
         // Lắng nghe sự kiện open-chat từ ProfilePage hoặc HomePage
         window.addEventListener('open-chat', handleOpenChat);
@@ -187,13 +192,13 @@ function AppContent() {
             </Routes>
 
             {currentUser && activeChat && (
-                <div style={{
-                    position: 'fixed', // Ghim cố định ở màn hình, không trôi theo thanh cuộn
-                    bottom: '0',       // Dính sát mép dưới cùng
-                    right: '20px',     // Cách mép phải 20px
-                    zIndex: 9999       // Luôn nổi lên trên các thành phần khác
-                }}>
-                    <div style={{ background: '#3a3b3c', padding: '4px 8px', textAlign: 'right', cursor: 'pointer', fontSize: '12px', color: '#fff' }} onClick={() => setActiveChat(null)}>✕ Đóng</div>
+                <div className="chat-box-wrapper">
+                    <div
+                        style={{ background: '#3a3b3c', padding: '10px', textAlign: 'right', cursor: 'pointer', fontSize: '14px', color: '#fff', fontWeight: 'bold' }}
+                        onClick={() => setActiveChat(null)}
+                    >
+                        ✕ Đóng đoạn chat
+                    </div>
                     <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username} />
                 </div>
             )}

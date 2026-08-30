@@ -26,12 +26,9 @@ const {savePost, unsavePost} = require("./controllers/SavedPostController");
 
 
 
-// 2. CẤU HÌNH CORS CHUẨN DUY NHẤT
+// 2. Cấu hình CORS cho phép mọi nguồn (hoặc định nghĩa cụ thể)
 const corsOptions = {
-    origin: [
-        'http://localhost:5173',
-        'https://social-media-frontend-brxn.onrender.com'
-    ],
+    origin: '*', // Cho phép mọi nguồn gọi vào (Thích hợp cho việc test app mobile và web)
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 };
@@ -105,12 +102,12 @@ app.get('/api/conversations/:userId', async (req, res) => {
 });
 
 
+// 4. Cấu hình Socket.io CORS tương ứng
 
-// 4. TẠO HTTP SERVER & TÍCH HỢP SOCKET.IO
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: "*", // Cho phép mọi kết nối Socket từ di động hoặc web
         methods: ["GET", "POST"]
     }
 });

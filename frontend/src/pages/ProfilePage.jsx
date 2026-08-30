@@ -100,6 +100,22 @@ function ProfilePage() {
                 </button>
               )}
             </div>
+              {/* 👇 THÊM NÚT GỬI YÊU CẦU KẾT BẠN TẠI ĐÂY */}
+              {!isOwnProfile && currentUser && (
+                  <button
+                      onClick={async () => {
+                          await fetch(`${API_URL}/friends/request`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ user_id: currentUser.user_id, friend_id: userProfile.user_id || userProfile.id })
+                          });
+                          alert("Đã gửi yêu cầu kết bạn!");
+                      }}
+                      style={{ background: '#2d88ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
+                  >
+                      ➕ Thêm bạn bè
+                  </button>
+              )}
             <ul className="profile-stats-list">
               <li><b>{stats?.post_count ?? 0}</b> bài viết</li>
               <li><b>{stats?.follower_count ?? 0}</b> người theo dõi</li>

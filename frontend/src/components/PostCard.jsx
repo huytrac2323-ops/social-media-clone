@@ -200,6 +200,22 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                     </span>
                     </div>
                 </Link>
+                {/* 👇 THÊM NÚT KẾT BẠN Ở ĐÂY (Kế bên tên tác giả) */}
+                {currentUser && currentUser.user_id !== post.userId && (
+                    <button
+                        onClick={async () => {
+                            await fetch(`${API_URL}/friends/request`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: post.userId })
+                            });
+                            alert("Đã gửi yêu cầu kết bạn!");
+                        }}
+                        style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', marginRight: '10px' }}
+                    >
+                        ➕ Thêm bạn
+                    </button>
+                )}
 
                 {/* Nút menu 3 chấm của chủ bài viết */}
                 {isOwner && (

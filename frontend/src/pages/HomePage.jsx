@@ -63,14 +63,23 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     }, [currentUser]);
 
 
-    const handleAddFriend = async (friendId) => {
-        await fetch(`${API_URL}/friends/add`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: currentUser.user_id, friend_id: friendId })
-        });
-        alert("Đã thêm bạn! Tải lại trang để xem bài viết của họ.");
-        window.location.reload(); // Hoặc gọi hàm refreshData
+    const handleSendRequest = async (friendId) => {
+        try {
+            const response = await fetch(`${API_URL}/friends/request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: friendId })
+            });
+
+            if (response.ok) {
+                alert("Đã gửi yêu cầu kết bạn! Vui lòng đợi đối phương chấp nhận.");
+                window.location.reload();
+            } else {
+                alert("Không thể gửi yêu cầu lúc này.");
+            }
+        } catch (err) {
+            console.error("Lỗi kết bạn:", err);
+        }
     };
 
 
@@ -84,7 +93,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
 
-            {/* Thanh công cụ phía trên gồm nút Đã lưu và Dropdown thông báo */}
+            {/* Thanh công cụ phía trên gồm nút Đã lưu */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <Link
                     to="/saved-posts"
@@ -92,39 +101,11 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 >
                     🔖 Bài viết đã lưu
                 </Link>
-
             </div>
 
             <CreatePost onPostCreated={onPostCreated} />
 
-            {/* Khối Gợi ý kết bạn luôn hiển thị */}
-            <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', marginTop: '20px' }}>
-                <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {suggestions && suggestions.length > 0 ? (
-                        suggestions.map(user => (
-                            <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '10px', borderRadius: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <img src={user.profile_photo_url || 'https://via.placeholder.com/40'} alt="avatar" style={{ width: '35px', height: '35px', borderRadius: '50%' }} />
-                                    <span style={{ fontSize: '14px' }}>{user.username}</span>
-                                </div>
-                                <button
-                                    onClick={() => handleAddFriend(user.user_id)}
-                                    style={{ background: '#2d88ff', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                                >
-                                    Thêm bạn
-                                </button>
-                            </div>
-                        ))
-                    ) : (
-                        <p style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>Không có gợi ý nào mới</p>
-                    )}
-                </div>
-            </div>
-
-
-
-            {/* Hiển thị danh sách bài viết */}
+            {/* Hiển thị danh sách bài viết ở chính giữa */}
             <div className="posts-list" style={{ marginTop: '20px' }}>
                 {posts && posts.length > 0 ? (
                     posts.map(post => (
@@ -146,42 +127,69 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 <Button variant="outline">Click me</Button>
             </div>
 
-            {/* Cố định danh sách trò chuyện gần đây ở góc trên bên phải */}
-            <div className="home-chat-sidebar" style={{
+            {/* Cố định cột bên phải: Gợi ý kết bạn (trên) và Trò chuyện gần đây (dưới) */}
+            <div className="home-right-sidebar" style={{
                 position: 'fixed',
                 top: '80px',
                 right: '20px',
-                width: '260px',
-                background: '#242526',
-                padding: '15px',
-                borderRadius: '8px',
-                color: 'white',
-                zIndex: 100,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                width: '280px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+                maxHeight: 'calc(100vh - 100px)',
+                overflowY: 'auto',
+                zIndex: 100
             }}>
-                <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>💬 Trò chuyện gần đây</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
-                    {/* 👇 Đã thay thế allUsers bằng conversations */}
-                    {conversations && conversations.length > 0 ? (
-                        conversations.map(u => (
-                            <div
-                                key={u.user_id}
-                                onClick={() => {
-                                    localStorage.setItem('activeChatUser', JSON.stringify({
-                                        user_id: u.user_id,
-                                        username: u.username
-                                    }));
-                                    window.dispatchEvent(new Event('open-chat'));
-                                }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '6px', borderRadius: '6px', background: '#3a3b3c' }}
-                            >
-                                <img src={u.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
-                                <span style={{ fontSize: '14px' }}>{u.username}</span>
-                            </div>
-                        ))
-                    ) : (
-                        <p style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>Chưa có cuộc trò chuyện nào</p>
-                    )}
+                {/* 1. Khối Gợi ý kết bạn ở bên phải */}
+                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                    <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {suggestions && suggestions.length > 0 ? (
+                            suggestions.map(user => (
+                                <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '8px', borderRadius: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                        <img src={user.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
+                                        <span style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.username}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleSendRequest(user.user_id)}
+                                        style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
+                                    >
+                                        Thêm bạn
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Không có gợi ý nào</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* 2. Khối Trò chuyện gần đây ở bên phải */}
+                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                    <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>💬 Trò chuyện gần đây</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                        {conversations && conversations.length > 0 ? (
+                            conversations.map(u => (
+                                <div
+                                    key={u.user_id}
+                                    onClick={() => {
+                                        localStorage.setItem('activeChatUser', JSON.stringify({
+                                            user_id: u.user_id,
+                                            username: u.username
+                                        }));
+                                        window.dispatchEvent(new Event('open-chat'));
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '6px', borderRadius: '6px', background: '#3a3b3c' }}
+                                >
+                                    <img src={u.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    <span style={{ fontSize: '13px' }}>{u.username}</span>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Chưa có cuộc trò chuyện nào</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

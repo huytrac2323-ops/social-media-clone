@@ -154,19 +154,21 @@ app.get('/api/conversations/:userId', async (req, res) => {
 });
 
 app.post('/api/friends/request', async (req, res) => {
-    // Hỗ trợ bắt cả 2 dạng tên biến truyền lên từ client
-    const user_id = req.body.user_id || req.body.sender_id;
-    const friend_id = req.body.friend_id || req.body.receiver_id;
+    const { user_id, friend_id } = req.body;
+
+    if (!user_id || !friend_id) {
+        return res.status(400).json({ error: "Thiếu thông tin định danh!" });
+    }
+
+    if (user_id === friend_id) {
+        return res.status(400).json({ error: "Không thể tự kết bạn với chính mình!" });
+    }
 
     try {
-        if (!user_id || !friend_id) {
-            return res.status(400).json({ error: "Thiếu thông tin người gửi hoặc người nhận!" });
-        }
-
         await pool.query(
             `INSERT INTO friends (user_id, friend_id, status)
              VALUES ($1, $2, 'pending')
-                 ON CONFLICT DO NOTHING`,
+                 ON CONFLICT (user_id, friend_id) DO NOTHING`,
             [user_id, friend_id]
         );
         res.status(200).json({ message: "Đã gửi yêu cầu kết bạn thành công!" });
@@ -175,6 +177,10 @@ app.post('/api/friends/request', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+
+
+
 // 4. Cấu hình Socket.io CORS tương ứng
 
 const server = http.createServer(app);

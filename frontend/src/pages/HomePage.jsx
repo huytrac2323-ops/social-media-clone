@@ -97,24 +97,33 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
 
             <CreatePost onPostCreated={onPostCreated} />
 
-
-            <div style={{ textAlign: 'center', background: '#242526', padding: '20px', borderRadius: '8px', color: 'white' }}>
-                <h3 style={{ marginBottom: '15px' }}>Bảng tin trống. Hãy kết bạn để xem bài viết!</h3>
-                <h4>Gợi ý kết bạn:</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                    {suggestions.map(user => (
-                        <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '10px', borderRadius: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <img src={user.profile_photo_url || 'https://via.placeholder.com/40'} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-                                <span>{user.username}</span>
+            {/* Khối Gợi ý kết bạn luôn hiển thị */}
+            <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', marginTop: '20px' }}>
+                <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {suggestions && suggestions.length > 0 ? (
+                        suggestions.map(user => (
+                            <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '10px', borderRadius: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <img src={user.profile_photo_url || 'https://via.placeholder.com/40'} alt="avatar" style={{ width: '35px', height: '35px', borderRadius: '50%' }} />
+                                    <span style={{ fontSize: '14px' }}>{user.username}</span>
+                                </div>
+                                <button
+                                    onClick={() => handleAddFriend(user.user_id)}
+                                    style={{ background: '#2d88ff', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                                >
+                                    Thêm bạn
+                                </button>
                             </div>
-                            <button onClick={() => handleAddFriend(user.user_id)} style={{ background: '#0084ff', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}>
-                                Thêm bạn
-                            </button>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        <p style={{ fontSize: '13px', color: '#888', textAlign: 'center' }}>Không có gợi ý nào mới</p>
+                    )}
                 </div>
             </div>
+
+
+
             {/* Hiển thị danh sách bài viết */}
             <div className="posts-list" style={{ marginTop: '20px' }}>
                 {posts && posts.length > 0 ? (

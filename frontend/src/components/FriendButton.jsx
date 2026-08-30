@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Tự động nhận diện môi trường Localhost hay Online
-const API_URL = import.meta.env.VITE_API_URL;
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 export default function FriendButton({ currentUserId, targetUserId }) {
     const [status, setStatus] = useState('NONE');

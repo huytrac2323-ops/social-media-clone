@@ -1,5 +1,6 @@
 {
   "appId": "com.huytrac.socialmedia",
-  "appName": "SocialMediaClone",
-  "webDir": "dist"
+  "appName": "Social Media",
+  "webDir": "dist",
+  "bundledWebRuntime": false
 }

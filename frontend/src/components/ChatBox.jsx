@@ -5,9 +5,11 @@ import { io } from 'socket.io-client';
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 const SOCKET_URL = 'https://social-media-clone-di9z.onrender.com';
 
-
 // Khởi tạo kết nối Socket ở ngoài component để tránh render lại nhiều lần
-const socket = io(SOCKET_URL);
+const socket = io(SOCKET_URL, {
+    secure: true,
+    transports: ['websocket', 'polling']
+});
 
 export default function ChatBox({ currentUser, friendId, friendName }) {
     const [messages, setMessages] = useState([]);
@@ -80,11 +82,19 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
     };
 
     return (
-        <div style={{ width: '300px', background: '#242526', border: '1px solid #3e4042', borderRadius: '8px', color: 'white', padding: '10px' }}>
-            <div style={{ fontWeight: 'bold', borderBottom: '1px solid #3e4042', paddingBottom: '5px' }}>
-                Chat với {friendName}
-            </div>
-
+        // Dòng số 65 trong ChatBox.jsx của bạn:
+        <div style={{
+            width: '320px',
+            background: '#242526',
+            border: '1px solid #3e4042',
+            borderTopLeftRadius: '8px',  // Chỉ bo tròn góc trên trái
+            borderTopRightRadius: '8px', // Chỉ bo tròn góc trên phải
+            borderBottom: 'none',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.2)' // Thêm bóng đổ cho đẹp
+        }}>
             <div style={{ height: '200px', overflowY: 'auto', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {messages.map((msg, index) => (
                     <div key={msg.id || msg.message_id || index} style={{

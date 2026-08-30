@@ -10,9 +10,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const { currentUser } = useAuth();
 
 
-    const API_URL = import.meta.env.VITE_API_URL;
-    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
-
+    const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 
 

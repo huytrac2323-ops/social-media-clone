@@ -15,9 +15,7 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater';
 CapacitorUpdater.notifyAppReady();
 
 
-const API_URL = import.meta.env.VITE_API_URL;
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
-
+const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
 function App() {
     return (
@@ -36,6 +34,7 @@ function AppContent() {
     const [allUsers, setAllUsers] = useState([]);
     const [dataVersion, setDataVersion] = useState(0);
     const [activeChat, setActiveChat] = useState(null);
+    const [activeChatUser, setActiveChatUser] = useState(null);
 
     useEffect(() => {
         const handleOpenChat = () => {
@@ -146,7 +145,11 @@ function AppContent() {
         logout();
         navigate('/login');
     };
-
+    const closeChat = () => {
+        setActiveChat(null);     // Dòng quan trọng nhất: Tắt khung chat đang hiển thị
+        setActiveChatUser(null); // Xóa nốt state phụ cho sạch
+        localStorage.removeItem('activeChatUser');
+    };
     return (
         <div className="fb-container">
             <nav className="fb-navbar">
@@ -194,13 +197,30 @@ function AppContent() {
             </Routes>
 
             {currentUser && activeChat && (
-                <div className="chat-box-wrapper">
-                    <div
-                        style={{ background: '#3a3b3c', padding: '10px', textAlign: 'right', cursor: 'pointer', fontSize: '14px', color: '#fff', fontWeight: 'bold' }}
-                        onClick={() => setActiveChat(null)}
+                <div style={{
+                    position: 'fixed',
+                    bottom: '0px',       // Neo sát đáy màn hình
+                    right: '80px',       // Cách lề phải một khoảng tránh đè lên thanh cuộn
+                    zIndex: 9999,        // Đảm bảo luôn nổi lên trên cùng
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end'
+                }}>
+                    {/* Nút đóng đoạn chat và component ChatBox của bạn đặt ở đây */}
+                    {/* Hãy sửa thành: */}
+                    <button
+                        onClick={closeChat}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            marginBottom: '5px'
+                        }}
                     >
-                        ✕ Đóng đoạn chat
-                    </div>
+                        ❌
+                    </button>
                     <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username} />
                 </div>
             )}

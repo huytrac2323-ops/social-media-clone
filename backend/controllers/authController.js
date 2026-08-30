@@ -34,11 +34,11 @@ const login = async (req, res) => {
             [username]
         );
 
-        if (result.rows.length === 0) return res.status(401).send({ message: 'Email hoặc mật khẩu không chính xác.' });
+        if (result.rows.length === 0) return res.status(401).send({ message: '"Sai mật khẩu rồi bạn ơi! Bản cập nhật mới nè' });
 
         const user = result.rows[0];
         const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) return res.status(401).send({ message: 'Email hoặc mật khẩu không chính xác.' });
+        if (!isMatch) return res.status(401).send({ message: '"Sai mật khẩu rồi bạn ơi! Bản cập nhật mới nè.' });
 
         const { password_hash, ...userWithoutPassword } = user;
 

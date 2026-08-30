@@ -10,10 +10,12 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const { currentUser } = useAuth();
 
 
-// Tự động nhận diện môi trường Localhost hay Online
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:5000/api'
-        : 'https://social-media-clone-di9z.onrender.com/api';
+    const API_URL = import.meta.env.VITE_API_URL;
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
+
+
+
     // 👇 Thêm state và useEffect để lấy danh sách người đã từng nhắn tin
     const [conversations, setConversations] = useState([]);
 

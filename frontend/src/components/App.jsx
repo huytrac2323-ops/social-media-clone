@@ -15,7 +15,9 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater';
 CapacitorUpdater.notifyAppReady();
 
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
 
 function App() {
     return (

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 // Tự động nhận diện môi trường để kết nối API và Socket
-const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_URL = IS_LOCAL ? 'http://localhost:5000/api' : 'https://social-media-clone-di9z.onrender.com/api';
-const SOCKET_URL = IS_LOCAL ? 'http://localhost:5000' : 'https://social-media-clone-di9z.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
+
 
 // Khởi tạo kết nối Socket ở ngoài component để tránh render lại nhiều lần
 const socket = io(SOCKET_URL);

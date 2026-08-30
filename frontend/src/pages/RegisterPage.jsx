@@ -3,7 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Auth.css';
 import { useAuth } from '../context/AuthContext.jsx'; // Import useAuth
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
+
 
 function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
   const [username, setUsername] = useState('');

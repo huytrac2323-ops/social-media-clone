@@ -3,7 +3,10 @@ import { useParams } from 'react-router-dom';
 import PostCard from '../components/PostCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+
+const API_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
 
 function PostPage() {
   const { postId } = useParams();

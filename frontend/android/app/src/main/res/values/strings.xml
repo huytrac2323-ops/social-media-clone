@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SocialMediaClone</string>
+    <string name="title_activity_main">SocialMediaClone</string>
+    <string name="package_name">com.huytrac.socialmedia</string>
+    <string name="custom_url_scheme">com.huytrac.socialmedia</string>
+</resources>

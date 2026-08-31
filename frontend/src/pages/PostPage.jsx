@@ -29,6 +29,8 @@ function PostPage() {
         const data = await response.json();
         const formattedPost = {
           id: data.post_id,
+          userId: data.user_id,  // Bổ sung dòng này để truyền ID cho PostCard
+          user_id: data.user_id,
           author: data.username,
           time: data.created_at,
           content: data.caption,

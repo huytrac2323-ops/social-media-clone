@@ -67,28 +67,32 @@ const getPosts = async (req, res) => {
     }
 };
 // Lấy chi tiết 1 bài viết
+// Lấy chi tiết 1 bài viết
 const getPostById = async (req, res) => {
     const { postId } = req.params;
     const currentUserId = req.query.currentUserId || null;
     try {
-        // Thay thế đoạn let query = `...` trong getPosts của bạn thành:
         let query = `
             SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
                    (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-                   EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user
+                   ${currentUserId ? 'EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $2) AS is_liked_by_user' : 'FALSE AS is_liked_by_user'},
+                   COALESCE(
+                        (SELECT json_agg(json_build_object(
+                            'comment_id', c.comment_id, 'comment_text', c.comment_text,
+                            'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username,
+                            'profile_photo_url', cu.profile_photo_url
+                        ))
+                         FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
+                         JOIN users cu ON c.user_id = cu.user_id),
+                        '[]'::json) AS comments
             FROM post p JOIN users u ON p.user_id = u.user_id
-            WHERE p.user_id = $1
-               OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted')
-               OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
-            ORDER BY p.created_at DESC
+            WHERE p.post_id = $1
         `;
 
-
-
-// Nếu mảng params của bạn đang rỗng, hãy đảm bảo truyền currentUserId vào:
-// const params = currentUserId ? [currentUserId] : [0];
+        // Truyền postId làm $1, currentUserId làm $2
         const params = currentUserId ? [postId, currentUserId] : [postId];
         const result = await pool.query(query, params);
+
         if (result.rows.length === 0) {
             return res.status(404).send({ message: 'Không tìm thấy bài viết.' });
         }
@@ -97,7 +101,6 @@ const getPostById = async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi lấy bài viết chi tiết", error: err.message });
     }
 };
-
 // Tạo bài viết mới
 const createPost = async (req, res) => {
     // Chỉ lấy caption và user_id từ body

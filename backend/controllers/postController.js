@@ -15,11 +15,15 @@ cloudinary.config({
 // Lấy danh sách tất cả bài viết
 // Lấy danh sách tất cả bài viết (Đã thêm bộ lọc Bạn bè)
 // Lấy danh sách tất cả bài viết (Hỗ trợ khách vãng lai chưa đăng nhập)
+// Lấy danh sách tất cả bài viết (Hỗ trợ hiển thị công khai cho nhiều tài khoản)
 const getPosts = async (req, res) => {
-    // Ép kiểu an toàn: Tránh trường hợp client gửi lên chuỗi "undefined"
     const currentUserId = (req.query.currentUserId && req.query.currentUserId !== 'undefined')
         ? req.query.currentUserId
         : null;
+
+    // 👇 Điền tất cả các ID bạn muốn hiển thị công khai vào mảng này, cách nhau bằng dấu phẩy
+    const PUBLIC_USER_IDS = [18,7];
+    const publicIdsString = PUBLIC_USER_IDS.join(','); // Sẽ tự động tạo thành chuỗi "15,18,22"
 
     try {
         let query = `
@@ -48,20 +52,19 @@ const getPosts = async (req, res) => {
         const params = [];
 
         if (currentUserId) {
-            // Khi đã đăng nhập: Hiện bài của mình, bài của bạn bè (accepted), và ưu tiên hiện bài "tracnhathuy"
+            // Đã đăng nhập: Hiện bài của mình, bạn bè, VÀ nhóm tài khoản công khai
             query += `
                 WHERE p.user_id = $1 
                    OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') 
                    OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
-                   OR u.username ILIKE 'tracnhathuy'
+                   OR u.user_id IN (${publicIdsString})
             `;
             params.push(currentUserId);
         } else {
-            // Khi chưa đăng nhập: Bắt buộc chỉ lấy các bài viết của "tracnhathuy"
-            query += ` WHERE u.username ILIKE 'tracnhathuy' `;
+            // Khách vãng lai: Hiện toàn bộ bài của nhóm tài khoản công khai
+            query += ` WHERE u.user_id IN (${publicIdsString}) `;
         }
 
-        // Sắp xếp bài mới nhất lên đầu
         query += ` ORDER BY p.created_at DESC`;
 
         const result = await pool.query(query, params);
@@ -71,7 +74,6 @@ const getPosts = async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
     }
 };// Lấy chi tiết 1 bài viết
-// Lấy chi tiết 1 bài viết
 const getPostById = async (req, res) => {
     const { postId } = req.params;
     const currentUserId = req.query.currentUserId || null;

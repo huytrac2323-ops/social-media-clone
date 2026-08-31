@@ -74,7 +74,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     }, [currentUser]);
 
     const handleSendRequest = async (friendId) => {
-        // Lấy linh hoạt cả user_id hoặc id và ép kiểu chuẩn số nguyên
         const myId = Number(currentUser?.user_id || currentUser?.id);
         const targetId = Number(friendId);
 
@@ -90,14 +89,15 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
             const response = await fetch(`${API_URL}/friends/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: myId, friend_id: targetId })
+                // 👇 ĐỔI TÊN BIẾN TẠI ĐÂY
+                body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
             });
 
             const data = await response.json();
 
             if (response.ok) {
                 alert("Đã gửi yêu cầu kết bạn!");
-                fetchSuggestions(); // Tải lại danh sách gợi ý mới
+                fetchSuggestions();
             } else {
                 alert(`Lỗi từ máy chủ: ${data.error || data.message}`);
             }

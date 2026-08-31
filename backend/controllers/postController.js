@@ -18,6 +18,7 @@ const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;
     try {
         let query = `
+
             SELECT
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
@@ -48,8 +49,12 @@ const getPosts = async (req, res) => {
                 WHERE p.user_id = $1 
                    OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') 
                    OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
+                   OR u.username = 'tracnhathuy'
             `;
             params.push(currentUserId);
+        } else {
+            // Dành cho trường hợp khách chưa đăng nhập, vẫn thấy bài của tracnhathuy
+            query += ` WHERE u.username = 'tracnhathuy' `;
         }
 
         // Sắp xếp bài mới nhất lên đầu

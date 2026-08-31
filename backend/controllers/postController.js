@@ -13,6 +13,7 @@ cloudinary.config({
 
 // Lấy danh sách tất cả bài viết
 // Lấy danh sách tất cả bài viết
+// Lấy danh sách tất cả bài viết (Đã thêm bộ lọc Bạn bè)
 const getPosts = async (req, res) => {
     const currentUserId = req.query.currentUserId || null;
     try {
@@ -37,17 +38,29 @@ const getPosts = async (req, res) => {
                                   JOIN users cu ON c.user_id = cu.user_id),
                         '[]'::json) AS comments
             FROM post p JOIN users u ON p.user_id = u.user_id
-            ORDER BY p.created_at DESC
         `;
 
-        const params = currentUserId ? [currentUserId] : [];
+        const params = [];
+
+        // 👇 ĐÂY LÀ ĐOẠN QUAN TRỌNG: Chỉ hiện bài của mình và bạn bè (accepted)
+        if (currentUserId) {
+            query += `
+                WHERE p.user_id = $1 
+                   OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') 
+                   OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
+            `;
+            params.push(currentUserId);
+        }
+
+        // Sắp xếp bài mới nhất lên đầu
+        query += ` ORDER BY p.created_at DESC`;
+
         const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (err) {
         res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
     }
 };
-
 // Lấy chi tiết 1 bài viết
 const getPostById = async (req, res) => {
     const { postId } = req.params;

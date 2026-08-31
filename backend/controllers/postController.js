@@ -14,11 +14,15 @@ cloudinary.config({
 // Lấy danh sách tất cả bài viết
 // Lấy danh sách tất cả bài viết
 // Lấy danh sách tất cả bài viết (Đã thêm bộ lọc Bạn bè)
+// Lấy danh sách tất cả bài viết (Hỗ trợ khách vãng lai chưa đăng nhập)
 const getPosts = async (req, res) => {
-    const currentUserId = req.query.currentUserId || null;
+    // Ép kiểu an toàn: Tránh trường hợp client gửi lên chuỗi "undefined"
+    const currentUserId = (req.query.currentUserId && req.query.currentUserId !== 'undefined')
+        ? req.query.currentUserId
+        : null;
+
     try {
         let query = `
-
             SELECT
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
@@ -43,18 +47,18 @@ const getPosts = async (req, res) => {
 
         const params = [];
 
-        // 👇 ĐÂY LÀ ĐOẠN QUAN TRỌNG: Chỉ hiện bài của mình và bạn bè (accepted)
         if (currentUserId) {
+            // Khi đã đăng nhập: Hiện bài của mình, bài của bạn bè (accepted), và ưu tiên hiện bài "tracnhathuy"
             query += `
                 WHERE p.user_id = $1 
                    OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') 
                    OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
-                   OR u.username = 'tracnhathuy'
+                   OR u.username ILIKE 'tracnhathuy'
             `;
             params.push(currentUserId);
         } else {
-            // Dành cho trường hợp khách chưa đăng nhập, vẫn thấy bài của tracnhathuy
-            query += ` WHERE u.username = 'tracnhathuy' `;
+            // Khi chưa đăng nhập: Bắt buộc chỉ lấy các bài viết của "tracnhathuy"
+            query += ` WHERE u.username ILIKE 'tracnhathuy' `;
         }
 
         // Sắp xếp bài mới nhất lên đầu
@@ -63,10 +67,10 @@ const getPosts = async (req, res) => {
         const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (err) {
+        console.error("Lỗi getPosts:", err);
         res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
     }
-};
-// Lấy chi tiết 1 bài viết
+};// Lấy chi tiết 1 bài viết
 // Lấy chi tiết 1 bài viết
 const getPostById = async (req, res) => {
     const { postId } = req.params;

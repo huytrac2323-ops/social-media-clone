@@ -189,10 +189,9 @@ body {
 /* TỐI ƯU HÓA CHO ĐIỆN THOẠI (Dưới 768px)              */
 /* =================================================== */
 @media screen and (max-width: 768px) {
-  .home-page-container {
-    right: 0 !important;
-    padding: 10px !important;
-    margin-bottom: 80px !important;
+  /* Đẩy toàn bộ nội dung trang lên cao hơn thanh bottom nav (60px + khoảng trống) */
+  .home-page-container, .profile-container {
+    margin-bottom: 90px !important;
   }
 
   /* Biến thanh menu trái thành thanh đáy cố định */
@@ -254,9 +253,11 @@ body {
   .chat-bottom-right {
     display: block !important;
     right: 5% !important;
-    bottom: 70px !important;
+    bottom: 75px !important; /* Đảm bảo không bị thanh menu đáy che mất */
     width: 90% !important;
+    z-index: 99999 !important;
   }
+
 
   /* Tối ưu hóa trang Profile trên điện thoại */
   .profile-container {

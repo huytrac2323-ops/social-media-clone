@@ -200,9 +200,10 @@ function AppContent() {
         navigate('/login');
     };
     const closeChat = () => {
-        setActiveChat(null);     // Dòng quan trọng nhất: Tắt khung chat đang hiển thị
-        setActiveChatUser(null); // Xóa nốt state phụ cho sạch
+        setActiveChat(null);
+        setActiveChatUser(null);
         localStorage.removeItem('activeChatUser');
+        window.location.reload(); // Tải lại nhẹ để làm mới trạng thái hiển thị góc phải
     };
     return (
         <div className="fb-container">
@@ -295,7 +296,7 @@ function AppContent() {
             {currentUser && activeChat && (
                 <div style={{
                     position: 'fixed',
-                    bottom: '135px',      /* Đẩy hẳn lên cao hơn thanh menu dưới đáy */
+                    bottom: '70px',      /* Đẩy hẳn lên cao hơn thanh menu dưới đáy */
                     right: '10px',
                     zIndex: 9999999,     /* Đảm bảo độ ưu tiên đè lên trên tất cả */
                     display: 'flex',

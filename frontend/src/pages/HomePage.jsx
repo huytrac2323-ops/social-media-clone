@@ -200,8 +200,9 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
 
             {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện) */}
             {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện tổng) */}
-            {currentUser && (
-                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '70px', right: '15px', width: '280px', zIndex: 99998 }}>
+            {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện tổng) - Ẩn đi khi đang chat riêng để không bị đè */}
+            {currentUser && !localStorage.getItem('activeChatUser') && (
+                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '70px', right: '10px', width: '280px', zIndex: 999 }}>
                     <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
                         <div
                             onClick={() => setIsChatExpanded(!isChatExpanded)}

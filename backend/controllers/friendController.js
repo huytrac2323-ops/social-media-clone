@@ -1,30 +1,35 @@
-const { pool } = require('../config/db'); // 👈 Đúng
+const { pool } = require('../config/db');
+
 // 1. GỬI LỜI MỜI KẾT BẠN
 const sendFriendRequest = async (req, res) => {
-    const { requester_id, addressee_id } = req.body;
+    // Tự động bắt cả 2 định dạng tên biến để không bao giờ bị undefined
+    const user_id = req.body.requester_id || req.body.user_id;
+    const friend_id = req.body.addressee_id || req.body.friend_id;
 
-    if (requester_id === addressee_id) {
+    if (!user_id || !friend_id) {
+        return res.status(400).json({ message: "Thiếu dữ liệu ID người dùng!" });
+    }
+
+    if (user_id === friend_id) {
         return res.status(400).json({ message: "Không thể tự kết bạn với chính mình!" });
     }
 
     try {
-        // Kiểm tra xem 2 người đã có quan hệ gì trước đó chưa (đã gửi lời mời, hoặc đã là bạn)
         const checkExist = await pool.query(
-            `SELECT * FROM friendships 
-             WHERE (requester_id = $1 AND addressee_id = $2) 
-                OR (requester_id = $2 AND addressee_id = $1)`,
-            [requester_id, addressee_id]
+            `SELECT * FROM friends 
+             WHERE (user_id = $1 AND friend_id = $2) 
+                OR (user_id = $2 AND friend_id = $1)`,
+            [user_id, friend_id]
         );
 
         if (checkExist.rows.length > 0) {
             return res.status(400).json({ message: "Lời mời kết bạn đã tồn tại hoặc hai người đã là bạn bè." });
         }
 
-        // Bắn lệnh INSERT vào database
         await pool.query(
-            `INSERT INTO friendships (requester_id, addressee_id, status) 
-             VALUES ($1, $2, 'PENDING')`,
-            [requester_id, addressee_id]
+            `INSERT INTO friends (user_id, friend_id, status) 
+             VALUES ($1, $2, 'pending')`,
+            [user_id, friend_id]
         );
 
         res.status(200).json({ message: "Đã gửi lời mời kết bạn thành công!" });
@@ -35,16 +40,16 @@ const sendFriendRequest = async (req, res) => {
 
 // 2. CHẤP NHẬN LỜI MỜI KẾT BẠN
 const acceptFriendRequest = async (req, res) => {
-    const { requester_id, addressee_id } = req.body;
-    // addressee_id chính là người đang thao tác bấm nút "Chấp nhận"
+    const user_id = req.body.addressee_id || req.body.user_id; // Người nhận bấm chấp nhận
+    const friend_id = req.body.requester_id || req.body.friend_id; // Người gửi lời mời
 
     try {
         const result = await pool.query(
-            `UPDATE friendships 
-             SET status = 'ACCEPTED', updated_at = CURRENT_TIMESTAMP 
-             WHERE requester_id = $1 AND addressee_id = $2 
-             RETURNING *`,
-            [requester_id, addressee_id]
+            `UPDATE friends
+             SET status = 'accepted'
+             WHERE user_id = $2 AND friend_id = $1
+                 RETURNING *`,
+            [user_id, friend_id]
         );
 
         if (result.rows.length === 0) {
@@ -59,14 +64,14 @@ const acceptFriendRequest = async (req, res) => {
 
 // 3. TỪ CHỐI / HỦY KẾT BẠN
 const unfriendOrReject = async (req, res) => {
-    const { user1_id, user2_id } = req.body;
+    const user1_id = req.body.user1_id || req.body.user_id;
+    const user2_id = req.body.user2_id || req.body.friend_id;
 
     try {
-        // Dù là A gửi cho B hay B gửi cho A, cứ hễ hủy là xóa sạch dòng đó khỏi database
         await pool.query(
-            `DELETE FROM friendships 
-             WHERE (requester_id = $1 AND addressee_id = $2) 
-                OR (requester_id = $2 AND addressee_id = $1)`,
+            `DELETE FROM friends 
+             WHERE (user_id = $1 AND friend_id = $2) 
+                OR (user_id = $2 AND friend_id = $1)`,
             [user1_id, user2_id]
         );
 
@@ -76,19 +81,18 @@ const unfriendOrReject = async (req, res) => {
     }
 };
 
-// 4. LẤY DANH SÁCH BẠN BÈ (Siêu Query JOIN bảng)
+// 4. LẤY DANH SÁCH BẠN BÈ
 const getFriendsList = async (req, res) => {
     const { user_id } = req.params;
 
     try {
-        // Nghệ thuật JOIN: Lấy thông tin từ bảng users của những người đã 'ACCEPTED'
         const friendsList = await pool.query(
             `SELECT u.user_id, u.username, u.profile_photo_url 
              FROM users u
-             JOIN friendships f ON (u.user_id = f.requester_id OR u.user_id = f.addressee_id)
-             WHERE f.status = 'ACCEPTED' 
-               AND (f.requester_id = $1 OR f.addressee_id = $1)
-               AND u.user_id != $1`, // Trừ chính bản thân mình ra
+             JOIN friends f ON (u.user_id = f.user_id OR u.user_id = f.friend_id)
+             WHERE f.status = 'accepted' 
+               AND (f.user_id = $1 OR f.friend_id = $1)
+               AND u.user_id != $1`,
             [user_id]
         );
 
@@ -97,14 +101,15 @@ const getFriendsList = async (req, res) => {
         res.status(500).json({ message: "Lỗi server khi lấy danh sách bạn bè.", error: err.message });
     }
 };
-// Bổ sung vào cuối file friendController.js
+
+// 5. KIỂM TRA TRẠNG THÁI KẾT BẠN
 const checkFriendStatus = async (req, res) => {
     const { user1, user2 } = req.params;
     try {
         const result = await pool.query(
-            `SELECT * FROM friendships
-             WHERE (requester_id = $1 AND addressee_id = $2)
-                OR (requester_id = $2 AND addressee_id = $1)`,
+            `SELECT * FROM friends
+             WHERE (user_id = $1 AND friend_id = $2)
+                OR (user_id = $2 AND friend_id = $1)`,
             [user1, user2]
         );
 
@@ -113,12 +118,13 @@ const checkFriendStatus = async (req, res) => {
         }
 
         const relation = result.rows[0];
-        if (relation.status === 'ACCEPTED') {
+        if (relation.status === 'accepted') {
             return res.json({ status: 'ACCEPTED' });
         }
 
-        if (relation.status === 'PENDING') {
-            if (relation.requester_id == user1) {
+        if (relation.status === 'pending') {
+            // Xác định ai là người gửi
+            if (relation.user_id == user1) {
                 return res.json({ status: 'PENDING_SENT' });
             } else {
                 return res.json({ status: 'PENDING_RECEIVED' });
@@ -127,13 +133,12 @@ const checkFriendStatus = async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-
 };
+
 module.exports = {
     sendFriendRequest,
     acceptFriendRequest,
     unfriendOrReject,
     getFriendsList,
     checkFriendStatus
-
 };

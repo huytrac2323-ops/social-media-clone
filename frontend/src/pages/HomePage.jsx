@@ -74,18 +74,32 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     }, [currentUser]);
 
     const handleSendRequest = async (friendId) => {
+        // Lấy linh hoạt cả user_id hoặc id và ép kiểu chuẩn số nguyên
+        const myId = Number(currentUser?.user_id || currentUser?.id);
+        const targetId = Number(friendId);
+
+        if (!myId || !targetId) {
+            return alert("Lỗi: Dữ liệu ID định danh bị trống!");
+        }
+
+        if (myId === targetId) {
+            return alert("Bạn không thể tự kết bạn với chính mình!");
+        }
+
         try {
             const response = await fetch(`${API_URL}/friends/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: friendId })
+                body: JSON.stringify({ user_id: myId, friend_id: targetId })
             });
 
+            const data = await response.json();
+
             if (response.ok) {
-                alert("Đã gửi yêu cầu kết bạn! Vui lòng đợi đối phương chấp nhận.");
-                fetchSuggestions();
+                alert("Đã gửi yêu cầu kết bạn!");
+                fetchSuggestions(); // Tải lại danh sách gợi ý mới
             } else {
-                alert("Không thể gửi yêu cầu lúc này.");
+                alert(`Lỗi từ máy chủ: ${data.error || data.message}`);
             }
         } catch (err) {
             console.error("Lỗi kết bạn:", err);
@@ -208,7 +222,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                         <span style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.username}</span>
                                     </div>
                                     <button
-                                        onClick={() => handleSendRequest(user.user_id)}
+                                        onClick={() => handleSendRequest(user.user_id || user.id)}
                                         style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
                                     >
                                         Thêm bạn

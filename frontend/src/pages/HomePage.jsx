@@ -82,8 +82,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     };
 
     return (
-        <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-
+        <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', position: 'relative', right: '60px' }}>
             {/* POPUP ĐĂNG BÀI */}
             {showCreatePost && currentUser && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999999, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setShowCreatePost(false)}>
@@ -171,8 +170,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
             </div>
 
             {/* THANH BÊN PHẢI (Gợi ý kết bạn) - Đã sửa right: '80px' để xích sang trái */}
-            <div className="home-right-sidebar" style={{ position: 'fixed', top: '20px', right: '80px', width: '280px', zIndex: 100 }}>
-                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+            <div className="home-right-sidebar" style={{ position: 'fixed', top: '20px', right: '140px', width: '280px', zIndex: 100 }}>                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                     <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {suggestions && suggestions.length > 0 ? (
@@ -194,8 +192,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
 
             {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện) - Đã thêm tính năng click để sổ ra và xích sang trái */}
             {currentUser && (
-                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '20px', right: '80px', width: '280px', zIndex: 100 }}>
-                    <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
+                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '20px', right: '20px', width: '280px', zIndex: 100 }}>                    <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
                         <div
                             onClick={() => setIsChatExpanded(!isChatExpanded)}
                             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}

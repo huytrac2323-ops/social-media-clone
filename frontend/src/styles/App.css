@@ -1,6 +1,57 @@
 @import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 @import "tailwindcss";
+/* =================================================== */
+/* TỐI ƯU HÓA CHO ĐIỆN THOẠI (Dưới 768px)              */
+/* =================================================== */
+@media (max-width: 768px) {
+  /* 1. Trả bảng tin về chính giữa, xóa khoảng lệch 60px */
+  .home-page-container {
+    right: 0 !important;
+    padding: 10px !important;
+    margin-bottom: 70px !important; /* Chừa chỗ cho thanh menu ở đáy */
+  }
 
+  /* 2. Biến thanh menu bên trái thành thanh Bottom Nav dàn hàng ngang */
+  .home-left-sidebar {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 60px !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    background-color: #242526 !important; /* Hiện nền đen cứng */
+    border-radius: 0 !important;
+    z-index: 999999 !important;
+  }
+
+  /* Điều chỉnh các icon cho vừa vặn */
+  .home-left-sidebar .sidebar-box {
+    width: auto !important;
+    padding: 10px !important;
+  }
+
+  /* Vô hiệu hóa hiệu ứng hover (mở rộng) trên màn hình cảm ứng */
+  .home-left-sidebar:hover {
+    width: 100vw !important;
+    height: 60px !important;
+    border-radius: 0 !important;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5) !important;
+    overflow-y: hidden !important;
+  }
+
+  .home-left-sidebar:hover .sidebar-content,
+  .home-left-sidebar:hover h3 span {
+    display: none !important;
+  }
+
+  /* 3. Đảm bảo Gợi ý kết bạn và Trò chuyện bị ẩn hoàn toàn */
+  .home-right-sidebar,
+  .chat-bottom-right {
+    display: none !important;
+  }
+}
 
 /* TỔNG THỂ THANH BÊN TRÁI */
 .home-left-sidebar {

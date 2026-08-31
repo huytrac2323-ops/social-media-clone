@@ -37,7 +37,7 @@ function App() {
 
 function AppContent() {
     const navigate = useNavigate();
-    const { currentUser, logout } = useAuth();
+    const {currentUser, logout} = useAuth();
     const [posts, setPosts] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
     const [dataVersion, setDataVersion] = useState(0);
@@ -123,7 +123,9 @@ function AppContent() {
                 }));
                 const sortedPosts = formattedPosts.sort((a, b) => b.id - a.id);
                 setPosts(sortedPosts);
-            } catch (error) { console.error("Lỗi khi lấy dữ liệu bài viết:", error); }
+            } catch (error) {
+                console.error("Lỗi khi lấy dữ liệu bài viết:", error);
+            }
         };
 
         const fetchAllUsers = async () => {
@@ -132,7 +134,9 @@ function AppContent() {
                 if (!response.ok) throw new Error('Lỗi khi tải danh sách người dùng');
                 const data = await response.json();
                 setAllUsers(data);
-            } catch (error) { console.error(error); }
+            } catch (error) {
+                console.error(error);
+            }
         };
 
         fetchPosts();
@@ -151,8 +155,8 @@ function AppContent() {
         try {
             const response = await fetch(`${API_URL}/posts/${postId}/like`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentUser.user_id })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: currentUser.user_id})
             });
 
             const data = await response.json();
@@ -181,12 +185,14 @@ function AppContent() {
         try {
             const response = await fetch(`${API_URL}/posts/${postId}/comment`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ comment_text: commentText, user_id: currentUser.user_id })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({comment_text: commentText, user_id: currentUser.user_id})
             });
             if (!response.ok) throw new Error('Lỗi khi bình luận');
             refreshData();
-        } catch (error) { console.error("Lỗi khi bình luận:", error); }
+        } catch (error) {
+            console.error("Lỗi khi bình luận:", error);
+        }
     };
 
     const handleLogout = () => {
@@ -200,6 +206,71 @@ function AppContent() {
     };
     return (
         <div className="fb-container">
+            {/* THANH ĐIỀU HƯỚNG PHÍA TRÊN CÙNG */}
+            <div style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 1000,
+                backgroundColor: '#242526',
+                borderBottom: '1px solid #3a3b3c',
+                padding: '12px 24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItem: 'center',
+                color: 'white'
+            }}>
+                <Link to="/" style={{fontSize: '20px', fontWeight: 'bold', color: 'white', textDecoration: 'none'}}>
+                    Dissipation
+                </Link>
+
+                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
+                    {currentUser ? (
+                        <>
+                            <span style={{fontSize: '14px'}}>Xin chào, <b>{currentUser.username}</b></span>
+                            <button
+                                onClick={handleLogout}
+                                style={{
+                                    backgroundColor: '#ff4d4f',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '6px 14px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    fontSize: '13px'
+                                }}
+                            >
+                                Đăng xuất
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" style={{
+                                backgroundColor: '#2d88ff',
+                                color: 'white',
+                                padding: '6px 14px',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                fontWeight: 'bold',
+                                fontSize: '13px'
+                            }}>
+                                Đăng nhập
+                            </Link>
+                            <Link to="/register" style={{
+                                backgroundColor: '#3a3b3c',
+                                color: 'white',
+                                padding: '6px 14px',
+                                borderRadius: '6px',
+                                textDecoration: 'none',
+                                fontWeight: 'bold',
+                                fontSize: '13px'
+                            }}>
+                                Đăng ký
+                            </Link>
+                        </>
+                    )}
+                </div>
+            </div>
 
             <Routes>
                 <Route path="/" element={
@@ -213,25 +284,24 @@ function AppContent() {
                         onPostUpdated={refreshData}
                     />}
                 />
-                <Route path="/post/:postId" element={<PostPage onPostDeleted={refreshData} onPostUpdated={refreshData} />} />
-                <Route path="/profile/:username" element={<ProfilePage />} />
-                <Route path="/register" element={<RegisterPage onRegisterSuccess={refreshData} />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/saved-posts" element={<SavedPostsPage />} />
+                <Route path="/post/:postId"
+                       element={<PostPage onPostDeleted={refreshData} onPostUpdated={refreshData}/>}/>
+                <Route path="/profile/:username" element={<ProfilePage/>}/>
+                <Route path="/register" element={<RegisterPage onRegisterSuccess={refreshData}/>}/>
+                <Route path="/login" element={<LoginPage/>}/>
+                <Route path="/saved-posts" element={<SavedPostsPage/>}/>
             </Routes>
 
             {currentUser && activeChat && (
                 <div style={{
                     position: 'fixed',
-                    bottom: '0px',       // Neo sát đáy màn hình
-                    right: '80px',       // Cách lề phải một khoảng tránh đè lên thanh cuộn
-                    zIndex: 9999,        // Đảm bảo luôn nổi lên trên cùng
+                    bottom: '0px',
+                    right: '80px',
+                    zIndex: 9999,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-end'
                 }}>
-                    {/* Nút đóng đoạn chat và component ChatBox của bạn đặt ở đây */}
-                    {/* Hãy sửa thành: */}
                     <button
                         onClick={closeChat}
                         style={{
@@ -245,11 +315,10 @@ function AppContent() {
                     >
                         ❌
                     </button>
-                    <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username} />
+                    <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username}/>
                 </div>
             )}
         </div>
     );
 }
-
 export default App;

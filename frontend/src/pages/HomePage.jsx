@@ -13,8 +13,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const [suggestions, setSuggestions] = useState([]);
     const [friendRequests, setFriendRequests] = useState([]);
     const [showCreatePost, setShowCreatePost] = useState(false);
-
-    // 👇 THÊM STATE QUẢN LÝ ĐÓNG/MỞ KHUNG CHAT
     const [isChatExpanded, setIsChatExpanded] = useState(false);
 
     const fetchSuggestions = async () => {
@@ -83,6 +81,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
 
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', position: 'relative', right: '60px' }}>
+
             {/* POPUP ĐĂNG BÀI */}
             {showCreatePost && currentUser && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999999, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setShowCreatePost(false)}>
@@ -102,15 +101,17 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 )}
             </div>
 
-            {/* THANH BÊN TRÁI (Tàng hình, Icon, Hover mở rộng) */}
+            {/* THANH BÊN TRÁI */}
             <div className="home-left-sidebar">
-                <Link to="/" className="sidebar-box" style={{ textDecoration: 'none' }}>
+                {/* 1. Trang chủ */}
+                <Link to="/" className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
                     <h3>🏠<span>Trang chủ</span></h3>
                 </Link>
 
                 {currentUser ? (
                     <>
-                        <Link to={`/profile/${currentUser.username}`} className="sidebar-box" style={{ textDecoration: 'none' }}>
+                        {/* 2. Trang cá nhân */}
+                        <Link to={`/profile/${currentUser.username}`} className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
                             <h3>👤<span>{currentUser.username}</span></h3>
                         </Link>
 
@@ -118,8 +119,14 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                             <h3>🔖<span>Bài đã lưu</span></h3>
                         </Link>
 
-                        <div className="sidebar-box" onClick={() => setShowCreatePost(true)}>
+                        {/* 3. Đăng bài */}
+                        <div className="sidebar-box mobile-only-btn" onClick={() => setShowCreatePost(true)}>
                             <h3>✍️<span>Đăng bài</span></h3>
+                        </div>
+
+                        {/* 4. Nhắn tin */}
+                        <div className="sidebar-box mobile-only-btn" onClick={() => setIsChatExpanded(!isChatExpanded)}>
+                            <h3>💬<span>Nhắn tin</span></h3>
                         </div>
 
                         <div className="sidebar-box">
@@ -169,8 +176,9 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 )}
             </div>
 
-            {/* THANH BÊN PHẢI (Gợi ý kết bạn) - Đã sửa right: '80px' để xích sang trái */}
-            <div className="home-right-sidebar" style={{ position: 'fixed', top: '20px', right: '140px', width: '280px', zIndex: 100 }}>                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+            {/* THANH BÊN PHẢI (Gợi ý kết bạn) */}
+            <div className="home-right-sidebar" style={{ position: 'fixed', top: '20px', right: '140px', width: '280px', zIndex: 100 }}>
+                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                     <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {suggestions && suggestions.length > 0 ? (
@@ -190,9 +198,10 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 </div>
             </div>
 
-            {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện) - Đã thêm tính năng click để sổ ra và xích sang trái */}
+            {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện) */}
             {currentUser && (
-                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '20px', right: '20px', width: '280px', zIndex: 100 }}>                    <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
+                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '20px', right: '20px', width: '280px', zIndex: 100 }}>
+                    <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
                         <div
                             onClick={() => setIsChatExpanded(!isChatExpanded)}
                             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
@@ -201,7 +210,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                             <span style={{ fontSize: '12px' }}>{isChatExpanded ? '▼' : '▲'}</span>
                         </div>
 
-                        {/* Chỉ render danh sách nếu isChatExpanded là true */}
                         {isChatExpanded && (
                             <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
                                 {conversations && conversations.length > 0 ? (

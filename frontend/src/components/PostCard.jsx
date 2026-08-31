@@ -202,14 +202,27 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                 </Link>
                 {/* 👇 THÊM NÚT KẾT BẠN Ở ĐÂY (Kế bên tên tác giả) */}
                 {/* 👇 Ép kiểu Number() để đồng bộ dữ liệu, tự động ẩn nút ở bài của chính mình */}
-                {currentUser && Number(currentUser.user_id) !== Number(post.user_id || post.userId || post.authorId) && (
+                {/* 👇 Sửa lỗi 400: Quét cả 2 biến id và user_id của currentUser để không bị undefined */}
+                {/* 👇 Ép kiểu Number() để đồng bộ dữ liệu, tự động ẩn nút ở bài của chính mình */}
+                {/* 👇 Sửa lỗi 400: Quét cả 2 biến id và user_id của currentUser để không bị undefined */}
+                {currentUser && Number(currentUser.user_id || currentUser.id) !== Number(post.userId) && (
                     <button
                         onClick={async () => {
-                            const targetId = Number(post.user_id || post.userId || post.authorId);
-                            const myId = Number(currentUser.user_id);
+                            // Lấy trực tiếp ID người đăng nhập và ID tác giả bài viết
+                            const myId = Number(currentUser.user_id || currentUser.id);
 
-                            if (!targetId || myId === targetId) {
-                                return alert("Đây là bài viết của chính bạn!");
+                            // Trong ảnh console, bài viết chứa tác giả ở trường userId, không phải user_id
+                            const targetId = Number(post.userId);
+
+                            // In ra console để kiểm tra chắc chắn dữ liệu không bị trống
+                            console.log("Đang gửi yêu cầu từ myId:", myId, "đến targetId:", targetId);
+
+                            if (!myId || !targetId) {
+                                return alert(`Lỗi: Thiếu ID! myId=${myId}, targetId=${targetId}`);
+                            }
+
+                            if (myId === targetId) {
+                                return alert("Không thể tự kết bạn với chính mình!");
                             }
 
                             try {
@@ -219,7 +232,12 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                                     body: JSON.stringify({ user_id: myId, friend_id: targetId })
                                 });
                                 const data = await res.json();
-                                alert(data.message || data.error);
+
+                                if (res.ok) {
+                                    alert("Đã gửi yêu cầu kết bạn!");
+                                } else {
+                                    alert(`Lỗi backend: ${data.error || data.message}`);
+                                }
                             } catch (err) {
                                 console.error("Lỗi gửi kết bạn:", err);
                             }

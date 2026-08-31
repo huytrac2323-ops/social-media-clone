@@ -14,11 +14,12 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const [suggestions, setSuggestions] = useState([]);
     const [friendRequests, setFriendRequests] = useState([]);
 
-    // 1. Định nghĩa hàm tải danh sách gợi ý kết bạn
+    // 1. Định nghĩa hàm tải danh sách gợi ý kết bạn (Hỗ trợ khách vãng lai)
     const fetchSuggestions = async () => {
-        if (!currentUser?.user_id) return;
+        // Lấy ID người dùng, nếu chưa đăng nhập thì gán là 'guest'
+        const currentId = currentUser?.user_id || currentUser?.id || 'guest';
         try {
-            const res = await fetch(`${API_URL}/suggestions/${currentUser.user_id}`);
+            const res = await fetch(`${API_URL}/suggestions/${currentId}`);
             if (res.ok) {
                 const data = await res.json();
                 setSuggestions(data);
@@ -56,21 +57,23 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         }
     };
 
+    // Thay đổi useEffect để tách biệt quyền truy cập của khách và thành viên
     useEffect(() => {
-        if (!currentUser?.user_id) return;
-
-        // Kích hoạt gọi dữ liệu ban đầu
-        fetchConversations();
+        // Luôn tải danh sách gợi ý dù có đăng nhập hay không
         fetchSuggestions();
-        fetchFriendRequests();
 
-        // Thiết lập vòng lặp 3 giây để làm mới trò chuyện và lời mời
-        const interval = setInterval(() => {
+        // Chỉ tải tin nhắn và lời mời nếu ĐÃ đăng nhập
+        if (currentUser?.user_id || currentUser?.id) {
             fetchConversations();
             fetchFriendRequests();
-        }, 3000);
 
-        return () => clearInterval(interval);
+            const interval = setInterval(() => {
+                fetchConversations();
+                fetchFriendRequests();
+            }, 3000);
+
+            return () => clearInterval(interval);
+        }
     }, [currentUser]);
 
     const handleSendRequest = async (friendId) => {
@@ -89,7 +92,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
             const response = await fetch(`${API_URL}/friends/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // 👇 ĐỔI TÊN BIẾN TẠI ĐÂY
                 body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
             });
 
@@ -129,7 +131,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     return (
         <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
 
-            {/* Thanh công cụ phía trên gồm nút Đã lưu */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <Link
                     to="/saved-posts"
@@ -139,9 +140,9 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 </Link>
             </div>
 
-            <CreatePost onPostCreated={onPostCreated} />
+            {/* Chỉ hiện khung đăng bài nếu đã đăng nhập */}
+            {currentUser && <CreatePost onPostCreated={onPostCreated} />}
 
-            {/* Hiển thị danh sách bài viết ở chính giữa */}
             <div className="posts-list" style={{ marginTop: '20px' }}>
                 {posts && posts.length > 0 ? (
                     posts.map(post => (
@@ -163,7 +164,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 <Button variant="outline">Click me</Button>
             </div>
 
-            {/* Cố định cột bên phải: Lời mời kết bạn, Gợi ý kết bạn và Trò chuyện gần đây */}
             <div className="home-right-sidebar" style={{
                 position: 'fixed',
                 top: '80px',
@@ -177,40 +177,42 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 zIndex: 100
             }}>
 
-                {/* 1. Khối Lời mời kết bạn đến */}
-                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                    <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>🔔 Lời mời kết bạn</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {friendRequests && friendRequests.length > 0 ? (
-                            friendRequests.map(reqUser => (
-                                <div key={reqUser.user_id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#3a3b3c', padding: '10px', borderRadius: '6px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <img src={reqUser.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
-                                        <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{reqUser.username}</span>
+                {/* 1. Khối Lời mời kết bạn đến (Ẩn nếu chưa đăng nhập) */}
+                {currentUser && (
+                    <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                        <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>🔔 Lời mời kết bạn</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {friendRequests && friendRequests.length > 0 ? (
+                                friendRequests.map(reqUser => (
+                                    <div key={reqUser.user_id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#3a3b3c', padding: '10px', borderRadius: '6px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <img src={reqUser.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
+                                            <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{reqUser.username}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                            <button
+                                                onClick={() => handleAcceptFriend(reqUser.user_id)}
+                                                style={{ background: '#2d88ff', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
+                                            >
+                                                Chấp nhận
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectFriend(reqUser.user_id)}
+                                                style={{ background: '#4e4f50', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
+                                            >
+                                                Xóa
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                        <button
-                                            onClick={() => handleAcceptFriend(reqUser.user_id)}
-                                            style={{ background: '#2d88ff', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
-                                        >
-                                            Chấp nhận
-                                        </button>
-                                        <button
-                                            onClick={() => handleRejectFriend(reqUser.user_id)}
-                                            style={{ background: '#4e4f50', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
-                                        >
-                                            Xóa
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Không có lời mời nào</p>
-                        )}
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Không có lời mời nào</p>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* 2. Khối Gợi ý kết bạn */}
+                {/* 2. Khối Gợi ý kết bạn (Hiển thị cho tất cả mọi người) */}
                 <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                     <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -222,7 +224,10 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                         <span style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.username}</span>
                                     </div>
                                     <button
-                                        onClick={() => handleSendRequest(user.user_id || user.id)}
+                                        onClick={() => {
+                                            if (!currentUser) return alert("Vui lòng đăng nhập để gửi lời mời kết bạn!");
+                                            handleSendRequest(user.user_id || user.id);
+                                        }}
                                         style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
                                     >
                                         Thêm bạn
@@ -235,32 +240,34 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                     </div>
                 </div>
 
-                {/* 3. Khối Trò chuyện gần đây */}
-                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                    <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>💬 Trò chuyện gần đây</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
-                        {conversations && conversations.length > 0 ? (
-                            conversations.map(u => (
-                                <div
-                                    key={u.user_id}
-                                    onClick={() => {
-                                        localStorage.setItem('activeChatUser', JSON.stringify({
-                                            user_id: u.user_id,
-                                            username: u.username
-                                        }));
-                                        window.dispatchEvent(new Event('open-chat'));
-                                    }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '6px', borderRadius: '6px', background: '#3a3b3c' }}
-                                >
-                                    <img src={u.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
-                                    <span style={{ fontSize: '13px' }}>{u.username}</span>
-                                </div>
-                            ))
-                        ) : (
-                            <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Chưa có cuộc trò chuyện nào</p>
-                        )}
+                {/* 3. Khối Trò chuyện gần đây (Ẩn nếu chưa đăng nhập) */}
+                {currentUser && (
+                    <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                        <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>💬 Trò chuyện gần đây</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                            {conversations && conversations.length > 0 ? (
+                                conversations.map(u => (
+                                    <div
+                                        key={u.user_id}
+                                        onClick={() => {
+                                            localStorage.setItem('activeChatUser', JSON.stringify({
+                                                user_id: u.user_id,
+                                                username: u.username
+                                            }));
+                                            window.dispatchEvent(new Event('open-chat'));
+                                        }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '6px', borderRadius: '6px', background: '#3a3b3c' }}
+                                    >
+                                        <img src={u.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
+                                        <span style={{ fontSize: '13px' }}>{u.username}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Chưa có cuộc trò chuyện nào</p>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
             </div>
         </div>

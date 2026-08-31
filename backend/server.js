@@ -77,20 +77,30 @@ app.get('/api/messages/:userId/:friendId', async (req, res) => {
 app.get('/api/suggestions/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
-        const query = `
-            SELECT user_id, username, profile_photo_url FROM users 
-            WHERE user_id != $1 
-            AND user_id NOT IN (SELECT friend_id FROM friends WHERE user_id = $1)
-            AND user_id NOT IN (SELECT user_id FROM friends WHERE friend_id = $1)
-            LIMIT 5;
-        `;
-        const result = await pool.query(query, [userId]);
+        let query;
+        let params = [];
+
+        if (userId === 'guest' || userId === 'undefined') {
+            // Khách chưa đăng nhập: Lấy ngẫu nhiên 5 người
+            query = `SELECT user_id, username, profile_photo_url FROM users LIMIT 5;`;
+        } else {
+            // Đã đăng nhập: Lọc bỏ những người đã là bạn hoặc đã gửi lời mời
+            query = `
+                SELECT user_id, username, profile_photo_url FROM users 
+                WHERE user_id != $1 
+                AND user_id NOT IN (SELECT friend_id FROM friends WHERE user_id = $1)
+                AND user_id NOT IN (SELECT user_id FROM friends WHERE friend_id = $1)
+                LIMIT 5;
+            `;
+            params = [userId];
+        }
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
-
 app.get('/api/friends/requests/:userId', async (req, res) => {
     const { userId } = req.params;
     try {

@@ -1,6 +1,96 @@
 @import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 @import "tailwindcss";
 
+
+/* TỔNG THỂ THANH BÊN TRÁI */
+.home-left-sidebar {
+  box-sizing: border-box;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 60px !important; /* Bắt buộc thu nhỏ thành 60px */
+  background-color: transparent !important;;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px);
+  z-index: 9999; /* Luôn nổi lên trên cùng, không bị chồng */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden; /* Che nội dung tràn ngang */
+  overflow-y: hidden;
+  box-shadow: none !important;
+}
+
+/* CÁC KHỐI CHỨC NĂNG BÊN TRONG */
+.home-left-sidebar .sidebar-box {
+  box-sizing: border-box;
+  width: 280px; /* Cố định width nội dung để không vỡ layout khi bóp nhỏ */
+  padding: 15px 18px; /* Căn giữa icon cho khung 60px */
+  border-bottom: 1px solid #3a3b3c;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.home-left-sidebar .sidebar-box:last-child {
+  border-bottom: none;
+}
+
+.home-left-sidebar .sidebar-box h3 {
+  margin: 0;
+  font-size: 22px; /* Kích thước Icon Emoji */
+  display: flex;
+  align-items: center;
+}
+
+/* ẨN CHỮ VÀ DANH SÁCH KHI CHƯA HOVER */
+.home-left-sidebar .sidebar-box h3 span,
+.home-left-sidebar .sidebar-content {
+  display: none !important;
+}
+
+/* ========================================= */
+/* KHI RƠ CHUỘT VÀO THANH TRÁI (HOVER)       */
+/* ========================================= */
+.home-left-sidebar:hover {
+  width: 280px !important;
+  background-color: #242526 !important; /* Hiện lại nền nổi để không bị đè chữ lên bài viết */
+  box-shadow: 2px 0 15px rgba(0,0,0,0.5) !important; /* Hiện lại viền bóng */
+  overflow-y: auto;
+}
+
+/* Hiện lại chữ */
+.home-left-sidebar:hover .sidebar-box h3 span {
+  display: inline !important;
+  margin-left: 15px;
+  font-size: 16px;
+}
+
+/* Hiện lại các danh sách (tìm kiếm, lời mời, chat) */
+.home-left-sidebar:hover .sidebar-content {
+  display: flex !important;
+  flex-direction: column;
+  margin-top: 15px;
+}
+
+/* Làm đẹp thanh cuộn */
+.home-left-sidebar::-webkit-scrollbar { width: 5px; }
+.home-left-sidebar::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; }
+
+/* =================================================== */
+/* THANH BÊN PHẢI (Gợi ý): Tự ẩn khi thu nhỏ           */
+/* =================================================== */
+@media (max-width: 1000px) {
+  .home-right-sidebar {
+    display: none !important;
+  }
+  .chat-bottom-right {
+    display: none !important;
+  }
+}
+
+
+
 @custom-variant dark (&:is(.dark *));
 /* Reset định dạng cơ bản theo chuẩn Instagram */
 * {

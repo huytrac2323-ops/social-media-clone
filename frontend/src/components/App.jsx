@@ -200,30 +200,6 @@ function AppContent() {
     };
     return (
         <div className="fb-container">
-            <nav className="fb-navbar">
-                <div className="nav-left">
-
-                    <Link to="/" style={{ textDecoration: 'none' }}><h1 className="fb-logo">Dissipation</h1></Link>
-                    {currentUser && <input type="text" placeholder="Tìm kiếm..." className="search-bar" />}
-                </div>
-                <div className="nav-right">
-                    <NotificationDropdown />
-                    {currentUser ? (
-
-                        <>
-                            <Link to={`/profile/${currentUser.username}`} className="user-avatar-btn" style={{ textDecoration: 'none' }}>{currentUser.username}</Link>
-                            <button onClick={handleLogout} className="btn-logout">Đăng xuất</button>
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/login" className="btn-logout">Đăng nhập</Link>
-                            <Link to="/register" className="user-avatar-btn" style={{ textDecoration: 'none' }}>Đăng ký</Link>
-
-
-                        </>
-                    )}
-                </div>
-            </nav>
 
             <Routes>
                 <Route path="/" element={

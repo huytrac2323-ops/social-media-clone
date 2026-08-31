@@ -201,29 +201,39 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                     </div>
                 </Link>
                 {/* 👇 THÊM NÚT KẾT BẠN Ở ĐÂY (Kế bên tên tác giả) */}
-                {currentUser && currentUser.user_id !== (post.user_id || post.userId || post.authorId) && (
+                {/* 👇 Ép kiểu Number() để đồng bộ dữ liệu, tự động ẩn nút ở bài của chính mình */}
+                {currentUser && Number(currentUser.user_id) !== Number(post.user_id || post.userId || post.authorId) && (
                     <button
                         onClick={async () => {
-                            // Lấy linh hoạt mọi trường có thể chứa ID của tác giả bài viết
-                            const targetId = post.user_id || post.userId || post.authorId;
+                            const targetId = Number(post.user_id || post.userId || post.authorId);
+                            const myId = Number(currentUser.user_id);
 
-                            if (!targetId) {
-                                return alert("Không tìm thấy mã định danh của tác giả bài viết này!");
+                            if (!targetId || myId === targetId) {
+                                return alert("Đây là bài viết của chính bạn!");
                             }
 
-                            const res = await fetch(`${API_URL}/friends/request`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: targetId })
-                            });
-                            const data = await res.json();
-                            alert(data.message || data.error);
+                            try {
+                                const res = await fetch(`${API_URL}/friends/request`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ user_id: myId, friend_id: targetId })
+                                });
+                                const data = await res.json();
+                                alert(data.message || data.error);
+                            } catch (err) {
+                                console.error("Lỗi gửi kết bạn:", err);
+                            }
                         }}
                         style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', marginRight: '10px' }}
                     >
                         ➕ Thêm bạn
                     </button>
                 )}
+
+
+
+
+
                 {/* Nút menu 3 chấm của chủ bài viết */}
                 {isOwner && (
                     <div className="post-menu-container" ref={menuRef}>

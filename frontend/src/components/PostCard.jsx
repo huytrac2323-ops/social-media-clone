@@ -229,7 +229,8 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                                 const res = await fetch(`${API_URL}/friends/request`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ user_id: myId, friend_id: targetId })
+                                    // 👇 ĐỔI TÊN BIẾN TẠI ĐÂY ĐỂ KHỚP VỚI BACKEND
+                                    body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
                                 });
                                 const data = await res.json();
 

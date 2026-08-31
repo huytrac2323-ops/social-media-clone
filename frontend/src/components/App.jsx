@@ -295,25 +295,29 @@ function AppContent() {
             {currentUser && activeChat && (
                 <div style={{
                     position: 'fixed',
-                    bottom: '0px',
-                    right: '80px',
-                    zIndex: 9999,
+                    bottom: '135px',      /* Đẩy hẳn lên cao hơn thanh menu dưới đáy */
+                    right: '10px',
+                    zIndex: 9999999,     /* Đảm bảo độ ưu tiên đè lên trên tất cả */
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'flex-end'
+                    alignItems: 'flex-end',
+                    maxHeight: 'calc(100vh - 150px)' /* Giới hạn không bị tràn màn hình */
                 }}>
                     <button
                         onClick={closeChat}
                         style={{
-                            background: 'transparent',
+                            background: '#3a3b3c',
                             border: 'none',
                             color: 'white',
                             cursor: 'pointer',
-                            fontSize: '16px',
-                            marginBottom: '5px'
+                            fontSize: '12px',
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            marginBottom: '4px',
+                            fontWeight: 'bold'
                         }}
                     >
-                        ❌
+                        ✕ Đóng chat
                     </button>
                     <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username}/>
                 </div>

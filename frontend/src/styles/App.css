@@ -189,9 +189,10 @@ body {
 /* TỐI ƯU HÓA CHO ĐIỆN THOẠI (Dưới 768px)              */
 /* =================================================== */
 @media screen and (max-width: 768px) {
-  /* Đẩy toàn bộ nội dung trang lên cao hơn thanh bottom nav (60px + khoảng trống) */
-  .home-page-container, .profile-container {
-    margin-bottom: 90px !important;
+  .home-page-container {
+    right: 0 !important;
+    padding: 10px !important;
+    margin-bottom: 80px !important;
   }
 
   /* Biến thanh menu trái thành thanh đáy cố định */
@@ -251,13 +252,14 @@ body {
   }
 
   .chat-bottom-right {
-    display: block !important;
-    right: 5% !important;
-    bottom: 75px !important; /* Đảm bảo không bị thanh menu đáy che mất */
-    width: 90% !important;
-    z-index: 99999 !important;
+    position: fixed !important;
+    bottom: 70px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: 280px !important;
+    max-width: 90vw !important;
+    z-index: 99999999 !important;
   }
-
 
   /* Tối ưu hóa trang Profile trên điện thoại */
   .profile-container {
@@ -327,715 +329,715 @@ body {
 
 
 
-    @custom-variant dark (&:is(.dark *));
-    /* Reset định dạng cơ bản theo chuẩn Instagram */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+@custom-variant dark (&:is(.dark *));
+/* Reset định dạng cơ bản theo chuẩn Instagram */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
-    body {
-      background-color: #ffffff; /* Instagram dùng nền trắng tinh hoặc đen */
-      color: #000000;
-    }
+body {
+  background-color: #ffffff; /* Instagram dùng nền trắng tinh hoặc đen */
+  color: #000000;
+}
 
-    /* Thanh Navbar trên cùng kiểu Instagram */
-    .fb-navbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      height: 60px;
-      background-color: #ffffff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 20px;
-      border-bottom: 1px solid #dbdbdb; /* Đường kẻ mảnh đặc trưng của IG */
-    }
+/* Thanh Navbar trên cùng kiểu Instagram */
+.fb-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 60px;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #dbdbdb; /* Đường kẻ mảnh đặc trưng của IG */
+}
 
-    /* Đổi chữ facebook thành font mềm mại của Instagram */
-    .fb-logo {
-      color: #000000;
-      font-family: 'Style Script', 'Grand Hotel', cursive, sans-serif; /* Nếu có font script */
-      font-size: 24px;
-      font-style: italic;
-      font-weight: bold;
-    }
+/* Đổi chữ facebook thành font mềm mại của Instagram */
+.fb-logo {
+  color: #000000;
+  font-family: 'Style Script', 'Grand Hotel', cursive, sans-serif; /* Nếu có font script */
+  font-size: 24px;
+  font-style: italic;
+  font-weight: bold;
+}
 
-    .nav-left {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
 
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 10px !important;
-    }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px !important;
+}
 
-    .search-bar {
-      background-color: #efefef;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-      width: 140px !important;
-      padding: 6px 10px !important;
-    }
+.search-bar {
+  background-color: #efefef;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  width: 140px !important;
+  padding: 6px 10px !important;
+}
 
-    .user-avatar-btn {
-      background-color: #000000;
-      color: #ffffff;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-    }
+.user-avatar-btn {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-    .btn-logout {
-      background-color: #efefef;
-      color: #000000;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-    }
+.btn-logout {
+  background-color: #efefef;
+  color: #000000;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-    /* Thân trang web 3 cột */
-    .fb-body {
-      display: flex;
-      justify-content: center;
-      padding: 30px 20px 0 20px;
-      max-width: 935px; /* Chiều rộng chuẩn hiển thị của IG */
-      margin: 0 auto;
-      gap: 28px;
-    }
+/* Thân trang web 3 cột */
+.fb-body {
+  display: flex;
+  justify-content: center;
+  padding: 30px 20px 0 20px;
+  max-width: 935px; /* Chiều rộng chuẩn hiển thị của IG */
+  margin: 0 auto;
+  gap: 28px;
+}
 
-    /* Menu bên trái (Sidebar) */
-    .fb-sidebar {
-      width: 220px;
-      position: sticky;
-      top: 90px;
-      height: calc(100vh - 110px);
-    }
+/* Menu bên trái (Sidebar) */
+.fb-sidebar {
+  width: 220px;
+  position: sticky;
+  top: 90px;
+  height: calc(100vh - 110px);
+}
 
-    .sidebar-item, .contact-item {
-      padding: 12px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-size: 16px;
-      transition: background 0.2s;
-    }
+.sidebar-item, .contact-item {
+  padding: 12px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 16px;
+  transition: background 0.2s;
+}
 
-    .sidebar-item:hover, .contact-item:hover {
-      background-color: #fafafa;
-      font-weight: 600;
-    }
+.sidebar-item:hover, .contact-item:hover {
+  background-color: #fafafa;
+  font-weight: 600;
+}
 
-    /* Cột phải gợi ý kết bạn */
-    .fb-rightbar {
-      width: 280px;
-      position: sticky;
-      top: 90px;
-      height: calc(100vh - 110px);
-    }
+/* Cột phải gợi ý kết bạn */
+.fb-rightbar {
+  width: 280px;
+  position: sticky;
+  top: 90px;
+  height: calc(100vh - 110px);
+}
 
-    .fb-rightbar h3 {
-      color: #737373;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
+.fb-rightbar h3 {
+  color: #737373;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
 
-    /* Vòng tròn viền màu hồng-tím-cam Gradient của Instagram */
-    .avatar-placeholder {
-      width: 42px;
-      height: 42px;
-      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
-      border-radius: 50%;
-      padding: 2px; /* Khoảng trống để tạo hiệu ứng viền */
-    }
+/* Vòng tròn viền màu hồng-tím-cam Gradient của Instagram */
+.avatar-placeholder {
+  width: 42px;
+  height: 42px;
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  border-radius: 50%;
+  padding: 2px; /* Khoảng trống để tạo hiệu ứng viền */
+}
 
-    .avatar-placeholder .avatar-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-      background-color: #dbdbdb; /* Màu nền dự phòng */
-    }
+.avatar-placeholder .avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  background-color: #dbdbdb; /* Màu nền dự phòng */
+}
 
-    .avatar-placeholder .avatar-initial {
-      display: flex;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background-color: #c4c4c4; /* Màu nền cho chữ cái */
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 18px;
-    }
+.avatar-placeholder .avatar-initial {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #c4c4c4; /* Màu nền cho chữ cái */
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
 
-    .mini-avatar {
-      width: 32px;
-      height: 32px;
-    }
+.mini-avatar {
+  width: 32px;
+  height: 32px;
+}
 
-    /* Bảng tin chính giữa (Feed) */
-    .fb-feed {
-      width: 470px; /* Độ rộng bài đăng chuẩn khít của IG */
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+/* Bảng tin chính giữa (Feed) */
+.fb-feed {
+  width: 470px; /* Độ rộng bài đăng chuẩn khít của IG */
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-    /* Khung tạo bài viết mới */
-    .create-post {
-      background-color: #ffffff;
-      border: 1px solid #dbdbdb;
-      border-radius: 8px;
-      padding: 16px;
-    }
+/* Khung tạo bài viết mới */
+.create-post {
+  background-color: #ffffff;
+  border: 1px solid #dbdbdb;
+  border-radius: 8px;
+  padding: 16px;
+}
 
-    .create-post textarea {
-      width: 100%;
-      height: 60px;
-      border: none;
-      resize: none;
-      outline: none;
-      font-size: 15px;
-      color: #000000;
-    }
+.create-post textarea {
+  width: 100%;
+  height: 60px;
+  border: none;
+  resize: none;
+  outline: none;
+  font-size: 15px;
+  color: #000000;
+}
 
-    .btn-post {
-      display: block;
-      width: 100%;
-      background-color: #0095f6; /* Màu xanh neon nút bấm của IG */
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+.btn-post {
+  display: block;
+  width: 100%;
+  background-color: #0095f6; /* Màu xanh neon nút bấm của IG */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+}
 
-    .btn-post:hover {
-      background-color: #1877f2;
-    }
+.btn-post:hover {
+  background-color: #1877f2;
+}
 
-    /* Khung bài viết (Post Card) */
-    .post-card {
-      background-color: #ffffff;
-      border: 1px solid #dbdbdb;
-      border-radius: 8px;
-      padding-bottom: 12px;
-    }
+/* Khung bài viết (Post Card) */
+.post-card {
+  background-color: #ffffff;
+  border: 1px solid #dbdbdb;
+  border-radius: 8px;
+  padding-bottom: 12px;
+}
 
-    .post-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      position: relative;
-    }
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  position: relative;
+}
 
-    .post-author {
-      font-size: 14px;
-      font-weight: 600;
-    }
+.post-author {
+  font-size: 14px;
+  font-weight: 600;
+}
 
-    .post-time {
-      font-size: 12px;
-      color: #737373;
-    }
+.post-time {
+  font-size: 12px;
+  color: #737373;
+}
 
-    /* --- Post Menu (Edit/Delete) --- */
-    .post-menu-container {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-    }
+/* --- Post Menu (Edit/Delete) --- */
+.post-menu-container {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
 
-    .post-menu-btn {
-      background: none;
-      border: none;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      padding: 5px;
-      line-height: 1;
-    }
+.post-menu-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+}
 
-    .post-menu-dropdown {
-      position: absolute;
-      right: 0;
-      top: 100%;
-      background-color: white;
-      border: 1px solid #dbdbdb;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-      z-index: 10;
-      width: 100px;
-      overflow: hidden;
-    }
+.post-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  border: 1px solid #dbdbdb;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  width: 100px;
+  overflow: hidden;
+}
 
-    .post-menu-dropdown button {
-      display: block;
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: none;
-      text-align: left;
-      cursor: pointer;
-      font-size: 14px;
-    }
+.post-menu-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
 
-    .post-menu-dropdown button:hover {
-      background-color: #fafafa;
-    }
+.post-menu-dropdown button:hover {
+  background-color: #fafafa;
+}
 
-    .post-menu-dropdown button.delete {
-      color: #ed4956;
-      font-weight: bold;
-    }
+.post-menu-dropdown button.delete {
+  color: #ed4956;
+  font-weight: bold;
+}
 
-    .post-content {
-      font-size: 14px;
-      line-height: 1.5;
-      padding: 0 12px 12px 12px;
-    }
+.post-content {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 0 12px 12px 12px;
+}
 
-    /* Thống kê lượt thích */
-    .post-stats {
-      padding: 0 12px;
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 8px;
-      display: flex; /* Thêm display: flex */
-      gap: 16px; /* Thêm khoảng cách */
-    }
+/* Thống kê lượt thích */
+.post-stats {
+  padding: 0 12px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: flex; /* Thêm display: flex */
+  gap: 16px; /* Thêm khoảng cách */
+}
 
-    /* Khu vực nút bấm Thích, Bình luận */
-    .post-actions {
-      display: flex;
-      gap: 16px;
-      padding: 8px 12px;
-    }
+/* Khu vực nút bấm Thích, Bình luận */
+.post-actions {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+}
 
-    .action-btn {
-      background: none;
-      border: none;
-      color: #000000;
-      font-size: 20px; /* Kích thước icon to rõ kiểu IG */
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
+.action-btn {
+  background: none;
+  border: none;
+  color: #000000;
+  font-size: 20px; /* Kích thước icon to rõ kiểu IG */
+  cursor: pointer;
+  transition: transform 0.1s;
+}
 
-    .action-btn:active {
-      transform: scale(1.2);
-    }
+.action-btn:active {
+  transform: scale(1.2);
+}
 
-    /* Khi đã bấm Thích đổi sang màu đỏ tim của IG */
-    .action-btn.liked {
-      color: #ff3040;
-    }
+/* Khi đã bấm Thích đổi sang màu đỏ tim của IG */
+.action-btn.liked {
+  color: #ff3040;
+}
 
-    /* Vùng hiển thị bình luận */
-    .comments-section {
-      padding: 0 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+/* Vùng hiển thị bình luận */
+.comments-section {
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-    .comment-item {
-      background: none; /* IG không dùng khung xám cho comment */
-      padding: 2px 0;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+.comment-item {
+  background: none; /* IG không dùng khung xám cho comment */
+  padding: 2px 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-    .comment-author {
-      font-weight: 600;
-      margin-right: 6px;
-    }
+.comment-author {
+  font-weight: 600;
+  margin-right: 6px;
+}
 
-    .comment-text {
-      color: #262626;
-    }
+.comment-text {
+  color: #262626;
+}
 
-    /* Ô nhập bình luận ở đáy bài viết */
-    .comment-form {
-      display: flex;
-      align-items: center;
-      border-top: 1px solid #efefef;
-      margin-top: 12px;
-      padding: 12px 12px 0 12px;
-    }
+/* Ô nhập bình luận ở đáy bài viết */
+.comment-form {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid #efefef;
+  margin-top: 12px;
+  padding: 12px 12px 0 12px;
+}
 
-    .comment-form input {
-      flex-grow: 1;
-      background: none;
-      border: none;
-      outline: none;
-      font-size: 14px;
-      color: #000000;
-    }
+.comment-form input {
+  flex-grow: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #000000;
+}
 
-    .btn-send-comment {
-      background: none;
-      border: none;
-      color: #0095f6;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-    }
+.btn-send-comment {
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-    .btn-send-comment:hover {
-      color: #00376b;
-    }
+.btn-send-comment:hover {
+  color: #00376b;
+}
 
-    /* Tối ưu hóa trang Profile trên điện thoại */
-    .profile-container {
-      padding: 10px !important;
-      margin-bottom: 70px !important;
-    }
+/* Tối ưu hóa trang Profile trên điện thoại */
+.profile-container {
+  padding: 10px !important;
+  margin-bottom: 70px !important;
+}
 
-    .profile-header {
-      flex-direction: column !important;
-      align-items: center !important;
-      text-align: center !important;
-      gap: 15px !important;
-      padding: 0 10px !important;
-    }
+.profile-header {
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 15px !important;
+  padding: 0 10px !important;
+}
 
-    .profile-avatar-section {
-      width: 100% !important;
-      display: flex !important;
-      justify-content: center !important;
-    }
+.profile-avatar-section {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
 
-    .profile-avatar-large {
-      width: 90px !important;
-      height: 90px !important;
-    }
+.profile-avatar-large {
+  width: 90px !important;
+  height: 90px !important;
+}
 
-    .profile-info-section {
-      width: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-    }
+.profile-info-section {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
 
-    .profile-info-header {
-      flex-direction: column !important;
-      gap: 10px !important;
-      width: 100% !important;
-    }
+.profile-info-header {
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
 
-    .profile-stats-list {
-      justify-content: center !important;
-      gap: 20px !important;
-      width: 100% !important;
-      padding: 0 !important;
-    }
+.profile-stats-list {
+  justify-content: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
 
-    .profile-bio {
-      text-align: center !important;
-      width: 100% !important;
-    }
+.profile-bio {
+  text-align: center !important;
+  width: 100% !important;
+}
 
-    .btn-edit-profile,
-    .profile-info-section button,
-    .btn-chat {
-      width: 80% !important;
-      max-width: 250px !important;
-      margin: 5px 0 !important;
-    }
-
-
-    .profile-posts-grid {
-      grid-template-columns: repeat(3, 1fr) !important;
-      gap: 2px !important;
-    }
+.btn-edit-profile,
+.profile-info-section button,
+.btn-chat {
+  width: 80% !important;
+  max-width: 250px !important;
+  margin: 5px 0 !important;
+}
 
 
-  .grid-post-item {
-    aspect-ratio: 1 / 1;
-    background-color: #efefef;
-    position: relative;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+.profile-posts-grid {
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 2px !important;
+}
+
+
+.grid-post-item {
+  aspect-ratio: 1 / 1;
+  background-color: #efefef;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.grid-post-content {
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #262626;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.grid-post-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-weight: bold;
+  gap: 20px;
+  pointer-events: none; /* Thêm thuộc tính này */
+}
+
+.grid-post-item:hover .grid-post-overlay {
+  opacity: 1;
+}
+
+.fb-logo {
+  cursor: pointer;
+}
+
+/* --- CSS CHO KHUNG ĐĂNG BÀI --- */
+.create-post-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.btn-add-photo {
+  background-color: #e4e6eb;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-add-photo:hover {
+  background-color: #d8dadf;
+}
+
+/* --- CSS CHO ẢNH XEM TRƯỚC (PREVIEW) --- */
+.image-preview {
+  position: relative;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-height: 400px; /* Giới hạn chiều cao tối đa */
+  overflow: hidden; /* Ẩn phần ảnh bị thừa */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f2f5;
+}
+
+.image-preview img {
+  width: 100%; /* Chiều rộng tự động co giãn theo khung */
+  height: auto; /* Chiều cao tự động để giữ đúng tỷ lệ */
+  max-height: 400px; /* Chiều cao ảnh không vượt quá khung */
+  object-fit: contain; /* Đảm bảo toàn bộ ảnh được hiển thị, không bị cắt */
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(15, 20, 25, 0.75);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.remove-image-btn:hover {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* --- CSS CHO ẢNH TRONG BÀI VIẾT ĐÃ ĐĂNG --- */
+.post-image {
+  width: 100%;
+  height: auto;
+  margin-top: 10px;
+  border-radius: 0; /* Có thể để border-radius: 8px nếu muốn bo góc */
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+
+/* --- CSS CHO LINK TÁC GIẢ --- */
+.post-author-link, .comment-author-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comment-author-link {
+  gap: 8px;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
 
-  .grid-post-content {
-    padding: 20px;
-    text-align: center;
-    font-size: 14px;
-    color: #262626;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  body {
+    @apply bg-background text-foreground;
   }
 
-  .grid-post-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    opacity: 0;
-    transition: opacity 0.2s;
-    font-weight: bold;
-    gap: 20px;
-    pointer-events: none; /* Thêm thuộc tính này */
+  html {
+    @apply font-sans;
   }
-
-  .grid-post-item:hover .grid-post-overlay {
-    opacity: 1;
-  }
-
-  .fb-logo {
-    cursor: pointer;
-  }
-
-  /* --- CSS CHO KHUNG ĐĂNG BÀI --- */
-  .create-post-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 8px;
-  }
-
-  .btn-add-photo {
-    background-color: #e4e6eb;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .btn-add-photo:hover {
-    background-color: #d8dadf;
-  }
-
-  /* --- CSS CHO ẢNH XEM TRƯỚC (PREVIEW) --- */
-  .image-preview {
-    position: relative;
-    margin-top: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    max-height: 400px; /* Giới hạn chiều cao tối đa */
-    overflow: hidden; /* Ẩn phần ảnh bị thừa */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #f0f2f5;
-  }
-
-  .image-preview img {
-    width: 100%; /* Chiều rộng tự động co giãn theo khung */
-    height: auto; /* Chiều cao tự động để giữ đúng tỷ lệ */
-    max-height: 400px; /* Chiều cao ảnh không vượt quá khung */
-    object-fit: contain; /* Đảm bảo toàn bộ ảnh được hiển thị, không bị cắt */
-  }
-
-  .remove-image-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background-color: rgba(15, 20, 25, 0.75);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.2s;
-  }
-
-  .remove-image-btn:hover {
-    background-color: rgba(0, 0, 0, 0.6);
-  }
-
-  /* --- CSS CHO ẢNH TRONG BÀI VIẾT ĐÃ ĐĂNG --- */
-  .post-image {
-    width: 100%;
-    height: auto;
-    margin-top: 10px;
-    border-radius: 0; /* Có thể để border-radius: 8px nếu muốn bo góc */
-    border-top: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-  }
-
-  /* --- CSS CHO LINK TÁC GIẢ --- */
-  .post-author-link, .comment-author-link {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .comment-author-link {
-    gap: 8px;
-  }
-
-  @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
-  }
-
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-  }
-
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
-
-  @layer base {
-    * {
-      @apply border-border outline-ring/50;
-    }
-
-    body {
-      @apply bg-background text-foreground;
-    }
-
-    html {
-      @apply font-sans;
-    }
-  }
+}
 /* Tối ưu hóa trang Profile trên điện thoại / màn hình nhỏ */
 .profile-container {
   padding: 10px !important;

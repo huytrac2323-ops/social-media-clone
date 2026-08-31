@@ -199,8 +199,9 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
             </div>
 
             {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện) */}
+            {/* GÓC DƯỚI BÊN PHẢI (Trò chuyện tổng) */}
             {currentUser && (
-                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '20px', right: '20px', width: '280px', zIndex: 100 }}>
+                <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '70px', right: '15px', width: '280px', zIndex: 99998 }}>
                     <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
                         <div
                             onClick={() => setIsChatExpanded(!isChatExpanded)}
@@ -211,7 +212,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                         </div>
 
                         {isChatExpanded && (
-                            <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
+                            <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
                                 {conversations && conversations.length > 0 ? (
                                     conversations.map(u => (
                                         <div key={u.user_id} onClick={() => { localStorage.setItem('activeChatUser', JSON.stringify({ user_id: u.user_id, username: u.username })); window.dispatchEvent(new Event('open-chat')); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '8px', borderRadius: '6px', background: '#3a3b3c' }}>

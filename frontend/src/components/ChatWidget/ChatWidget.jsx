@@ -51,7 +51,7 @@ function ChatWidget() {
                         {/* Nút thu nhỏ thành bong bóng */}
                         <button onClick={() => setIsOpen(false)}>✖</button>
                     </div>
-                    <div className="chat-body" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                    <div className="chat-body no-scrollbar" style={{ maxHeight: '350px', overflowY: 'auto' }}>
                         {conversations && conversations.length > 0 ? (
                             conversations.map(u => (
                                 <div
@@ -80,6 +80,7 @@ function ChatWidget() {
                     </div>
                 </Draggable>
             )}
+
         </div>
     );
 }

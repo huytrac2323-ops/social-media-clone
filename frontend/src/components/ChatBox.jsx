@@ -81,25 +81,49 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
     };
 
     return (
-        // Dòng số 65 trong ChatBox.jsx của bạn:
         <div style={{
             width: '320px',
             background: '#242526',
             border: '1px solid #3e4042',
-            borderTopLeftRadius: '8px',  // Chỉ bo tròn góc trên trái
-            borderTopRightRadius: '8px', // Chỉ bo tròn góc trên phải
+            borderTopLeftRadius: '8px',
+            borderTopRightRadius: '8px',
             borderBottom: 'none',
             color: 'white',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 -2px 10px rgba(0,0,0,0.2)' // Thêm bóng đổ cho đẹp
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.2)'
         }}>
-            <div style={{ height: '200px', overflowY: 'auto', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+
+            {/* ÉP ẨN THANH CUỘN TUYỆT ĐỐI */}
+            <style>
+                {`
+                .hide-scroll::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0 !important;
+                }
+                .hide-scroll {
+                    -ms-overflow-style: none !important;
+                    scrollbar-width: none !important;
+                }
+                `}
+            </style>
+
+            {/* GẮN CLASS hide-scroll VÀO KHUNG CHỨA TIN NHẮN */}
+            <div className="hide-scroll" style={{ height: '200px', overflowY: 'auto', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px', padding: '0 10px' }}>
                 {messages.map((msg, index) => (
                     <div key={msg.id || msg.message_id || index} style={{
                         alignSelf: msg.sender_id === currentUser?.user_id ? 'flex-end' : 'flex-start',
                         background: msg.sender_id === currentUser?.user_id ? '#0084ff' : '#3a3b3c',
-                        padding: '6px 10px', borderRadius: '10px', maxWidth: '80%', fontSize: '14px', color: 'white'
+                        padding: '6px 10px',
+                        borderRadius: '10px',
+                        maxWidth: '80%',
+                        fontSize: '14px',
+                        color: 'white',
+
+                        /* ÉP CHỮ DÀI XUỐNG DÒNG */
+                        wordBreak: 'break-all',
+                        overflowWrap: 'break-word',
+                        whiteSpace: 'pre-wrap'
                     }}>
                         {msg.message_text}
                     </div>
@@ -107,15 +131,15 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                 <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSend} style={{ display: 'flex', gap: '5px' }}>
+            <form onSubmit={handleSend} style={{ display: 'flex', gap: '5px', padding: '0 10px 10px 10px' }}>
                 <input
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     placeholder="Nhập tin nhắn..."
-                    style={{ flex: 1, background: '#3a3b3c', border: 'none', color: 'white', padding: '6px', borderRadius: '4px' }}
+                    style={{ flex: 1, background: '#3a3b3c', border: 'none', outline: 'none', color: 'white', padding: '8px', borderRadius: '4px' }}
                 />
-                <button type="submit" style={{ background: '#0084ff', border: 'none', color: 'white', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>Gửi</button>
+                <button type="submit" style={{ background: '#0084ff', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Gửi</button>
             </form>
         </div>
     );

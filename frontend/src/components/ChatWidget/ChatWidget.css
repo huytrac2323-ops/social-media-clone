@@ -56,9 +56,13 @@
     font-size: 16px;
 }
 
+/* Ẩn thanh cuộn cho danh sách người nhắn tin */
+.chat-body::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+}
+
 .chat-body {
-    padding: 15px;
-    color: white;
-    flex-grow: 1;
-    overflow-y: auto;
+    -ms-overflow-style: none !important;  /* Ẩn trên IE và Edge */
+    scrollbar-width: none !important;  /* Ẩn trên Firefox */
 }

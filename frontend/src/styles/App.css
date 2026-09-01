@@ -1208,3 +1208,12 @@ body {
 .grid-post-item:hover .grid-post-overlay {
   opacity: 1;
 }
+/* Ẩn thanh cuộn nhưng vẫn cho phép cuộn nội dung */
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Ẩn trên Chrome, Safari, Edge, Cốc Cốc */
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* Ẩn trên IE và Edge cũ */
+  scrollbar-width: none;  /* Ẩn trên Firefox */
+}

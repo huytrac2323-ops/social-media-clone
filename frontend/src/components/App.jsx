@@ -252,7 +252,11 @@ function AppContent() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-end',
-                    maxHeight: 'calc(100vh - 150px)' /* Giới hạn không bị tràn màn hình */
+                    maxHeight: 'calc(100vh - 150px)',
+                    wordBreak: 'break-all',      // Ép bẻ gãy mọi chuỗi dính liền
+                    whiteSpace: 'pre-wrap',      // Giữ nguyên khoảng trắng và cho phép xuống dòng
+                    maxWidth: '100%',            // Chặn div phình to vượt quá khung cha
+                    /* Giới hạn không bị tràn màn hình */
                 }}>
                     <button
                         onClick={closeChat}

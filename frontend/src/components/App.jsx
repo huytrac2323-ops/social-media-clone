@@ -220,57 +220,7 @@ function AppContent() {
                 alignItem: 'center',
                 color: 'white'
             }}>
-                <Link to="/" style={{fontSize: '20px', fontWeight: 'bold', color: 'white', textDecoration: 'none'}}>
-                    Dissipation
-                </Link>
 
-                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
-                    {currentUser ? (
-                        <>
-                            <span style={{fontSize: '14px'}}>Xin chào, <b>{currentUser.username}</b></span>
-                            <button
-                                onClick={handleLogout}
-                                style={{
-                                    backgroundColor: '#ff4d4f',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '6px 14px',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold',
-                                    fontSize: '13px'
-                                }}
-                            >
-                                Đăng xuất
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/login" style={{
-                                backgroundColor: '#2d88ff',
-                                color: 'white',
-                                padding: '6px 14px',
-                                borderRadius: '6px',
-                                textDecoration: 'none',
-                                fontWeight: 'bold',
-                                fontSize: '13px'
-                            }}>
-                                Đăng nhập
-                            </Link>
-                            <Link to="/register" style={{
-                                backgroundColor: '#3a3b3c',
-                                color: 'white',
-                                padding: '6px 14px',
-                                borderRadius: '6px',
-                                textDecoration: 'none',
-                                fontWeight: 'bold',
-                                fontSize: '13px'
-                            }}>
-                                Đăng ký
-                            </Link>
-                        </>
-                    )}
-                </div>
             </div>
 
             <Routes>

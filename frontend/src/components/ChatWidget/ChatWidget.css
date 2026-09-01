@@ -1,0 +1,64 @@
+
+/* Bong bóng chat nổi */
+.chat-bubble {
+    position: fixed;
+    bottom: 80px; /* Cách thanh điều hướng dưới cùng */
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    cursor: grab; /* Biểu tượng bàn tay khi kéo */
+    z-index: 9999;
+}
+
+.chat-bubble:active {
+    cursor: grabbing;
+}
+
+/* Cửa sổ chat mở rộng */
+.chat-window {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 320px;
+    height: 400px;
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.chat-header {
+    background-color: #333;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.chat-header button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.chat-body {
+    padding: 15px;
+    color: white;
+    flex-grow: 1;
+    overflow-y: auto;
+}

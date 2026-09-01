@@ -4,6 +4,8 @@ import '../styles/App.css';
 import EditProfileModal from '../modals/EditProfileModal.jsx';
 import CreatePost from '../modals/CreatePost.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import ChatWidget from '../components/ChatWidget/ChatWidget';
+
 
 const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -192,50 +194,45 @@ function ProfilePage() {
           </div>
 
 
-          {/* THANH BÊN TRÁI (Đồng bộ chuẩn 4 nút cho mobile và ẩn các mục thừa) */}
+          {/* THANH ĐIỀU HƯỚNG DƯỚI CÙNG (Gồm Đăng nhập / Đăng xuất) */}
           <div className="home-left-sidebar">
+            {/* 1. Nút Trang chủ */}
             <Link to="/" className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
               <h3>🏠<span>Trang chủ</span></h3>
             </Link>
 
-            {currentUser && (
-                <Link to={`/profile/${currentUser.username}`} className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
-                  <h3>👤<span>{currentUser.username}</span></h3>
+            {currentUser ? (
+                <>
+                  {/* 2. Nút Trang cá nhân */}
+                  <Link to={`/profile/${currentUser.username}`} className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
+                    <h3>👤<span>{currentUser.username}</span></h3>
+                  </Link>
+
+                  {/* 3. Nút Đăng bài */}
+                  <div className="sidebar-box mobile-only-btn" onClick={() => setShowCreatePost(true)}>
+                    <h3>✍️<span>Đăng bài</span></h3>
+                  </div>
+
+                  {/* 4. Nút Đăng xuất (Thay thế nút Chat cũ) */}
+                  <div
+                      className="sidebar-box mobile-only-btn"
+                      onClick={() => {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                      }}
+                  >
+                    <h3 style={{ color: '#ff4d4d' }}>🚪<span>Đăng xuất</span></h3>
+                  </div>
+                </>
+            ) : (
+                /* Nút Đăng nhập hiển thị khi chưa có user */
+                <Link to="/login" className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
+                  <h3>🔑<span>Đăng nhập</span></h3>
                 </Link>
             )}
-
-            <div className="sidebar-box mobile-only-btn" onClick={() => setShowCreatePost(true)}>
-              <h3>✍️<span>Đăng bài</span></h3>
-            </div>
-
-            <div className="sidebar-box mobile-only-btn" onClick={() => setIsChatExpanded(!isChatExpanded)}>
-              <h3>💬<span>Nhắn tin</span></h3>
-            </div>
           </div>
 
-          {/* Khung chat thu gọn trên mobile */}
-          {currentUser && isChatExpanded && (
-              <div className="chat-bottom-right" style={{ position: 'fixed', bottom: '70px', right: '5%', width: '90%', zIndex: 100 }}>
-                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 15px rgba(0,0,0,0.6)' }}>
-                  <div onClick={() => setIsChatExpanded(false)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                    <h3 style={{ fontSize: '15px', margin: 0 }}>💬 Trò chuyện</h3>
-                    <span style={{ fontSize: '12px' }}>▼</span>
-                  </div>
-                  <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                    {conversations && conversations.length > 0 ? (
-                        conversations.map(u => (
-                            <div key={u.user_id} onClick={() => { localStorage.setItem('activeChatUser', JSON.stringify({ user_id: u.user_id, username: u.username })); window.dispatchEvent(new Event('open-chat')); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '8px', borderRadius: '6px', background: '#3a3b3c' }}>
-                              <img src={u.profile_photo_url || 'https://via.placeholder.com/30'} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
-                              <span style={{ fontSize: '13px' }}>{u.username}</span>
-                            </div>
-                        ))
-                    ) : (
-                        <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Chưa có trò chuyện</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-          )}
+          <ChatWidget />
 
         </div>
       </>

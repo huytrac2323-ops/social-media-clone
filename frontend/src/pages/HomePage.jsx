@@ -128,7 +128,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                             className="sidebar-box mobile-only-btn"
                             onClick={() => {
                                 localStorage.removeItem('token');
-                                window.location.href = '/login';
+                                window.location.href = '/loginpage';
                             }}
                         >
                             <h3 style={{ color: '#ff4d4d' }}>🚪<span>Đăng xuất</span></h3>

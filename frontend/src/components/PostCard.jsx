@@ -200,11 +200,8 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                     </span>
                     </div>
                 </Link>
+
                 {/* 👇 THÊM NÚT KẾT BẠN Ở ĐÂY (Kế bên tên tác giả) */}
-                {/* 👇 Ép kiểu Number() để đồng bộ dữ liệu, tự động ẩn nút ở bài của chính mình */}
-                {/* 👇 Sửa lỗi 400: Quét cả 2 biến id và user_id của currentUser để không bị undefined */}
-                {/* 👇 Ép kiểu Number() để đồng bộ dữ liệu, tự động ẩn nút ở bài của chính mình */}
-                {/* 👇 Sửa lỗi 400: Quét cả 2 biến id và user_id của currentUser để không bị undefined */}
                 {currentUser && Number(currentUser.user_id || currentUser.id) !== Number(post.userId) && (
                     <button
                         onClick={async () => {
@@ -334,95 +331,112 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                 )}
             </div>
 
-            {/* THỐNG KÊ LƯỢT THÍCH, BÌNH LUẬN, CHIA SẺ (Nằm dưới nội dung ảnh/chữ) */}
-            <div className="post-stats">
-                <span>♥️ {post.likes} Lượt thích</span>
+              {/* HÀNG ICON VÀ SỐ LƯỢNG NẰM LIỀN KỀ NHAU Ở DƯỚI */}
+              <div className="post-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderTop: '1px solid #efefef' }}>
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
 
-                    <span>💬 {post.comments.length} {STRINGS.COMMENTS}</span>
+                      {/* Nút Thích + Số lượng like */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                              onClick={() => onLike(post.id)}
+                              className={`action-btn ${post.isLiked ? 'liked' : ''}`}
+                              title="Thích"
+                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
+                          >
+                              {post.isLiked ? '❤️' : '🤍'}
+                          </button>
+                          <span style={{ fontSize: '14px', fontWeight: '600' }}>{post.likes ?? 0}</span>
+                      </div>
 
-                <span>↗️ {post.sharesCount || 0} Lượt chia sẻ</span>
-            </div>
-            <hr />
+                      {/* Nút Bình luận + Số lượng bình luận */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Link to={`/post/${post.id}`} className="action-btn" title="Bình luận" style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', textDecoration: 'none' }}>
+                              💬
+                          </Link>
+                          <span style={{ fontSize: '14px', fontWeight: '600' }}>{post.comments ? post.comments.length : 0}</span>
+                      </div>
 
-            {/* CÁC NÚT HÀNH ĐỘNG THÍCH, BÌNH LUẬN, CHIA SẺ */}
-            <div className="post-actions">
-                <button className={`action-btn ${post.isLiked ? 'liked' : ''}`} onClick={() => onLike(post.id)}>
-                    {post.isLiked ? '♥️ Đã thích' : '👍 Thích'}
-                </button>
-                <button
-                    onClick={() => handleSavePost(post.id)}
-                    disabled={loading}
-                    style={{
-                        background: isSaved ? '#2d88ff' : 'transparent',
-                        border: 'none',
-                        color: 'inherit',
-                        cursor: 'pointer',
-                        fontWeight: isSaved ? 'bold' : 'normal'
-                    }}
-                >
-                    {loading ? '⏳ Đang xử lý...' : (isSaved ? '🔖 Đã lưu' : '🔖 Lưu bài viết')}
-                </button>
-                <Link to={`/post/${post.id}`} className="action-btn">💬 {STRINGS.COMMENTS.charAt(0).toUpperCase() + STRINGS.COMMENTS.slice(1)}</Link>
-                <button className="action-btn" onClick={() => handleShare(post.id)}>↗️ Chia sẻ</button>
-            </div>
-            <hr />
+                      {/* Nút Chia sẻ */}
+                      <button
+                          className="action-btn"
+                          title="Chia sẻ"
+                          onClick={() => handleShare(post.id)}
+                          style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
+                      >
+                          ↗️
+                      </button>
+                  </div>
 
-            <div className="comments-section">
-                {post.comments.slice(0, 2).map(comment => (
-                    <div key={comment.comment_id || comment.id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                  {/* Nút Lưu bài viết ở góc phải */}
+                  <button
+                      onClick={() => handleSavePost(post.id)}
+                      disabled={loading}
+                      title={isSaved ? "Đã lưu" : "Lưu bài viết"}
+                      style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '20px',
+                          color: isSaved ? '#2d88ff' : 'inherit'
+                      }}
+                  >
+                      {isSaved ? '🔖' : '📑'}
+                  </button>
+              </div>
+              <hr />
 
-                        <Link to={comment.username ? `/profile/${comment.username}` : '#'} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Avatar user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }} className="mini-avatar" style={{ width: '24px', height: '24px' }} />
-                            <span className="comment-author">{comment.username}: </span>
-                        </Link>
+              {/* DANH SÁCH BÌNH LUẬN & Ô NHẬP BÌNH LUẬN */}
+              <div className="comments-section">
+                  {post.comments && post.comments.slice(0, 2).map(comment => (
+                      <div key={comment.comment_id || comment.id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '0 12px' }}>
 
-                        <span className="comment-text">{comment.comment_text || comment.content}</span>
+                          <Link to={comment.username ? `/profile/${comment.username}` : '#'} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: 'inherit' }}>
+                              <Avatar user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }} className="mini-avatar" style={{ width: '24px', height: '24px' }} />
+                              <span className="comment-author" style={{ fontWeight: '600', fontSize: '13px' }}>{comment.username}: </span>
+                          </Link>
 
-                        {/* THỜI GIAN BẮT BUỘC NẰM Ở ĐÂY */}
-                        <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
-                {comment.created_at
-                    ? new Date(comment.created_at).toLocaleString('vi-VN', {
-                        timeZone: 'Asia/Ho_Chi_Minh',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-                    : ''}
-            </span>
+                          <span className="comment-text" style={{ fontSize: '13px' }}>{comment.comment_text || comment.content}</span>
 
-                        {/* NÚT XÓA BẮT BUỘC NẰM Ở ĐÂY */}
-                        {currentUser && currentUser.user_id === comment.user_id && onDeleteComment && (
-                            <button
-                                onClick={() => onDeleteComment(comment.comment_id || comment.id)}
-                                style={{ color: '#ff4d4f', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', marginLeft: '10px', padding: 0 }}
-                            >
-                                Xóa
-                            </button>
-                        )}
+                          <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
+                            {comment.created_at
+                                ? new Date(comment.created_at).toLocaleString('vi-VN', {
+                                    timeZone: 'Asia/Ho_Chi_Minh',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })
+                                : ''}
+                        </span>
 
-                    </div>
-                ))} {/* 👈 DẤU ĐÓNG VÒNG LẶP PHẢI NẰM SAU CÙNG */}
+                          {/* NÚT XÓA BÌNH LUẬN (Hiển thị khi đúng là chủ nhân comment) */}
+                          {currentUser && Number(currentUser.user_id || currentUser.id) === Number(comment.user_id) && onDeleteComment && (
+                              <button
+                                  onClick={() => onDeleteComment(comment.comment_id || comment.id)}
+                                  style={{ color: '#ff4d4f', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', marginLeft: '6px', padding: 0 }}
+                              >
+                                  Xóa
+                              </button>
+                          )}
+                      </div>
+                  ))}
 
-                {post.comments.length > 2 && (
-                    <p style={{ color: '#8e8e8e', cursor: 'pointer', marginTop: '10px' }}>
-                        {STRINGS.VIEW_ALL_COMMENTS} {post.comments.length} {STRINGS.COMMENTS}
-                    </p>
-                )}
+                  {post.comments && post.comments.length > 2 && (
+                      <Link to={`/post/${post.id}`} style={{ color: '#8e8e8e', cursor: 'pointer', margin: '8px 12px', textDecoration: 'none', display: 'block', fontSize: '13px' }}>
+                          Xem tất cả {post.comments.length} bình luận
+                      </Link>
+                  )}
 
-
-
-
-          {currentUser && (
-            <form onSubmit={handleCommentFormSubmit} className="comment-form">
-              <input
-                type="text"
-                placeholder={STRINGS.WRITE_A_COMMENT}
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <button type="submit" className="btn-send-comment">Đăng</button>
-            </form>
-          )}
-        </div>
+                  {currentUser && (
+                      <form onSubmit={handleCommentFormSubmit} className="comment-form">
+                          <input
+                              type="text"
+                              placeholder="Thêm bình luận..."
+                              value={commentText}
+                              onChange={(e) => setCommentText(e.target.value)}
+                          />
+                          <button type="submit" className="btn-send-comment">Đăng</button>
+                      </form>
+                  )}
+              </div>
       </div>
     </>
   );

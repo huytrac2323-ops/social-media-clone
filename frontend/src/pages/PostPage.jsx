@@ -37,7 +37,8 @@ function PostPage() {
           imageUrl: data.photo_url || null,
           likes: parseInt(data.like_count) || 0,
           shares: parseInt(data.share_count) || 0, // THÊM: Lấy số lượng share từ Backend
-          isLiked: data.is_liked_by_user,
+          isLiked: data.is_liked_by_user || true,
+          isSaved: data.is_saved_by_user || true,
           comments: data.comments || [],
           authorAvatar: data.profile_photo_url,
           shared_post: data.shared_post,
@@ -61,18 +62,21 @@ function PostPage() {
       // Cập nhật UI trước cho mượt
       setPost(p => ({ ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }));
 
+      // SỬA LẠI ĐOẠN NÀY: Bổ sung lại body chứa user_id để Backend lưu vào Database chính xác
       await fetch(`${API_URL}/posts/${postIdToLike}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // THÊM TOKEN VÀO HEADER
-        }
-        // Xóa body chứa user_id vì Backend đã tự lấy từ Token
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_id: currentUser.user_id }) // 👈 Thêm dòng này để khớp với Backend
       });
     } catch (err) {
       console.error("Lỗi khi thích bài viết:", err);
     }
   };
+
+
 
   const handleCommentSubmit = async (postIdToComment, commentText) => {
     if (!currentUser) return alert('Vui lòng đăng nhập để bình luận.');

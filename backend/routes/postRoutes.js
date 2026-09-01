@@ -16,6 +16,8 @@ router.post('/:postId/share', verifyToken, postController.sharePost);
 router.post('/', upload.single('postImage'), postController.createPost);
 router.post('/:postId/save', savePost);
 router.get('/saved/:userId', getSavedPosts);
+router.get('/saved-posts/:userId', getSavedPosts);
+
 
 router.get('/', postController.getPosts);
 router.get('/:postId', postController.getPostById);

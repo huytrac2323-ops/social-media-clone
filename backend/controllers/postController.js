@@ -11,10 +11,7 @@ cloudinary.config({
 });
 
 
-// Lấy danh sách tất cả bài viết
-// Lấy danh sách tất cả bài viết
-// Lấy danh sách tất cả bài viết (Đã thêm bộ lọc Bạn bè)
-// Lấy danh sách tất cả bài viết (Hỗ trợ khách vãng lai chưa đăng nhập)
+
 // Lấy danh sách tất cả bài viết (Hỗ trợ hiển thị công khai cho nhiều tài khoản)
 const getPosts = async (req, res) => {
     const currentUserId = (req.query.currentUserId && req.query.currentUserId !== 'undefined')
@@ -30,9 +27,9 @@ const getPosts = async (req, res) => {
             SELECT
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
-                (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
+                (SELECT COUNT(*) FROM post_likes pr WHERE pr.post_id = p.post_id) AS like_count,
                 (SELECT COUNT(*) FROM shares s WHERE s.post_id = p.post_id) AS sharesCount,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
+                ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
                 p.shared_post_id,
                 (
                     SELECT json_build_object('post_id', op.post_id, 'caption', op.caption, 'photo_url', op.photo_url, 'username', ou.username, 'profile_photo_url', ou.profile_photo_url)
@@ -74,28 +71,28 @@ const getPosts = async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
     }
 };// Lấy chi tiết 1 bài viết
+// Sửa hàm getPostById trong postController.js thành như sau:
 const getPostById = async (req, res) => {
     const { postId } = req.params;
     const currentUserId = req.query.currentUserId || null;
     try {
         let query = `
             SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
-                   (SELECT COUNT(*) FROM post_reactions pr WHERE pr.post_id = p.post_id) AS like_count,
-                   ${currentUserId ? 'EXISTS (SELECT 1 FROM post_reactions pr WHERE pr.post_id = p.post_id AND pr.user_id = $2) AS is_liked_by_user' : 'FALSE AS is_liked_by_user'},
+                   (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                   ${currentUserId ? 'EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user' : 'FALSE AS is_liked_by_user'},
                    COALESCE(
-                        (SELECT json_agg(json_build_object(
-                            'comment_id', c.comment_id, 'comment_text', c.comment_text,
-                            'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username,
-                            'profile_photo_url', cu.profile_photo_url
-                        ))
-                         FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
-                         JOIN users cu ON c.user_id = cu.user_id),
-                        '[]'::json) AS comments
+                           (SELECT json_agg(json_build_object(
+                                   'comment_id', c.comment_id, 'comment_text', c.comment_text,
+                                   'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username,
+                                   'profile_photo_url', cu.profile_photo_url
+                                            ))
+                            FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
+                                     JOIN users cu ON c.user_id = cu.user_id),
+                           '[]'::json) AS comments
             FROM post p JOIN users u ON p.user_id = u.user_id
             WHERE p.post_id = $1
         `;
 
-        // Truyền postId làm $1, currentUserId làm $2
         const params = currentUserId ? [postId, currentUserId] : [postId];
         const result = await pool.query(query, params);
 
@@ -107,6 +104,8 @@ const getPostById = async (req, res) => {
         res.status(500).send({ message: "Lỗi server khi lấy bài viết chi tiết", error: err.message });
     }
 };
+
+
 // Tạo bài viết mới
 const createPost = async (req, res) => {
     // Chỉ lấy caption và user_id từ body

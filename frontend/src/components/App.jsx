@@ -155,8 +155,11 @@ function AppContent() {
         try {
             const response = await fetch(`${API_URL}/posts/${postId}/like`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: currentUser.user_id})
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Thêm token vào đây nếu backend yêu cầu xác thực
+                },
+                body: JSON.stringify({ user_id: currentUser.user_id })
             });
 
             const data = await response.json();

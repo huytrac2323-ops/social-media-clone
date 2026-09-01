@@ -4,7 +4,7 @@ const http = require('http'); // ⚠️ Bắt buộc phải có để chạy Soc
 const cors = require('cors');
 const path = require('path');
 const { Server } = require('socket.io');
-
+const { getSavedPosts, savePost, unsavePost } = require('./controllers/SavedPostController');
 require('dotenv').config();
 
 
@@ -22,7 +22,6 @@ const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 const friendRoutes = require('./routes/friendRoutes');
-const {savePost, unsavePost} = require("./controllers/SavedPostController");
 
 
 
@@ -55,8 +54,7 @@ app.use('/api', userRoutes);
 app.post('/api/posts/:postId/save', savePost);
 app.delete('/api/posts/:postId/unsave', unsavePost);
 app.get('/api/notifications/:userId', getNotifications);
-
-
+app.get('/api/saved-posts/:userId', getSavedPosts);
 
 app.get('/api/messages/:userId/:friendId', async (req, res) => {
     const { userId, friendId } = req.params;

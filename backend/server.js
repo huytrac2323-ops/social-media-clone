@@ -6,7 +6,7 @@ const path = require('path');
 const { Server } = require('socket.io');
 const { getSavedPosts, savePost, unsavePost } = require('./controllers/SavedPostController');
 require('dotenv').config();
-
+const postController = require('./controllers/postController');
 
 
 // Khởi tạo Express app

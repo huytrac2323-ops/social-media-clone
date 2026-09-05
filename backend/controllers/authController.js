@@ -76,5 +76,19 @@ const logout = async (req,res)=>{
     }
 
 }
+deleteAccount = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        // Lưu ý: Nếu database có các bảng liên kết (posts, comments),
+        // cần đảm bảo đã set khóa ngoại ON DELETE CASCADE, nếu không sẽ bị lỗi khóa ngoại.
+        const result = await pool.query('DELETE FROM users WHERE user_id = $1 RETURNING *', [userId]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Không tìm thấy người dùng" });
+        }
+        res.status(200).json({ message: "Đã xóa tài khoản thành công!" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
 
-module.exports = { register, login,logout };
+module.exports = { register, login,logout,deleteAccount };

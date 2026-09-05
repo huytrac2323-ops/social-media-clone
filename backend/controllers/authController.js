@@ -67,7 +67,7 @@ const logout = async (req,res)=>{
             return res.status(400).json({ message:'ko tìm thấy toekn hợp lệ'})
         }
         const token = authHeader.split('')[1];
-        await pool.query('INSERT INTO token_blacklist (token VALUES (%1)' , [token])
+        await pool.query('INSERT INTO token_blacklist (token) VALUES (%1)' , [token])
 
         res.status(200).json ({message: "đăng xuất thành công!"});
     }

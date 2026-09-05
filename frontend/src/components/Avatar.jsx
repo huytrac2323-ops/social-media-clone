@@ -1,5 +1,7 @@
 import React from 'react';
-
+const BACKEND_ROOT_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://social-media-clone-d192.onrender.com';
 // Tự động nhận diện môi trường Localhost hay Online
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000/api'

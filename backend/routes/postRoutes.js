@@ -18,7 +18,6 @@ router.post('/:postId/save', savePost);
 router.get('/saved/:userId', getSavedPosts);
 router.get('/saved-posts/:userId', getSavedPosts);
 
-
 router.get('/', postController.getPosts);
 router.get('/:postId', postController.getPostById);
 

@@ -294,6 +294,21 @@ const sharePost = async (req, res) => {
         client.release();
     }
 };
+const deleteComment = async (req, res) => {
+    const { commentId } = req.params;
+    try {
+        const result = await pool.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *', [commentId]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Không tìm thấy bình luận cần xóa!" });
+        }
+
+        res.status(200).json({ message: "Đã xóa bình luận thành công!" });
+    } catch (err) {
+        console.error("Lỗi khi xóa bình luận:", err.message);
+        res.status(500).json({ error: "Lỗi Server", details: err.message });
+    }
+};
 
 module.exports = {
     getPosts,
@@ -304,5 +319,6 @@ module.exports = {
     likePost,
     commentPost,
     sharePost,
+    deleteComment
 
 };

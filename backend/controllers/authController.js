@@ -60,5 +60,21 @@ const login = async (req, res) => {
         res.status(500).send({ message: err.message });
     }
 };
+const logout = async (req,res)=>{
+    try{
+        const authHeader = req.headers.authorization;
+        if(!authHeader || !authHeader.startsWith('Bearer')){
+            return res.status(400).json({ message:'ko tìm thấy toekn hợp lệ'})
+        }
+        const token = authHeader.split('')[1];
+        await pool.querry('INSERTO INTO token_blacklist (token VALUES (%1)' , [token])
+
+        res.status(200).json ({message: "đăng xuất thành công!"});
+    }
+    catch(error){
+        res.status(500).json({message:"lỗi server khi đăng xuất",error:error.message});
+    }
+
+}
 
 module.exports = { register, login };

@@ -13,7 +13,7 @@ const verifyToken = async (req, res, next) => {
         // 2.kiểm tra token đưa vào ds đen chưa
         const checkBlackist = await pool.querry('SELECT * FROM token_blackist WHERE token =&1',[token]);
         if (checkBlackist.rows.length >0){
-            return res.status(401).json({ message: 'phiên bản này đã kết thúc (Token bị hủy'});
+            return res.status(401).json({ message: 'Phiên bản này đã kết thúc (Token bị hủy'});
         }
         // 3. Giải mã token (Sử dụng chuỗi Secret Key giống hệt lúc bạn tạo token khi Login)
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'chuoi_bi_mat_cua_ban');

@@ -133,9 +133,9 @@ function PostPage() {
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm("Bạn có chắc muốn xóa bình luận này?")) return;
     try {
-      const response = await fetch(`${API_URL}/comments/${commentId}`, { // Sửa lại URL khớp với route Backend của bạn
-        method: 'DELETE',
-      });
+        const response = await fetch(`${API_URL}/posts/comments/${commentId}`, {
+            method: 'DELETE',
+        });
       if (response.ok) {
         // Gọi lại hàm lấy dữ liệu bài viết để cập nhật giao diện
         setPost(p => ({ ...p, comments: p.comments.filter(c => c.comment_id !== commentId) }));      }

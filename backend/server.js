@@ -55,6 +55,9 @@ app.post('/api/posts/:postId/save', savePost);
 app.delete('/api/posts/:postId/unsave', unsavePost);
 app.get('/api/notifications/:userId', getNotifications);
 app.get('/api/saved-posts/:userId', getSavedPosts);
+app.delete('/api/comments/:commentId', postController.deleteComment);
+
+
 
 app.get('/api/messages/:userId/:friendId', async (req, res) => {
     const { userId, friendId } = req.params;

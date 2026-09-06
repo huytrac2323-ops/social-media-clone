@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const verifyToken = require('../middlewares/verifyToken'); // 👈 Thêm dòng này để nạp middleware vào file
 
 // Xử lý các route bắt đầu bằng /api/auth (sẽ cấu hình ở server.js)
 router.post('/register', authController.register);

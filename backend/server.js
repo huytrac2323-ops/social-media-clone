@@ -40,10 +40,10 @@ const corsOptions = {
 app.use(cors({ origin: '*' }));
 
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(express.static('public'));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(express.static('public'));
 
 

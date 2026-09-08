@@ -1,4 +1,12 @@
 const { pool } = require('../config/db');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const createStory = async (req, res) => {
     const { user_id } = req.body;
@@ -8,6 +16,18 @@ const createStory = async (req, res) => {
 
     try {
         const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+        let mediaUrl = `/uploads/${req.file.filename}`;
+        const hasCloudinaryConfig = process.env.CLOUDINARY_CLOUD_NAME
+            && process.env.CLOUDINARY_API_KEY
+            && process.env.CLOUDINARY_API_SECRET;
+        if (hasCloudinaryConfig) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'social-media-clone-stories',
+                resource_type: 'auto'
+            });
+            mediaUrl = uploadResult.secure_url;
+            fs.unlinkSync(req.file.path);
+        }
         let poll = null;
         if (req.body.poll) {
             try {
@@ -23,7 +43,7 @@ const createStory = async (req, res) => {
             `INSERT INTO stories (user_id, media_url, media_type, poll, sticker, expires_at)
              VALUES ($1, $2, $3, $4::jsonb, $5, NOW() + INTERVAL '24 hours')
              RETURNING story_id, user_id, media_url, media_type, poll, sticker, created_at, expires_at`,
-            [user_id, `/uploads/${req.file.filename}`, mediaType, poll ? JSON.stringify(poll) : null, req.body.sticker || null]
+            [user_id, mediaUrl, mediaType, poll ? JSON.stringify(poll) : null, req.body.sticker || null]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {

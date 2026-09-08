@@ -128,3 +128,40 @@
   margin-top: -10px;
   margin-bottom: 15px;
 }
+.privacy-setting {
+  margin: 15px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.privacy-label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.btn-privacy {
+  padding: 6px 12px;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Màu khi bật chế độ riêng tư */
+.btn-privacy.private-on {
+  background-color: #ff4d4f;
+}
+
+/* Màu khi tắt chế độ riêng tư (Public) */
+.btn-privacy.private-off {
+  background-color: #4CAF50;
+}
+
+.privacy-desc {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+  margin-bottom: 0;
+}

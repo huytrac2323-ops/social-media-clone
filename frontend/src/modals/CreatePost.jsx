@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
 
 
@@ -10,6 +10,7 @@ function CreatePost({ onPostCreated }) {
   const [inputText, setInputText] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [location, setLocation] = useState('');
   const fileInputRef = useRef(null);
 
   const handleImageChange = (e) => {
@@ -39,6 +40,7 @@ function CreatePost({ onPostCreated }) {
     const formData = new FormData();
     formData.append('caption', inputText);
     formData.append('user_id', currentUser.user_id);
+    formData.append('location', location);
     if (imageFile) {
       formData.append('postImage', imageFile);
     }
@@ -48,12 +50,14 @@ function CreatePost({ onPostCreated }) {
         method: 'POST',
         body: formData,
       });
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error('Lỗi khi đăng bài');
+        throw new Error(data.message || 'Lỗi khi đăng bài');
       }
       
       // Reset form
       setInputText("");
+      setLocation("");
       handleRemoveImage();
 
       // Callback để component cha có thể làm mới dữ liệu
@@ -77,6 +81,12 @@ function CreatePost({ onPostCreated }) {
           placeholder={`Bạn đang nghĩ gì thế, ${currentUser.username}?`}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
+        />
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Thêm địa điểm (không bắt buộc)"
+          style={{ width: '100%', padding: '8px', margin: '8px 0', borderRadius: '6px', border: '1px solid #555' }}
         />
         {previewUrl && (
           <div className="image-preview">

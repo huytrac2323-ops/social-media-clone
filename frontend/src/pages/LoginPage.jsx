@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 
 
@@ -14,6 +15,42 @@ function LoginPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return undefined;
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async response => {
+          try {
+            const result = await fetch(`${API_URL}/auth/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential: response.credential })
+            });
+            const data = await result.json();
+            if (!result.ok) throw new Error(data.message || 'Đăng nhập Google thất bại.');
+            localStorage.setItem('token', data.token);
+            login(data.user);
+            navigate('/');
+          } catch (error) {
+            setError(error.message);
+          }
+        }
+      });
+      window.google.accounts.id.renderButton(document.getElementById('google-login-button'), {
+        theme: 'outline',
+        size: 'large',
+        width: 280,
+        text: 'signin_with'
+      });
+    };
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [login, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +95,8 @@ function LoginPage() {
             />
             <button type="submit" className="auth-button">Đăng nhập</button>
           </form>
+          <div id="google-login-button" style={{ margin: '14px auto' }} />
+          <p><Link to="/forgot-password">Quên mật khẩu?</Link></p>
           {error && <p className="error-message">{error}</p>}
         </div>
         <div className="switch-auth-box">

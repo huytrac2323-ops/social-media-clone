@@ -23,13 +23,55 @@ const getUsers = async (req, res) => {
 // Lấy thông tin một người dùng cụ thể
 const getUserByUsername = async (req, res) => {
     const { username } = req.params;
+    // Hỗ trợ lấy viewer_id từ nhiều nguồn khác nhau để không bị thiếu sót
+    const viewer_id = req.user?.id || req.query.viewer_id || req.headers['x-viewer-id'];
     try {
-        const userResult = await pool.query('SELECT user_id, username, bio, profile_photo_url FROM users WHERE username = $1', [username]);
+        const userResult = await pool.query(
+            'SELECT user_id, username, bio, profile_photo_url, (is_private IS TRUE) AS is_private FROM users WHERE username = $1',
+            [username]
+        );
         if (userResult.rows.length === 0) {
             return res.status(404).send({ message: 'Không tìm thấy người dùng.' });
         }
         const userProfile = userResult.rows[0];
+        let isAllowedToView = true;
 
+        // 1. Kiểm tra xem người xem có phải là chủ tài khoản không
+        const isOwner = viewer_id && String(viewer_id) === String(userProfile.user_id);
+
+        // 2. Nếu tài khoản riêng tư và KHÔNG PHẢI là chủ tài khoản
+        if (userProfile.is_private === true && !isOwner) {
+            isAllowedToView = false; // Mặc định chặn tất cả người khác
+
+            // 3. Nếu có viewer_id, kiểm tra xem đã là bạn bè chưa
+            if (viewer_id) {
+                const friendCheck = await pool.query(
+                    `SELECT * FROM friends
+                     WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
+                       AND status = 'accepted'`,
+                    [viewer_id, userProfile.user_id]
+                );
+                // Nếu tồn tại quan hệ bạn bè đã chấp nhận thì cho phép xem
+                if (friendCheck.rowCount > 0) {
+                    isAllowedToView = true;
+                }
+            }
+        }
+
+        // Nếu không được phép xem, trả về thông báo khóa và không lộ bài viết
+        if (!isAllowedToView) {
+            return res.json({
+                user_id: userProfile.user_id,
+                username: userProfile.username,
+                profile_photo_url: userProfile.profile_photo_url,
+                bio: userProfile.bio,
+                is_private: true,
+                message: "Tài khoản riêng tư. Vui lòng kết bạn để xem bài viết."
+            });
+        }
+        // ... (phần code query bài viết giữ nguyên phía dưới)
+
+        // ĐƯỢC PHÉP XEM: Tiếp tục query posts và stats như cũ
         const postsResult = await pool.query('SELECT post_id, photo_url, caption FROM post WHERE user_id = $1 ORDER BY created_at DESC', [userProfile.user_id]);
         userProfile.posts = postsResult.rows;
 
@@ -47,28 +89,29 @@ const getUserByUsername = async (req, res) => {
     }
 };
 
+
 // Cập nhật thông tin profile
 const updateProfile = async (req, res) => {
-    const { username, bio, user_id } = req.body;
+    const { username, bio, user_id, is_private } = req.body;
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
+        // Thực hiện cập nhật đầy đủ cả username, bio và trạng thái is_private
         await pool.query(
-            'UPDATE users SET username = $1, bio = $2 WHERE user_id = $3',
-            [username, bio, user_id]
+            'UPDATE users SET username = $1, bio = $2, is_private = COALESCE($3, is_private) WHERE user_id = $4',
+            [username, bio, is_private, user_id]
         );
 
-        const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [user_id]);
+        // Truy vấn lại chính xác thông tin mới nhất từ cơ sở dữ liệu để trả về
+        const result = await pool.query('SELECT user_id, username, bio, profile_photo_url, is_private FROM users WHERE user_id = $1', [user_id]);
         const updatedUser = result.rows[0];
 
-        const { password_hash, ...userWithoutPassword } = updatedUser;
-        res.status(200).json({ message: 'Cập nhật thông tin thành công!', user: userWithoutPassword });
+        res.status(200).json({ message: 'Cập nhật thông tin thành công!', user: updatedUser });
 
     } catch (err) {
-        if (err.code === '23505') return res.status(409).send({ message: 'Username này đã được sử dụng.' }); // Mã lỗi trùng lặp của PostgreSQL
+        if (err.code === '23505') return res.status(409).send({ message: 'Username này đã được sử dụng.' });
         res.status(500).send({ message: "Lỗi server khi cập nhật thông tin", error: err.message });
     }
 };
-
 // Cập nhật ảnh đại diện (Avatar)
 const updateAvatar = async (req, res) => {
     const { user_id } = req.body;

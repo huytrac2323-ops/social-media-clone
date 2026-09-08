@@ -71,7 +71,8 @@ const getSavedPosts = async (req, res) => {
              FROM saved_posts sp
                       JOIN post p ON sp.post_id = p.post_id
                       JOIN users u ON p.user_id = u.user_id
-             WHERE sp.user_id = $1`,
+             WHERE sp.user_id = $1
+             ORDER BY sp.created_at DESC`,
             [userId]
         );
         res.status(200).json(result.rows);
@@ -80,5 +81,82 @@ const getSavedPosts = async (req, res) => {
         res.status(500).json({ error: "Lỗi Server", details: error.message });
     }
 };
-// Đảm bảo export chung với các hàm khác
-module.exports = { savePost, unsavePost, getSavedPosts };
+
+const getCollections = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT c.collection_id, c.name, c.created_at,
+                    COUNT(sp.post_id)::int AS post_count
+             FROM saved_collections c
+             LEFT JOIN saved_posts sp ON sp.collection_id = c.collection_id
+             WHERE c.user_id = $1
+             GROUP BY c.collection_id
+             ORDER BY c.created_at DESC`,
+            [req.params.userId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Lỗi lấy bộ sưu tập:', error.message);
+        res.status(500).json({ error: 'Lỗi Server' });
+    }
+};
+
+const createCollection = async (req, res) => {
+    const name = String(req.body.name || '').trim();
+    if (!name) return res.status(400).json({ message: 'Tên bộ sưu tập không được để trống' });
+    try {
+        const result = await pool.query(
+            'INSERT INTO saved_collections (user_id, name) VALUES ($1, $2) RETURNING collection_id, name, created_at',
+            [req.body.user_id, name]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Lỗi tạo bộ sưu tập:', error.message);
+        res.status(500).json({ error: 'Lỗi Server' });
+    }
+};
+
+const addPostToCollection = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE saved_posts sp
+             SET collection_id = $1
+             FROM saved_collections c
+             WHERE sp.user_id = $2 AND sp.post_id = $3
+               AND c.collection_id = $1 AND c.user_id = $2
+             RETURNING sp.post_id`,
+            [req.body.collection_id, req.body.user_id, req.params.postId]
+        );
+        if (!result.rowCount) return res.status(404).json({ message: 'Bài viết chưa được lưu hoặc bộ sưu tập không hợp lệ' });
+        res.json({ message: 'Đã thêm bài viết vào bộ sưu tập' });
+    } catch (error) {
+        console.error('Lỗi thêm bài vào bộ sưu tập:', error.message);
+        res.status(500).json({ error: 'Lỗi Server' });
+    }
+};
+
+const getCollectionPosts = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT p.post_id, p.caption AS content, p.photo_url, p.created_at,
+                    u.username AS author, u.profile_photo_url AS "authorAvatar",
+                    u.user_id AS "userId"
+             FROM saved_posts sp
+             JOIN saved_collections c ON c.collection_id = sp.collection_id
+             JOIN post p ON p.post_id = sp.post_id
+             JOIN users u ON u.user_id = p.user_id
+             WHERE c.collection_id = $1 AND c.user_id = $2
+             ORDER BY sp.created_at DESC`,
+            [req.params.collectionId, req.params.userId]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Lỗi lấy bài trong bộ sưu tập:', error.message);
+        res.status(500).json({ error: 'Lỗi Server' });
+    }
+};
+
+module.exports = {
+    savePost, unsavePost, getSavedPosts,
+    getCollections, createCollection, addPostToCollection, getCollectionPosts
+};

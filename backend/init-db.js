@@ -29,6 +29,7 @@ const createSchemaSQL = `
         password_hash VARCHAR(255) NOT NULL,
         profile_photo_url VARCHAR(255),
         bio NVARCHAR(255),
+        is_private BIT NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT GETDATE()
     );
     CREATE TABLE post (

@@ -5,9 +5,10 @@ import EditProfileModal from '../modals/EditProfileModal.jsx';
 import CreatePost from '../modals/CreatePost.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
+import SidebarNav from '../components/SidebarNav.jsx';
 
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL =import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
 function ProfilePage() {
   const { username } = useParams();
@@ -22,6 +23,8 @@ function ProfilePage() {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [conversations, setConversations] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [followStatus, setFollowStatus] = useState(null);
 
   const getAvatarUrl = (url) => {
     if (!url) return 'https://picsum.photos/150';
@@ -32,7 +35,10 @@ function ProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/users/${username}`);
+      // Đính kèm viewer_id vào query params nếu đã đăng nhập
+      const viewerParam = currentUser?.user_id ? `?viewer_id=${currentUser.user_id}` : '';
+      const response = await fetch(`${API_URL}/users/${username}${viewerParam}`);
+
       if (!response.ok) {
         const errorData = await response.text();
         throw new Error(errorData || 'Không tìm thấy người dùng.');
@@ -44,7 +50,9 @@ function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [username]);
+  }, [username, currentUser]);
+
+
 
   const fetchConversations = async () => {
     if (!currentUser?.user_id) return;
@@ -54,12 +62,64 @@ function ProfilePage() {
     } catch (err) { console.error(err); }
   };
 
+  const fetchFriends = useCallback(async (userId) => {
+    if (!userId) return;
+    try {
+      const response = await fetch(`${API_URL}/friends/${userId}/list`);
+      if (!response.ok) throw new Error('Không thể tải danh sách bạn bè.');
+      setFriends(await response.json());
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách bạn bè:', err);
+      setFriends([]);
+    }
+  }, []);
+
+  const fetchFollowStatus = useCallback(async (followeeId) => {
+    if (!currentUser?.user_id || !followeeId || String(currentUser.user_id) === String(followeeId)) return;
+    try {
+      const response = await fetch(`${API_URL}/friends/follow-status/${currentUser.user_id}/${followeeId}`);
+      if (!response.ok) throw new Error('Không thể tải trạng thái theo dõi.');
+      setFollowStatus(await response.json());
+    } catch (err) {
+      console.error('Lỗi khi lấy trạng thái theo dõi:', err);
+      setFollowStatus(null);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     fetchUserProfile();
     if (currentUser?.user_id) {
       fetchConversations();
     }
   }, [fetchUserProfile, currentUser]);
+
+  useEffect(() => {
+    if (userProfile?.user_id) {
+      fetchFriends(userProfile.user_id);
+      fetchFollowStatus(userProfile.user_id);
+    }
+  }, [fetchFriends, fetchFollowStatus, userProfile?.user_id]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUser?.user_id || !userProfile?.user_id) return;
+    const endpoint = followStatus?.is_following || followStatus?.request_sent
+      ? `${API_URL}/friends/follow/${currentUser.user_id}/${userProfile.user_id}`
+      : `${API_URL}/friends/follow`;
+    const response = await fetch(endpoint, {
+      method: followStatus?.is_following || followStatus?.request_sent ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: followStatus?.is_following || followStatus?.request_sent
+        ? undefined
+        : JSON.stringify({ follower_id: currentUser.user_id, followee_id: userProfile.user_id })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      alert(data.message || 'Không thể cập nhật theo dõi.');
+      return;
+    }
+    await fetchFollowStatus(userProfile.user_id);
+    await fetchUserProfile();
+  };
 
   const handlePostClick = (postId) => {
     navigate(`/post/${postId}`);
@@ -101,7 +161,14 @@ function ProfilePage() {
             </div>
             <section className="profile-info-section">
               <div className="profile-info-header">
-                <h2 className="profile-username">{username}</h2>
+                <div className="username-container">
+                  <h2 className="profile-username" style={{ margin: 0 }}>{username}</h2>
+                  {userProfile.is_private && (
+                      <span className="private-badge" title="Tài khoản riêng tư">
+                            🔒 Riêng tư
+                        </span>
+                  )}
+                </div>
                 {isOwnProfile && (
                     <button className="btn-edit-profile" onClick={() => setIsEditModalOpen(true)}>
                       Chỉnh sửa trang cá nhân
@@ -111,17 +178,14 @@ function ProfilePage() {
 
               {!isOwnProfile && currentUser && (
                   <button
-                      onClick={async () => {
-                        await fetch(`${API_URL}/friends/request`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ user_id: currentUser.user_id, friend_id: userProfile.user_id || userProfile.id })
-                        });
-                        alert("Đã gửi yêu cầu kết bạn!");
-                      }}
+                      onClick={handleFollowToggle}
                       style={{ background: '#2d88ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
                   >
-                    ➕ Thêm bạn bè
+                    {followStatus?.is_following
+                      ? 'Đang theo dõi'
+                      : followStatus?.request_sent
+                        ? 'Đã gửi yêu cầu'
+                        : userProfile.is_private ? 'Yêu cầu theo dõi' : 'Theo dõi'}
                   </button>
               )}
 
@@ -171,6 +235,31 @@ function ProfilePage() {
             <div className="profile-tab">👤 ĐƯỢC GẮN THẺ</div>
           </div>
 
+          <section style={{ margin: '16px 0', padding: '16px', background: '#242526', borderRadius: '8px', color: 'white' }}>
+            <h3 style={{ margin: '0 0 12px' }}>Bạn bè ({friends.length})</h3>
+            {friends.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                {friends.map(friend => (
+                  <button
+                    key={friend.user_id}
+                    type="button"
+                    onClick={() => navigate(`/profile/${encodeURIComponent(friend.username)}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', border: '1px solid #555', borderRadius: '20px', background: '#3a3b3c', color: 'white', cursor: 'pointer' }}
+                  >
+                    <img
+                      src={getAvatarUrl(friend.profile_photo_url)}
+                      alt={`Ảnh đại diện của ${friend.username}`}
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                    <span>{friend.username}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: '#aaa' }}>Chưa có bạn bè.</p>
+            )}
+          </section>
+
           <div className="profile-posts-grid">
             {Array.isArray(posts) && posts.length > 0 ? (
                 posts.map(post => (
@@ -195,42 +284,7 @@ function ProfilePage() {
 
 
           {/* THANH ĐIỀU HƯỚNG DƯỚI CÙNG (Gồm Đăng nhập / Đăng xuất) */}
-          <div className="home-left-sidebar">
-            {/* 1. Nút Trang chủ */}
-            <Link to="/" className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
-              <h3>🏠<span>Trang chủ</span></h3>
-            </Link>
-
-            {currentUser ? (
-                <>
-                  {/* 2. Nút Trang cá nhân */}
-                  <Link to={`/profile/${currentUser.username}`} className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
-                    <h3>👤<span>{currentUser.username}</span></h3>
-                  </Link>
-
-                  {/* 3. Nút Đăng bài */}
-                  <div className="sidebar-box mobile-only-btn" onClick={() => setShowCreatePost(true)}>
-                    <h3>✍️<span>Đăng bài</span></h3>
-                  </div>
-
-                  {/* 4. Nút Đăng xuất (Thay thế nút Chat cũ) */}
-                  <div
-                      className="sidebar-box mobile-only-btn"
-                      onClick={() => {
-                        localStorage.removeItem('token');
-                        window.location.href = '/login';
-                      }}
-                  >
-                    <h3 style={{ color: '#ff4d4d' }}>🚪<span>Đăng xuất</span></h3>
-                  </div>
-                </>
-            ) : (
-                /* Nút Đăng nhập hiển thị khi chưa có user */
-                <Link to="/login" className="sidebar-box mobile-only-btn" style={{ textDecoration: 'none' }}>
-                  <h3>🔑<span>Đăng nhập</span></h3>
-                </Link>
-            )}
-          </div>
+          <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
 
           <ChatWidget />
 

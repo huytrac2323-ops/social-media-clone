@@ -11,7 +11,7 @@ const Avatar = ({ user, className = '' }) => {
     if (user.profile_photo_url.startsWith('http')) {
       imageUrl = user.profile_photo_url;
     } else {
-      imageUrl = `${API_URL}${user.profile_photo_url}`;
+      imageUrl = `${API_URL.replace(/\/api$/, '')}${user.profile_photo_url}`;
     }
   }
 

@@ -4,8 +4,8 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 
 // Tự động nhận diện môi trường để kết nối API và Socket
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
-const SOCKET_URL = 'https://social-media-clone-di9z.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
+const SOCKET_URL = API_URL.replace(/\/api$/, '');
 
 // Khởi tạo kết nối Socket ở ngoài component để tránh render lại nhiều lần
 const socket = io(SOCKET_URL, { secure: true, transports: ['websocket', 'polling'] });
@@ -13,6 +13,10 @@ const socket = io(SOCKET_URL, { secure: true, transports: ['websocket', 'polling
 export default function ChatBox({ currentUser, friendId, friendName }) {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const [otherIsTyping, setOtherIsTyping] = useState(false);
+    const [online, setOnline] = useState(false);
+    const [readMessageIds, setReadMessageIds] = useState(new Set());
     const messagesEndRef = useRef(null);
 
     // 1. Tải lịch sử tin nhắn ban đầu (Chỉ gọi 1 lần, bỏ setInterval)
@@ -32,6 +36,8 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
         };
 
         fetchMessages();
+        socket.emit('user_online', currentUser.user_id);
+        socket.emit('mark_messages_read', { reader_id: currentUser.user_id, sender_id: friendId });
     }, [currentUser, friendId]);
 
     // 2. Lắng nghe tin nhắn mới từ Socket.io theo thời gian thực
@@ -44,14 +50,34 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
 
             if (isRelevant) {
                 setMessages((prev) => [...prev, newMessage]);
+                if (Number(newMessage.sender_id) === Number(friendId)) {
+                    socket.emit('mark_messages_read', { reader_id: currentUser.user_id, sender_id: friendId });
+                }
+            }
+        };
+        const handleTyping = ({ user_id, isTyping: typing }) => {
+            if (Number(user_id) === Number(friendId)) setOtherIsTyping(typing);
+        };
+        const handlePresence = ({ userId, online: isOnline }) => {
+            if (Number(userId) === Number(friendId)) setOnline(isOnline);
+        };
+        const handleRead = ({ sender_id }) => {
+            if (Number(sender_id) === Number(currentUser?.user_id)) {
+                setReadMessageIds(prev => new Set([...prev, ...messages.filter(msg => Number(msg.sender_id) === Number(currentUser.user_id)).map(msg => msg.id || msg.message_id)]));
             }
         };
 
         socket.on('receive_message', handleReceiveMessage);
+        socket.on('user_typing', handleTyping);
+        socket.on('presence_changed', handlePresence);
+        socket.on('messages_read', handleRead);
 
         // Hủy lắng nghe khi đóng khung chat để tránh trùng lặp tin nhắn
         return () => {
             socket.off('receive_message', handleReceiveMessage);
+            socket.off('user_typing', handleTyping);
+            socket.off('presence_changed', handlePresence);
+            socket.off('messages_read', handleRead);
         };
     }, [currentUser, friendId]);
 
@@ -78,6 +104,8 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
 
         // Xóa ô nhập (Tin nhắn sẽ tự cập nhật vào mảng khi nhận lại từ 'receive_message')
         setText('');
+        setIsTyping(false);
+        socket.emit('typing', { sender_id: currentUser.user_id, receiver_id: friendId, isTyping: false });
     };
 
     return (
@@ -93,6 +121,10 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
             flexDirection: 'column',
             boxShadow: '0 -2px 10px rgba(0,0,0,0.2)'
         }}>
+        <div style={{ padding: '8px 10px', borderBottom: '1px solid #3e4042', fontSize: 13 }}>
+            {online ? '● Đang hoạt động' : '○ Ngoại tuyến'}
+            {otherIsTyping && <span style={{ marginLeft: 8, color: '#aaa' }}>đang nhập...</span>}
+        </div>
 
             {/* ÉP ẨN THANH CUỘN TUYỆT ĐỐI */}
             <style>
@@ -126,6 +158,7 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                         whiteSpace: 'pre-wrap'
                     }}>
                         {msg.message_text}
+                        {Number(msg.sender_id) === Number(currentUser?.user_id) && <small style={{ display: 'block', opacity: .7, fontSize: 10 }}>{readMessageIds.has(msg.id || msg.message_id) ? 'Đã xem' : 'Đã gửi'}</small>}
                     </div>
                 ))}
                 <div ref={messagesEndRef} />
@@ -136,6 +169,16 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
+                    onFocus={() => {
+                        if (!isTyping) {
+                            setIsTyping(true);
+                            socket.emit('typing', { sender_id: currentUser.user_id, receiver_id: friendId, isTyping: true });
+                        }
+                    }}
+                    onBlur={() => {
+                        setIsTyping(false);
+                        socket.emit('typing', { sender_id: currentUser.user_id, receiver_id: friendId, isTyping: false });
+                    }}
                     placeholder="Nhập tin nhắn..."
                     style={{ flex: 1, background: '#3a3b3c', border: 'none', outline: 'none', color: 'white', padding: '8px', borderRadius: '4px' }}
                 />

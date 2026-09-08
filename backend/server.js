@@ -4,7 +4,10 @@ const http = require('http'); // ⚠️ Bắt buộc phải có để chạy Soc
 const cors = require('cors');
 const path = require('path');
 const { Server } = require('socket.io');
-const { getSavedPosts, savePost, unsavePost } = require('./controllers/SavedPostController');
+const {
+    getSavedPosts, savePost, unsavePost, getCollections,
+    createCollection, addPostToCollection, getCollectionPosts
+} = require('./controllers/SavedPostController');
 require('dotenv').config();
 const postController = require('./controllers/postController');
 
@@ -14,7 +17,7 @@ const app = express();
 
 // 1. IMPORT CONTROLLERS & DB
 const { poolPromise } = require('./config/db'); //const { savePost, unsavePost } = require('./controllers/savedPostController');
-const { getNotifications } = require('./controllers/NotificationController');
+const { getNotifications, markNotificationsRead } = require('./controllers/NotificationController');
 const { getMessages } = require('./controllers/messageController');
 
 // Import các Routes cũ của bạn
@@ -22,6 +25,8 @@ const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 const friendRoutes = require('./routes/friendRoutes');
+const storyRoutes = require('./routes/storyRoutes');
+const exploreRoutes = require('./routes/exploreRoutes');
 
 
 
@@ -47,6 +52,8 @@ app.use('/api/friends', friendRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api', userRoutes);
+app.use('/api/stories', storyRoutes);
+app.use('/api/explore', exploreRoutes);
 
 
 
@@ -54,7 +61,12 @@ app.use('/api', userRoutes);
 app.post('/api/posts/:postId/save', savePost);
 app.delete('/api/posts/:postId/unsave', unsavePost);
 app.get('/api/notifications/:userId', getNotifications);
+app.patch('/api/notifications/:userId/read', markNotificationsRead);
 app.get('/api/saved-posts/:userId', getSavedPosts);
+app.get('/api/saved-collections/:userId', getCollections);
+app.post('/api/saved-collections', createCollection);
+app.patch('/api/posts/:postId/collection', addPostToCollection);
+app.get('/api/saved-collections/:collectionId/posts/:userId', getCollectionPosts);
 app.delete('/api/comments/:commentId', postController.deleteComment);
 
 
@@ -125,6 +137,11 @@ app.post('/api/friends/accept', async (req, res) => {
         await pool.query(
             'UPDATE friends SET status = \'accepted\' WHERE user_id = $2 AND friend_id = $1',
             [user_id, friend_id]
+        );
+        await pool.query(
+            `INSERT INTO follows (follower_id, followee_id)
+             VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [friend_id, user_id]
         );
         res.status(200).json({ message: "Đã chấp nhận kết bạn!" });
     } catch (err) {
@@ -201,10 +218,32 @@ const io = new Server(server, {
         methods: ["GET", "POST"]
     }
 });
+const onlineUsers = new Map();
 
 // Xử lý sự kiện Chat Real-time và lưu vào PostgreSQL
 io.on('connection', (socket) => {
     console.log(`⚡ Một người dùng vừa kết nối Socket: ${socket.id}`);
+    socket.on('user_online', (userId) => {
+        if (!userId) return;
+        onlineUsers.set(String(userId), socket.id);
+        io.emit('presence_changed', { userId, online: true });
+    });
+    socket.on('typing', ({ sender_id, receiver_id, isTyping }) => {
+        const receiverSocket = onlineUsers.get(String(receiver_id));
+        if (receiverSocket) io.to(receiverSocket).emit('user_typing', { user_id: sender_id, isTyping });
+    });
+    socket.on('mark_messages_read', async ({ reader_id, sender_id }) => {
+        try {
+            await pool.query(
+                'UPDATE messages SET is_read = TRUE, read_at = NOW() WHERE sender_id = $1 AND receiver_id = $2 AND is_read = FALSE',
+                [sender_id, reader_id]
+            );
+            const senderSocket = onlineUsers.get(String(sender_id));
+            if (senderSocket) io.to(senderSocket).emit('messages_read', { reader_id, sender_id });
+        } catch (error) {
+            console.error('Lỗi đánh dấu tin nhắn đã đọc:', error.message);
+        }
+    });
 
     socket.on('send_message', async (data) => {
         try {
@@ -228,6 +267,13 @@ io.on('connection', (socket) => {
         }
     });
     socket.on('disconnect', () => {
+        for (const [userId, socketId] of onlineUsers.entries()) {
+            if (socketId === socket.id) {
+                onlineUsers.delete(userId);
+                io.emit('presence_changed', { userId, online: false });
+                break;
+            }
+        }
         console.log(`🔌 Người dùng đã ngắt kết nối: ${socket.id}`);
     });
 });
@@ -241,6 +287,94 @@ const startServer = async () => {
         // Kiểm tra kết nối database trước khi mở cổng server
         const client = await pool.connect();
         console.log("✅ Kết nối Database PostgreSQL thành công!");
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS stories (
+                story_id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                media_url VARCHAR(500) NOT NULL,
+                media_type VARCHAR(10) NOT NULL CHECK (media_type IN ('image', 'video')),
+                poll JSONB,
+                sticker VARCHAR(100),
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                expires_at TIMESTAMP NOT NULL
+            )
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS stories_expires_at_idx ON stories(expires_at)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS poll JSONB');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS sticker VARCHAR(100)');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS story_views (
+                story_id INTEGER NOT NULL REFERENCES stories(story_id) ON DELETE CASCADE,
+                viewer_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                viewed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (story_id, viewer_id)
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS story_poll_votes (
+                story_id INTEGER NOT NULL REFERENCES stories(story_id) ON DELETE CASCADE,
+                voter_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                option_value VARCHAR(255) NOT NULL,
+                voted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (story_id, voter_id)
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS story_reactions (
+                story_id INTEGER NOT NULL REFERENCES stories(story_id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                reaction VARCHAR(8) NOT NULL,
+                reacted_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (story_id, user_id)
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS notifications (
+                notification_id SERIAL PRIMARY KEY,
+                receiver_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                sender_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                type VARCHAR(30) NOT NULL,
+                content VARCHAR(500) NOT NULL,
+                post_id INTEGER REFERENCES post(post_id) ON DELETE CASCADE,
+                is_read BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        // Keep databases created by older versions compatible with notifications.
+        await client.query('ALTER TABLE notifications ADD COLUMN IF NOT EXISTS post_id INTEGER REFERENCES post(post_id) ON DELETE CASCADE');
+        await client.query('ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE');
+        await client.query('ALTER TABLE notifications ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT NOW()');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                token_hash VARCHAR(64) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used_at TIMESTAMP NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `);
+        await client.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN NOT NULL DEFAULT FALSE');
+        await client.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP');
+        await client.query('ALTER TABLE post ADD COLUMN IF NOT EXISTS location VARCHAR(100)');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS saved_posts (
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                post_id INTEGER NOT NULL REFERENCES post(post_id) ON DELETE CASCADE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (user_id, post_id)
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS saved_collections (
+                collection_id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                name VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                UNIQUE (user_id, name)
+            )
+        `);
+        await client.query('ALTER TABLE saved_posts ADD COLUMN IF NOT EXISTS collection_id INTEGER REFERENCES saved_collections(collection_id) ON DELETE SET NULL');
         client.release();
 
         server.listen(PORT, () => {

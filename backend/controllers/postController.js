@@ -2,6 +2,8 @@
 const { pool } = require('../config/db');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const path = require('path');
+const { createNotification } = require('./NotificationController');
 
 // Cấu hình Cloudinary (Khai báo các biến này trong file .env trên Render)
 cloudinary.config({
@@ -17,10 +19,6 @@ const getPosts = async (req, res) => {
     const currentUserId = (req.query.currentUserId && req.query.currentUserId !== 'undefined')
         ? req.query.currentUserId
         : null;
-
-    // 👇 Điền tất cả các ID bạn muốn hiển thị công khai vào mảng này, cách nhau bằng dấu phẩy
-    const PUBLIC_USER_IDS = [18,7];
-    const publicIdsString = PUBLIC_USER_IDS.join(','); // Sẽ tự động tạo thành chuỗi "15,18,22"
 
     try {
         let query = `
@@ -49,17 +47,17 @@ const getPosts = async (req, res) => {
         const params = [];
 
         if (currentUserId) {
-            // Đã đăng nhập: Hiện bài của mình, bạn bè, VÀ nhóm tài khoản công khai
+            // Tài khoản riêng tư chỉ hiển thị cho chủ tài khoản và bạn bè đã chấp nhận.
             query += `
-                WHERE p.user_id = $1 
-                   OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted') 
+                WHERE u.is_private IS NOT TRUE
+                   OR p.user_id = $1
+                   OR p.user_id IN (SELECT friend_id FROM friends WHERE user_id = $1 AND status = 'accepted')
                    OR p.user_id IN (SELECT user_id FROM friends WHERE friend_id = $1 AND status = 'accepted')
-                   OR u.user_id IN (${publicIdsString})
             `;
             params.push(currentUserId);
         } else {
-            // Khách vãng lai: Hiện toàn bộ bài của nhóm tài khoản công khai
-            query += ` WHERE u.user_id IN (${publicIdsString}) `;
+            // Khách vãng lai chỉ được xem bài viết từ tài khoản công khai.
+            query += ` WHERE u.is_private IS NOT TRUE `;
         }
 
         query += ` ORDER BY p.created_at DESC`;
@@ -76,6 +74,15 @@ const getPostById = async (req, res) => {
     const { postId } = req.params;
     const currentUserId = req.query.currentUserId || null;
     try {
+        const visibilityCondition = currentUserId
+            ? `AND (
+                   u.is_private IS NOT TRUE
+                   OR u.user_id = $2
+                   OR u.user_id IN (SELECT friend_id FROM friends WHERE user_id = $2 AND status = 'accepted')
+                   OR u.user_id IN (SELECT user_id FROM friends WHERE friend_id = $2 AND status = 'accepted')
+               )`
+            : 'AND u.is_private IS NOT TRUE';
+
         let query = `
             SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
@@ -91,6 +98,7 @@ const getPostById = async (req, res) => {
                            '[]'::json) AS comments
             FROM post p JOIN users u ON p.user_id = u.user_id
             WHERE p.post_id = $1
+            ${visibilityCondition}
         `;
 
         const params = currentUserId ? [postId, currentUserId] : [postId];
@@ -109,7 +117,7 @@ const getPostById = async (req, res) => {
 // Tạo bài viết mới
 const createPost = async (req, res) => {
     // Chỉ lấy caption và user_id từ body
-    const { caption, user_id } = req.body;
+    const { caption, user_id, location } = req.body;
 
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
 
@@ -118,16 +126,18 @@ const createPost = async (req, res) => {
     try {
         // Kiểm tra nếu có file ảnh được đính kèm qua Multer
         if (req.file) {
-            // Upload file từ thư mục tạm lên Cloudinary
-            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'social-media-clone-posts' // Gom nhóm ảnh gọn gàng trên Cloudinary
-            });
-//jj
-            // Lấy đường link ảnh public
-            finalPhotoUrl = uploadResult.secure_url;
-
-            // Xóa file ảnh tạm ở server cục bộ (tránh đầy bộ nhớ ổ cứng)
-            fs.unlinkSync(req.file.path);
+            const hasCloudinaryConfig = process.env.CLOUDINARY_CLOUD_NAME
+                && process.env.CLOUDINARY_API_KEY
+                && process.env.CLOUDINARY_API_SECRET;
+            if (hasCloudinaryConfig) {
+                const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'social-media-clone-posts'
+                });
+                finalPhotoUrl = uploadResult.secure_url;
+                fs.unlinkSync(req.file.path);
+            } else {
+                finalPhotoUrl = `/uploads/${path.basename(req.file.path)}`;
+            }
         } else if (req.body.photo_url) {
             // Hỗ trợ trường hợp phụ: client gửi sẵn URL
             finalPhotoUrl = req.body.photo_url;
@@ -135,8 +145,8 @@ const createPost = async (req, res) => {
 
         // Lưu dữ liệu vào database
         const result = await pool.query(
-            'INSERT INTO post (user_id, caption, photo_url, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *',
-            [user_id, caption, finalPhotoUrl]
+            'INSERT INTO post (user_id, caption, photo_url, location, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
+            [user_id, caption, finalPhotoUrl, location || null]
         );
 // Đảm bảo kết quả trả về JSON cho client có chứa trường created_at
         res.status(201).json(result.rows[0]);
@@ -215,6 +225,14 @@ const likePost = async (req, res) => {
             res.json({ message: 'Unliked' });
         } else {
             await pool.query('INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)', [user_id, postId]);
+            const postOwner = await pool.query('SELECT user_id FROM post WHERE post_id = $1', [postId]);
+            await createNotification({
+                receiverId: postOwner.rows[0]?.user_id,
+                senderId: user_id,
+                type: 'like',
+                content: 'đã thích bài viết của bạn.',
+                postId
+            });
             res.json({ message: 'Liked' });
         }
     } catch (err) {
@@ -234,6 +252,14 @@ const commentPost = async (req, res) => {
             [postId, user_id, comment_text]
         );
         const newComment = result.rows[0];
+        const postOwner = await pool.query('SELECT user_id FROM post WHERE post_id = $1', [postId]);
+        await createNotification({
+            receiverId: postOwner.rows[0]?.user_id,
+            senderId: user_id,
+            type: 'comment',
+            content: 'đã bình luận về bài viết của bạn.',
+            postId
+        });
 
         // Lấy cả username và profile_photo_url để hiển thị avatar bên phía giao diện
         const userResult = await pool.query('SELECT username, profile_photo_url FROM users WHERE user_id = $1', [newComment.user_id]);

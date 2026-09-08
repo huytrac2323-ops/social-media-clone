@@ -2,6 +2,10 @@
 const { pool } = require('../config/db'); // 👈 Đúng
 const jwt = require('jsonwebtoken'); // Nhớ khai báo cái này ở đầu file nếu chưa có
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const register = async (req, res) => {
     const { username, email, password } = req.body;
@@ -60,22 +64,112 @@ const login = async (req, res) => {
         res.status(500).send({ message: err.message });
     }
 };
+
+const googleLogin = async (req, res) => {
+    const { credential } = req.body;
+    if (!credential || !process.env.GOOGLE_CLIENT_ID) {
+        return res.status(400).json({ message: 'Google OAuth chưa được cấu hình.' });
+    }
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const payload = ticket.getPayload();
+        if (!payload?.email || !payload.email_verified) {
+            return res.status(401).json({ message: 'Tài khoản Google chưa xác thực email.' });
+        }
+
+        let result = await pool.query('SELECT * FROM users WHERE email ILIKE $1 LIMIT 1', [payload.email]);
+        let user = result.rows[0];
+        if (!user) {
+            const baseUsername = (payload.email.split('@')[0] || 'google_user').replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24);
+            const username = `${baseUsername}_${String(payload.sub).slice(-6)}`;
+            const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+            result = await pool.query(
+                `INSERT INTO users (username, email, password_hash, profile_photo_url)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING *`,
+                [username, payload.email, passwordHash, payload.picture || null]
+            );
+            user = result.rows[0];
+        } else if (payload.picture && user.profile_photo_url !== payload.picture) {
+            const updated = await pool.query(
+                'UPDATE users SET profile_photo_url = $1 WHERE user_id = $2 RETURNING *',
+                [payload.picture, user.user_id]
+            );
+            user = updated.rows[0];
+        }
+
+        const { password_hash: ignoredPassword, ...userWithoutPassword } = user;
+        const token = jwt.sign(
+            { id: user.user_id },
+            process.env.JWT_SECRET || 'chuoi_bi_mat_cua_ban',
+            { expiresIn: '7d' }
+        );
+        res.json({ message: 'Đăng nhập Google thành công', user: userWithoutPassword, token });
+    } catch (err) {
+        res.status(401).json({ message: 'Token Google không hợp lệ.' });
+    }
+};
 const logout = async (req,res)=>{
     try{
         const authHeader = req.headers.authorization;
         if(!authHeader || !authHeader.startsWith('Bearer')){
             return res.status(400).json({ message:'ko tìm thấy toekn hợp lệ'})
         }
-        const token = authHeader.split('')[1];
+
+        const token = authHeader.split(' ')[1];
         await pool.query('INSERT INTO token_blacklist (token) VALUES ($1)' , [token])
 
         res.status(200).json ({message: "đăng xuất thành công!"});
-    }
-    catch(error){
-        res.status(500).json({message:"lỗi server khi đăng xuất",error:error.message});
-    }
+        } catch (error) {
+            res.status(500).json({ message: "lỗi server khi đăng xuất", error: error.message });
+        }
+    };
 
-}
+    const requestPasswordReset = async (req, res) => {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Vui lòng nhập email.' });
+        try {
+            const userResult = await pool.query('SELECT user_id FROM users WHERE email ILIKE $1 LIMIT 1', [email.trim()]);
+            if (userResult.rowCount > 0) {
+                const token = crypto.randomBytes(32).toString('hex');
+                await pool.query(
+                    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+                     VALUES ($1, $2, NOW() + INTERVAL '30 minutes')`,
+                    [userResult.rows[0].user_id, crypto.createHash('sha256').update(token).digest('hex')]
+                );
+                if (process.env.NODE_ENV !== 'production') console.info(`[password-reset] ${email}: ${token}`);
+            }
+            res.json({ message: 'Nếu email tồn tại, hướng dẫn khôi phục đã được gửi.' });
+        } catch (err) {
+            res.status(500).json({ message: 'Không thể tạo yêu cầu khôi phục.', error: err.message });
+        }
+    };
+
+    const resetPassword = async (req, res) => {
+        const { token, password } = req.body;
+        if (!token || !password || password.length < 8) {
+            return res.status(400).json({ message: 'Mã khôi phục và mật khẩu mới tối thiểu 8 ký tự là bắt buộc.' });
+        }
+        try {
+            const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+            const tokenResult = await pool.query(
+                `SELECT id, user_id FROM password_reset_tokens
+                 WHERE token_hash = $1 AND expires_at > NOW() AND used_at IS NULL
+                 ORDER BY created_at DESC LIMIT 1`,
+                [tokenHash]
+            );
+            if (!tokenResult.rowCount) return res.status(400).json({ message: 'Mã khôi phục không hợp lệ hoặc đã hết hạn.' });
+            const passwordHash = await bcrypt.hash(password, 10);
+            await pool.query('UPDATE users SET password_hash = $1 WHERE user_id = $2', [passwordHash, tokenResult.rows[0].user_id]);
+            await pool.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [tokenResult.rows[0].id]);
+            res.json({ message: 'Đổi mật khẩu thành công. Bạn có thể đăng nhập lại.' });
+        } catch (err) {
+            res.status(500).json({ message: 'Không thể đổi mật khẩu.', error: err.message });
+        }
+    };
 deleteAccount = async (req, res) => {
     const { userId } = req.params;
     try {
@@ -91,4 +185,4 @@ deleteAccount = async (req, res) => {
     }
 };
 
-module.exports = { register, login,logout,deleteAccount };
+module.exports = { register, login, googleLogin, logout, deleteAccount, requestPasswordReset, resetPassword };

@@ -4,12 +4,13 @@ import '../styles/App.css';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
 import PostPage from '../pages/PostPage.jsx';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import SavedPostsPage from '../components/SavedPostsPage.jsx';
+import ExplorePage from '../pages/ExplorePage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
-import NotificationDropdown from "../components/NotificationDropdown.jsx";
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { io } from 'socket.io-client';
@@ -23,7 +24,7 @@ const socket = io(SOCKET_URL, {
     transports: ['websocket', 'polling']
 });
 
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
 function App() {
     return (
@@ -99,6 +100,40 @@ function AppContent() {
             socket.off('receive_message', handleNewMessage);
         };
     }, [currentUser, activeChat]);
+
+    useEffect(() => {
+        if (!currentUser?.user_id) return undefined;
+        let cancelled = false;
+        const notifyActivity = async () => {
+            try {
+                const response = await fetch(`${API_URL}/notifications/${currentUser.user_id}`);
+                if (!response.ok || cancelled) return;
+                const notifications = await response.json();
+                const seen = new Set(JSON.parse(localStorage.getItem('deviceNotificationIds') || '[]'));
+                const fresh = notifications.filter(item => !item.is_read && !seen.has(item.notification_id));
+                if (fresh.length) {
+                    await LocalNotifications.schedule({
+                        notifications: fresh.slice(0, 5).map(item => ({
+                            id: Number(item.notification_id),
+                            title: 'Hoạt động mới',
+                            body: item.content || `${item.username} vừa tương tác với bạn`,
+                            extra: { notificationId: item.notification_id }
+                        }))
+                    });
+                    const updated = [...seen, ...fresh.map(item => item.notification_id)].slice(-200);
+                    localStorage.setItem('deviceNotificationIds', JSON.stringify(updated));
+                }
+            } catch (error) {
+                console.error('Không thể đồng bộ thông báo thiết bị:', error);
+            }
+        };
+        notifyActivity();
+        const interval = setInterval(notifyActivity, 10000);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [currentUser]);
 
     const refreshData = () => setDataVersion(v => v + 1);
 
@@ -210,22 +245,6 @@ function AppContent() {
     };
     return (
         <div className="fb-container">
-            {/* THANH ĐIỀU HƯỚNG PHÍA TRÊN CÙNG */}
-            <div style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 1000,
-                backgroundColor: '#242526',
-                borderBottom: '1px solid #3a3b3c',
-                padding: '12px 24px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItem: 'center',
-                color: 'white'
-            }}>
-
-            </div>
-
             <Routes>
                 <Route path="/" element={
                     <HomePage
@@ -243,7 +262,9 @@ function AppContent() {
                 <Route path="/profile/:username" element={<ProfilePage/>}/>
                 <Route path="/register" element={<RegisterPage onRegisterSuccess={refreshData}/>}/>
                 <Route path="/login" element={<LoginPage/>}/>
+                <Route path="/forgot-password" element={<ForgotPasswordPage/>}/>
                 <Route path="/saved-posts" element={<SavedPostsPage/>}/>
+                <Route path="/explore" element={<ExplorePage/>}/>
             </Routes>
 
             {currentUser && activeChat && (

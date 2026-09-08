@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { useAuth } from '../../context/AuthContext'; // Nhớ kiểm tra lại đường dẫn
 import './ChatWidget.css';
+import Avatar from '../Avatar.jsx';
 
 function ChatWidget() {
     const { currentUser } = useAuth();
@@ -59,11 +60,7 @@ function ChatWidget() {
                                     onClick={() => handleOpenChat(u)}
                                     style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px', borderRadius: '6px', background: '#3a3b3c', marginBottom: '8px' }}
                                 >
-                                    <img
-                                        src={u.profile_photo_url || 'https://via.placeholder.com/30'}
-                                        alt="avatar"
-                                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-                                    />
+                                    <Avatar user={u} className="chat-avatar" />
                                     <span style={{ fontSize: '14px', fontWeight: '500' }}>{u.username}</span>
                                 </div>
                             ))

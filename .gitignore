@@ -17,7 +17,9 @@ yarn-error.log*
 # File biến môi trường (CHỨA THÔNG TIN NHẠY CẢM)
 /.env
 /backend/.env
+/backend/public/uploads/*
 
 # Thư mục cấu hình của IDE
 /.idea
 /.vscode
+/oracleJdk-21/

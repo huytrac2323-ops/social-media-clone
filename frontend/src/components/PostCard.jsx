@@ -8,7 +8,7 @@ import '../styles/PostCard.css';
 
 
 // Tự động nhận diện môi trường Localhost hay Online
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
 
 
@@ -24,6 +24,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
     const [isExpanded, setIsExpanded] = useState(false);
     // Thêm state quản lý việc bật/tắt khung xem full ảnh
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+    const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -128,8 +129,8 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
 
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/posts/${postId}/save`, {
-                method: 'POST',
+            const response = await fetch(`${API_URL}/posts/${postId}/${isSaved ? 'unsave' : 'save'}`, {
+                method: isSaved ? 'DELETE' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -285,7 +286,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                 {post.imageUrl && (
                     <>
                         <img
-                            src={post.imageUrl}
+                            src={mediaUrl(post.imageUrl)}
                             alt="Nội dung bài viết"
                             className="post-image"
                             onClick={(e) => {
@@ -309,7 +310,7 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                                 }}
                             >
                                 <img
-                                    src={post.imageUrl}
+                                    src={mediaUrl(post.imageUrl)}
                                     alt="Full size"
                                     style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '4px' }}
                                 />

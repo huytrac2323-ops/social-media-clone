@@ -99,7 +99,7 @@ function LoginPage() {
       } catch (requestError) {
         setError(requestError.message);
       }
-    }, { scope: 'public_profile,email', auth_type: 'rerequest', return_scopes: true });
+    }, { scope: 'public_profile', auth_type: 'rerequest', return_scopes: true });
   };
 
   const handleSubmit = async (e) => {

@@ -5,7 +5,7 @@ import { Bell, CheckCheck, BellOff, MessageSquare, Heart, UserPlus } from 'lucid
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
-function NotificationDropdown() {
+function NotificationDropdown({ compact = false }) {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
@@ -73,13 +73,13 @@ function NotificationDropdown() {
         <div className="notification-wrapper" ref={dropdownRef}>
             <button
                 type="button"
-                className={`nav-link-item ${isOpen ? 'active' : ''}`}
+                className={compact ? 'mobile-header-icon-btn' : `nav-link-item ${isOpen ? 'active' : ''}`}
                 onClick={() => setIsOpen(previous => !previous)}
                 aria-label={`Thông báo${unreadCount ? `, ${unreadCount} chưa đọc` : ''}`}
-                style={{ position: 'relative', width: '100%', cursor: 'pointer' }}
+                style={compact ? { position: 'relative' } : { position: 'relative', width: '100%', cursor: 'pointer' }}
             >
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <Bell size={20} />
+                    <Bell size={compact ? 18 : 20} />
                     {unreadCount > 0 && (
                         <span style={{
                             position: 'absolute',
@@ -99,7 +99,7 @@ function NotificationDropdown() {
                         </span>
                     )}
                 </div>
-                <span>Thông báo</span>
+                {!compact && <span>Thông báo</span>}
             </button>
 
             {isOpen && (

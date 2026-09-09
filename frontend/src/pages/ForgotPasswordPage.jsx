@@ -41,6 +41,7 @@ export default function ForgotPasswordPage() {
     return (
         <div className="auth-container">
             <div className="auth-box">
+                <h1 className="auth-logo">Khôi phục mật khẩu</h1>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
                     <div style={{
                         width: '48px',

@@ -7,6 +7,18 @@ const { OAuth2Client } = require('google-auth-library');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const issueUserToken = user => {
+    const { password_hash: ignoredPassword, ...userWithoutPassword } = user;
+    return {
+        user: userWithoutPassword,
+        token: jwt.sign(
+            { id: user.user_id },
+            process.env.JWT_SECRET || 'chuoi_bi_mat_cua_ban',
+            { expiresIn: '7d' }
+        )
+    };
+};
+
 const register = async (req, res) => {
     const { username, email, password } = req.body;
     if (!username || !email || !password) return res.status(400).send({ message: 'Vui lòng điền đầy đủ thông tin.' });
@@ -112,6 +124,46 @@ const googleLogin = async (req, res) => {
         res.status(401).json({ message: 'Token Google không hợp lệ.' });
     }
 };
+
+const facebookLogin = async (req, res) => {
+    const { accessToken } = req.body;
+    const appId = process.env.FACEBOOK_APP_ID;
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    if (!accessToken || !appId || !appSecret) {
+        return res.status(400).json({ message: 'Facebook OAuth chưa được cấu hình.' });
+    }
+    try {
+        const appToken = `${appId}|${appSecret}`;
+        const debugResponse = await fetch(`https://graph.facebook.com/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(appToken)}`);
+        const debugData = await debugResponse.json();
+        const tokenData = debugData.data;
+        if (!debugResponse.ok || !tokenData?.is_valid || String(tokenData.app_id) !== String(appId)) {
+            return res.status(401).json({ message: 'Token Facebook không hợp lệ.' });
+        }
+        const profileResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(accessToken)}`);
+        const profile = await profileResponse.json();
+        if (!profileResponse.ok || !profile.id || !profile.email) {
+            return res.status(401).json({ message: 'Facebook chưa cung cấp email cho tài khoản này.' });
+        }
+
+        let result = await pool.query('SELECT * FROM users WHERE email ILIKE $1 LIMIT 1', [profile.email]);
+        let user = result.rows[0];
+        if (!user) {
+            const username = `${(profile.name || 'facebook_user').replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24)}_${String(profile.id).slice(-6)}`;
+            const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+            result = await pool.query(
+                `INSERT INTO users (username, email, password_hash, profile_photo_url)
+                 VALUES ($1, $2, $3, $4) RETURNING *`,
+                [username, profile.email, passwordHash, profile.picture?.data?.url || null]
+            );
+            user = result.rows[0];
+        }
+        const auth = issueUserToken(user);
+        res.json({ message: 'Đăng nhập Facebook thành công', ...auth });
+    } catch (err) {
+        res.status(502).json({ message: 'Không thể xác thực Facebook.' });
+    }
+};
 const logout = async (req,res)=>{
     try{
         const authHeader = req.headers.authorization;
@@ -185,4 +237,4 @@ deleteAccount = async (req, res) => {
     }
 };
 
-module.exports = { register, login, googleLogin, logout, deleteAccount, requestPasswordReset, resetPassword };
+module.exports = { register, login, googleLogin, facebookLogin, logout, deleteAccount, requestPasswordReset, resetPassword };

@@ -83,3 +83,8 @@
 .success-message {
   color: #28a745;
 }
+
+.facebook-auth-button {
+  background: #1877f2;
+  margin-top: 8px;
+}

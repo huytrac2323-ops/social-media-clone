@@ -8,6 +8,7 @@ const verifyToken = require('../middlewares/verifyToken'); // 👈 Thêm dòng n
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/google', authController.googleLogin);
+router.post('/facebook', authController.facebookLogin);
 router.post('/forgot-password', authController.requestPasswordReset);
 router.post('/reset-password', authController.resetPassword);
 router.post('/logout', authController.logout); // 👈 Thêm route đăng xuất

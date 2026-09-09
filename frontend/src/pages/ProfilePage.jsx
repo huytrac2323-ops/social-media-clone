@@ -18,8 +18,10 @@ import {
   Lock,
   Heart,
   Users,
-  X
+  X,
+  Menu
 } from 'lucide-react';
+import ProfileMenuModal from '../components/ProfileMenuModal.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -32,6 +34,7 @@ function ProfilePage() {
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('posts');
   const [friends, setFriends] = useState([]);
   const [followStatus, setFollowStatus] = useState(null);
@@ -150,6 +153,18 @@ function ProfilePage() {
         <main style={{ flex: 1, maxWidth: '900px', minWidth: 0, paddingBottom: '80px' }}>
           {/* PROFILE HEADER CARD */}
           <section className="profile-header-card">
+            {currentUser && (
+              <button
+                type="button"
+                className="profile-menu-trigger-btn"
+                onClick={() => setIsMenuModalOpen(true)}
+                title="Tùy chọn trang cá nhân"
+                aria-label="Tùy chọn trang cá nhân"
+              >
+                <Menu size={22} />
+              </button>
+            )}
+
             <div className="profile-avatar-wrapper">
               <Avatar user={userProfile} size={130} style={{ border: '3px solid rgba(255,255,255,0.15)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }} />
             </div>
@@ -396,6 +411,12 @@ function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* PROFILE OPTIONS MENU MODAL */}
+      <ProfileMenuModal
+        isOpen={isMenuModalOpen}
+        onClose={() => setIsMenuModalOpen(false)}
+      />
     </div>
   );
 }

@@ -12,7 +12,8 @@ import {
     LogOut,
     LogIn,
     Search,
-    Sparkles
+    Sparkles,
+    MessageCircle
 } from 'lucide-react';
 
 function SidebarNav({ onCreatePost }) {
@@ -110,6 +111,12 @@ function SidebarNav({ onCreatePost }) {
                         {currentUser ? (
                             <>
                                 <li>
+                                    <Link to="/messages" className={`nav-link-item ${isActive('/messages') ? 'active' : ''}`} title="Tin nhắn">
+                                        <MessageCircle size={20} />
+                                        <span>Tin nhắn</span>
+                                    </Link>
+                                </li>
+                                <li>
                                     <Link
                                         to="/saved-posts"
                                         className={`nav-link-item ${isActive('/saved-posts') ? 'active' : ''}`}
@@ -180,9 +187,9 @@ function SidebarNav({ onCreatePost }) {
                     <span>Trang chủ</span>
                 </Link>
 
-                <Link to="/explore" className={`mobile-nav-item ${isActive('/explore') ? 'active' : ''}`} title="Khám phá">
-                    <Compass size={22} />
-                    <span>Khám phá</span>
+                <Link to="/explore" className={`mobile-nav-item ${isActive('/explore') ? 'active' : ''}`} title="Tìm kiếm">
+                    <Search size={22} />
+                    <span>Tìm kiếm</span>
                 </Link>
 
                 {currentUser ? (
@@ -200,12 +207,12 @@ function SidebarNav({ onCreatePost }) {
                         </button>
 
                         <Link
-                            to="/saved-posts"
-                            className={`mobile-nav-item ${isActive('/saved-posts') ? 'active' : ''}`}
-                            title="Đã lưu"
+                            to="/messages"
+                            className={`mobile-nav-item ${isActive('/messages') ? 'active' : ''}`}
+                            title="Tin nhắn"
                         >
-                            <Bookmark size={22} />
-                            <span>Đã lưu</span>
+                            <MessageCircle size={22} />
+                            <span>Tin nhắn</span>
                         </Link>
 
                         <Link
@@ -214,14 +221,24 @@ function SidebarNav({ onCreatePost }) {
                             title="Trang cá nhân"
                         >
                             <Avatar user={currentUser} size={24} />
-                            <span>Tôi</span>
+                            <span>Cá nhân</span>
                         </Link>
                     </>
                 ) : (
-                    <Link to="/login" className={`mobile-nav-item ${isActive('/login') ? 'active' : ''}`} title="Đăng nhập">
-                        <LogIn size={22} />
-                        <span>Đăng nhập</span>
-                    </Link>
+                    <>
+                        <Link
+                            to="/messages"
+                            className={`mobile-nav-item ${isActive('/messages') ? 'active' : ''}`}
+                            title="Tin nhắn"
+                        >
+                            <MessageCircle size={22} />
+                            <span>Tin nhắn</span>
+                        </Link>
+                        <Link to="/login" className={`mobile-nav-item ${isActive('/login') ? 'active' : ''}`} title="Đăng nhập">
+                            <LogIn size={22} />
+                            <span>Đăng nhập</span>
+                        </Link>
+                    </>
                 )}
             </nav>
         </>

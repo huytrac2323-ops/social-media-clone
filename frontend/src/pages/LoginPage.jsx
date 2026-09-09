@@ -116,7 +116,7 @@ function LoginPage() {
       if (!response.ok) throw new Error(data.message || 'Đăng nhập thất bại.');
 
       if (data.token) localStorage.setItem('token', data.token);
-      login(data.user || data);
+      login(data.user || data, data.token);
       navigate('/');
     } catch (err) {
       setError(err.message);

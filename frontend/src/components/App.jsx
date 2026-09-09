@@ -10,6 +10,7 @@ import PostPage from '../pages/PostPage.jsx';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import SavedPostsPage from '../components/SavedPostsPage.jsx';
 import ExplorePage from '../pages/ExplorePage.jsx';
+import MessagesPage from '../pages/MessagesPage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -265,6 +266,8 @@ function AppContent() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage/>}/>
                 <Route path="/saved-posts" element={<SavedPostsPage/>}/>
                 <Route path="/explore" element={<ExplorePage/>}/>
+                <Route path="/messages" element={<MessagesPage/>}/>
+                <Route path="/messages/:userId" element={<MessagesPage/>}/>
             </Routes>
 
             {currentUser && activeChat && (

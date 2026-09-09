@@ -3,16 +3,26 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
 import EditPostModal from '../modals/EditPostModal.jsx';
-import { STRINGS } from '../constants/strings.js'; // Import tệp strings
+import { STRINGS } from '../constants/strings.js';
 import '../styles/PostCard.css';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  MoreHorizontal,
+  UserPlus,
+  Edit3,
+  Trash2,
+  Send,
+  X,
+  Clock
+} from 'lucide-react';
 
-
-// Tự động nhận diện môi trường Localhost hay Online
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
-
-
-function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated, onDeleteComment }) {  const { currentUser } = useAuth();
+function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated, onDeleteComment }) {
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [commentText, setCommentText] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,11 +30,12 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
   const menuRef = useRef(null);
   const [isSaved, setIsSaved] = useState(post.isSaved || false);
   const [loading, setLoading] = useState(false);
-  const isOwner = currentUser && currentUser.user_id === post.userId;
-    const [isExpanded, setIsExpanded] = useState(false);
-    // Thêm state quản lý việc bật/tắt khung xem full ảnh
-    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-    const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
+  const isOwner = currentUser && Number(currentUser.user_id) === Number(post.userId);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [friendRequestSent, setFriendRequestSent] = useState(false);
+
+  const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -34,411 +45,418 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuRef]);
+  }, []);
 
-    const maxLength = 250;
-    const shouldTruncate = post.content && post.content.length > maxLength;
-    const displayedContent = (isExpanded || !shouldTruncate)
-        ? post.content
-        : post.content.slice(0, maxLength) + '...';
-
-
+  const maxLength = 240;
+  const shouldTruncate = post.content && post.content.length > maxLength;
+  const displayedContent = (isExpanded || !shouldTruncate)
+    ? post.content
+    : post.content.slice(0, maxLength) + '...';
 
   const handleCommentFormSubmit = (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
     onCommentSubmit(post.id, commentText);
+    setCommentText('');
   };
-    // Thêm hàm xử lý khi click vào thẻ bài viết để xem chi tiết
-    const handleCardClick = (e) => {
-        // Nếu người dùng bấm vào avatar, tên tác giả, nút 3 chấm hoặc các nút hành động thì không chuyển trang
-        if (
-            e.target.closest('a') ||
-            e.target.closest('button') ||
-            e.target.closest('.post-menu-container') ||
-            e.target.closest('.comments-section')
-        ) {
-            return;
-        }
-        navigate(`/post/${post.id}`);
-    };
+
+  const handleCardClick = (e) => {
+    if (
+      e.target.closest('a') ||
+      e.target.closest('button') ||
+      e.target.closest('input') ||
+      e.target.closest('.post-menu-dropdown') ||
+      e.target.closest('.comment-form') ||
+      e.target.closest('.image-modal-view')
+    ) {
+      return;
+    }
+    navigate(`/post/${post.id}`);
+  };
 
   const handleDelete = async () => {
-
     if (!window.confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) return;
-    
     try {
-        const response = await fetch(`${API_URL}/posts/${post.id}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: currentUser.user_id })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Xóa bài viết thất bại.');
-        
-        alert('Xóa bài viết thành công!');
-        if (onPostDeleted) {
-            onPostDeleted();
-        }
-        if(window.location.pathname.startsWith('/post/')) {
-            navigate('/');
-        }
+      const response = await fetch(`${API_URL}/posts/${post.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.user_id })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Xóa bài viết thất bại.');
 
+      alert('Xóa bài viết thành công!');
+      if (onPostDeleted) onPostDeleted();
+      if (window.location.pathname.startsWith('/post/')) {
+        navigate('/');
+      }
     } catch (error) {
-        alert(`Lỗi: ${error.message}`);
+      alert(`Lỗi: ${error.message}`);
     }
   };
 
-    const handleShare = async (postIdToShare) => {
-        const token = localStorage.getItem('token');
-        if (!token) return alert('Vui lòng đăng nhập để chia sẻ bài viết.');
+  const handleShare = async (postIdToShare) => {
+    const token = localStorage.getItem('token');
+    if (!token) return alert('Vui lòng đăng nhập để chia sẻ bài viết.');
 
-        // 1. Hiển thị hộp thoại cho phép nhập lời tựa (caption)
-        const userCaption = window.prompt("Nhập nội dung chia sẻ của bạn (Có thể để trống):");
+    const userCaption = window.prompt("Nhập nội dung chia sẻ của bạn (Có thể để trống):");
+    if (userCaption === null) return;
 
-        // 2. Nếu người dùng bấm "Hủy" (Cancel), biến sẽ là null -> Dừng lại không share nữa
-        if (userCaption === null) return;
+    try {
+      const response = await fetch(`${API_URL}/posts/${postIdToShare}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ caption: userCaption })
+      });
 
-        try {
-            const response = await fetch(`${API_URL}/posts/${postIdToShare}/share`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                // 3. Gửi caption mà người dùng vừa gõ lên cho Backend
-                body: JSON.stringify({ caption: userCaption })
-            });
+      if (!response.ok) {
+        const errData = await response.json();
+        return alert(errData.message || 'Có lỗi xảy ra khi chia sẻ');
+      }
 
-            if (!response.ok) {
-                const errData = await response.json();
-                return alert(errData.message || 'Có lỗi xảy ra khi chia sẻ');
-            }
+      alert('Chia sẻ thành công! Đang làm mới bảng tin.');
+      if (onPostUpdated) onPostUpdated();
+    } catch (err) {
+      console.error("Lỗi khi chia sẻ bài viết:", err);
+    }
+  };
 
-            alert('Chia sẻ thành công! Tải lại trang để xem bài viết mới.');
-        } catch (err) {
-            console.error("Lỗi khi chia sẻ bài viết:", err);
-        }
-    };
-    // Thêm hàm xử lý gọi API lưu bài viết
-    const handleSavePost = async (postId) => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            return alert('Vui lòng đăng nhập để lưu bài viết.');
-        }
+  const handleSavePost = async (postId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return alert('Vui lòng đăng nhập để lưu bài viết.');
 
-        try {
-            setLoading(true);
-            const response = await fetch(`${API_URL}/posts/${postId}/${isSaved ? 'unsave' : 'save'}`, {
-                method: isSaved ? 'DELETE' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ user_id: currentUser?.user_id })
-            });
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/posts/${postId}/${isSaved ? 'unsave' : 'save'}`, {
+        method: isSaved ? 'DELETE' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_id: currentUser?.user_id })
+      });
 
-            const data = await response.json();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Lỗi thao tác từ server');
+      }
 
-            if (!response.ok) {
-                throw new Error(data.message || data.error || 'Lỗi thao tác từ server');
-            }
+      setIsSaved(!isSaved);
+    } catch (err) {
+      console.error('Lỗi khi lưu bài:', err);
+      alert(`Lỗi: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            // Đổi trạng thái qua lại: Nếu chưa lưu thì thành đã lưu, và ngược lại
-            setIsSaved(!isSaved);
-            alert(data.message || 'Thành công!');
-        } catch (err) {
-            console.error('Lỗi chi tiết:', err);
-            alert(`Lỗi: ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleAddFriend = async () => {
+    const myId = Number(currentUser?.user_id || currentUser?.id);
+    const targetId = Number(post.userId);
 
+    if (!myId || !targetId) return alert('Lỗi: Thiếu thông tin ID!');
+    if (myId === targetId) return alert('Không thể tự kết bạn với chính mình!');
 
+    try {
+      const res = await fetch(`${API_URL}/friends/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFriendRequestSent(true);
+        alert('Đã gửi yêu cầu kết bạn!');
+      } else {
+        alert(data.error || data.message || 'Lỗi gửi kết bạn');
+      }
+    } catch (err) {
+      console.error("Lỗi kết bạn:", err);
+    }
+  };
 
-    const authorUser = {
-        username: post.author || post.username,
-        profile_photo_url: post.authorAvatar || post.profile_photo_url
-    };
-    console.log("Dữ liệu PostCard nhận được:", post);
+  const authorUser = {
+    username: post.author || post.username,
+    profile_photo_url: post.authorAvatar || post.profile_photo_url
+  };
 
+  const formattedTime = post.time ? new Date(post.time).toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : '';
 
   return (
     <>
       {isEditModalOpen && (
-        <EditPostModal 
+        <EditPostModal
           post={post}
           onClose={() => setIsEditModalOpen(false)}
           onPostUpdated={() => {
             setIsEditModalOpen(false);
-            if(onPostUpdated) onPostUpdated();
+            if (onPostUpdated) onPostUpdated();
           }}
         />
       )}
 
+      <article className="modern-post-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+        {/* Post Header */}
+        <div className="post-header">
+          <Link
+            to={(post.author || post.username) ? `/profile/${post.author || post.username}` : '#'}
+            className="post-author-group"
+          >
+            <Avatar user={authorUser} size={40} />
+            <div className="post-meta">
+              <span className="post-author-name">{post.author || post.username}</span>
+              <span className="post-time-stamp" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <Clock size={11} />
+                {formattedTime || 'Vừa xong'}
+              </span>
+            </div>
+          </Link>
 
+          <div className="post-header-actions">
+            {currentUser && Number(currentUser.user_id || currentUser.id) !== Number(post.userId) && (
+              <button
+                type="button"
+                className="btn-add-friend-post"
+                onClick={handleAddFriend}
+                disabled={friendRequestSent}
+                title="Kết bạn"
+              >
+                <UserPlus size={13} />
+                <span>{friendRequestSent ? 'Đã gửi' : 'Thêm bạn'}</span>
+              </button>
+            )}
 
-
-          <div className="post-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
-            <div className="post-header">
-                <Link
-                    to={(post.author || post.username) ? `/profile/${post.author || post.username}` : '#'} >
-                    <Avatar user={authorUser} className="mini-avatar" />
-                    <div className="post-meta">
-                        <h4 className="post-author">{post.author}</h4>
-                        <span className="post-time">
-                        {post.time
-                            ? new Date(post.time).toLocaleString('vi-VN', { // 👈 Đổi comment.created_at thành post.time
-                                timeZone: 'Asia/Ho_Chi_Minh',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
-                            })
-                            : 'Chưa có thời gian'}
-                    </span>
-                    </div>
-                </Link>
-
-                {/* 👇 THÊM NÚT KẾT BẠN Ở ĐÂY (Kế bên tên tác giả) */}
-                {currentUser && Number(currentUser.user_id || currentUser.id) !== Number(post.userId) && (
-                    <button
-                        onClick={async () => {
-                            // Lấy trực tiếp ID người đăng nhập và ID tác giả bài viết
-                            const myId = Number(currentUser.user_id || currentUser.id);
-
-                            // Trong ảnh console, bài viết chứa tác giả ở trường userId, không phải user_id
-                            const targetId = Number(post.userId);
-
-                            // In ra console để kiểm tra chắc chắn dữ liệu không bị trống
-                            console.log("Đang gửi yêu cầu từ myId:", myId, "đến targetId:", targetId);
-
-                            if (!myId || !targetId) {
-                                return alert(`Lỗi: Thiếu ID! myId=${myId}, targetId=${targetId}`);
-                            }
-
-                            if (myId === targetId) {
-                                return alert("Không thể tự kết bạn với chính mình!");
-                            }
-
-                            try {
-                                const res = await fetch(`${API_URL}/friends/request`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    // 👇 ĐỔI TÊN BIẾN TẠI ĐÂY ĐỂ KHỚP VỚI BACKEND
-                                    body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
-                                });
-                                const data = await res.json();
-
-                                if (res.ok) {
-                                    alert("Đã gửi yêu cầu kết bạn!");
-                                } else {
-                                    alert(`Lỗi backend: ${data.error || data.message}`);
-                                }
-                            } catch (err) {
-                                console.error("Lỗi gửi kết bạn:", err);
-                            }
-                        }}
-                        style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', marginRight: '10px' }}
-                    >
-                        ➕ Thêm bạn
+            {isOwner && (
+              <div className="post-menu-container" ref={menuRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="post-menu-btn"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  aria-label="Tùy chọn bài viết"
+                >
+                  <MoreHorizontal size={18} />
+                </button>
+                {menuOpen && (
+                  <div className="post-menu-dropdown">
+                    <button type="button" onClick={() => { setIsEditModalOpen(true); setMenuOpen(false); }}>
+                      <Edit3 size={14} />
+                      <span>{STRINGS.EDIT}</span>
                     </button>
-                )}
-
-
-
-
-
-                {/* Nút menu 3 chấm của chủ bài viết */}
-                {isOwner && (
-                    <div className="post-menu-container" ref={menuRef}>
-                        <button className="post-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
-                            •••
-                        </button>
-                        {menuOpen && (
-                            <div className="post-menu-dropdown">
-                                <button onClick={() => { setIsEditModalOpen(true); setMenuOpen(false); }}>{STRINGS.EDIT}</button>
-                                <button onClick={handleDelete} className="delete">{STRINGS.DELETE}</button>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {/* Nội dung bài viết và hình ảnh nằm ở đây */}
-            <div className="post-body">
-                {post.content && (
-                    <div className="post-content-wrapper">
-                        <p className="post-content">{displayedContent}</p>
-                        {shouldTruncate && (
-                            <button
-                                onClick={() => setIsExpanded(!isExpanded)}
-                                style={{ background: 'none', border: 'none', color: '#1877f2', cursor: 'pointer', padding: 0, fontWeight: 'bold', marginTop: '6px' }}
-                            >
-                                {isExpanded ? 'Thu gọn' : 'Xem thêm'}
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                {post.imageUrl && (
-                    <>
-                        <img
-                            src={mediaUrl(post.imageUrl)}
-                            alt="Nội dung bài viết"
-                            className="post-image"
-                            onClick={(e) => {
-                                e.stopPropagation(); // 👈 Chặn không cho sự kiện lan ra ngoài khung bài viết
-                                setIsImageViewerOpen(true);
-                            }}
-                            style={{ cursor: 'zoom-in' }}
-                        />
-
-                        {/* Modal hiển thị Full hình ảnh khi click vào */}
-                        {isImageViewerOpen && (
-                            <div
-                                onClick={(e) => {
-                                    e.stopPropagation(); // 👈 Chặn lan truyền khi bấm vào nền tối của modal
-                                    setIsImageViewerOpen(false);
-                                }}
-                                style={{
-                                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-                                    backgroundColor: 'rgba(0, 0, 0, 0.85)', display: 'flex',
-                                    justifyContent: 'center', alignItems: 'center', zIndex: 9999, cursor: 'zoom-out'
-                                }}
-                            >
-                                <img
-                                    src={mediaUrl(post.imageUrl)}
-                                    alt="Full size"
-                                    style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', borderRadius: '4px' }}
-                                />
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* NẾU LÀ BÀI CHIA SẺ -> VẼ KHUNG BÀI GỐC Ở ĐÂY */}
-                {post.shared_post && (
-                    <div className="shared-post-container" style={{ border: '1px solid #444', padding: '12px', borderRadius: '8px', marginTop: '15px', backgroundColor: '#242526' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <img src={post.shared_post.profile_photo_url} alt="avatar" style={{ width: 24, height: 24, borderRadius: '50%' }} />
-                            <strong>{post.shared_post.username}</strong>
-                        </div>
-                        {post.shared_post.caption && <p style={{ fontSize: '14px' }}>{post.shared_post.caption}</p>}
-                        {post.shared_post.photo_url && <img src={post.shared_post.photo_url} alt="Shared content" style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
-                    </div>
-                )}
-            </div>
-
-              {/* HÀNG ICON VÀ SỐ LƯỢNG NẰM LIỀN KỀ NHAU Ở DƯỚI */}
-              <div className="post-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderTop: '1px solid #efefef' }}>
-                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-
-                      {/* Nút Thích + Số lượng like */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <button
-                              onClick={() => onLike(post.id)}
-                              className={`action-btn ${post.isLiked ? 'liked' : ''}`}
-                              title="Thích"
-                              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
-                          >
-                              {post.isLiked ? '❤️' : '🤍'}
-                          </button>
-                          <span style={{ fontSize: '14px', fontWeight: '600' }}>{post.likes ?? 0}</span>
-                      </div>
-
-                      {/* Nút Bình luận + Số lượng bình luận */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Link to={`/post/${post.id}`} className="action-btn" title="Bình luận" style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', textDecoration: 'none' }}>
-                              💬
-                          </Link>
-                          <span style={{ fontSize: '14px', fontWeight: '600' }}>{post.comments ? post.comments.length : 0}</span>
-                      </div>
-
-                      {/* Nút Chia sẻ */}
-                      <button
-                          className="action-btn"
-                          title="Chia sẻ"
-                          onClick={() => handleShare(post.id)}
-                          style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
-                      >
-                          ↗️
-                      </button>
+                    <button type="button" onClick={handleDelete} className="delete">
+                      <Trash2 size={14} />
+                      <span>{STRINGS.DELETE}</span>
+                    </button>
                   </div>
-
-                  {/* Nút Lưu bài viết ở góc phải */}
-                  <button
-                      onClick={() => handleSavePost(post.id)}
-                      disabled={loading}
-                      title={isSaved ? "Đã lưu" : "Lưu bài viết"}
-                      style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '20px',
-                          color: isSaved ? '#2d88ff' : 'inherit'
-                      }}
-                  >
-                      {isSaved ? '🔖' : '📑'}
-                  </button>
+                )}
               </div>
-              <hr />
+            )}
+          </div>
+        </div>
 
-              {/* DANH SÁCH BÌNH LUẬN & Ô NHẬP BÌNH LUẬN */}
-              <div className="comments-section">
-                  {post.comments && post.comments.slice(0, 2).map(comment => (
-                      <div key={comment.comment_id || comment.id} className="comment-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '0 12px' }}>
+        {/* Post Content */}
+        {post.content && (
+          <div className="post-caption-box">
+            <p style={{ margin: 0 }}>
+              {displayedContent}
+              {shouldTruncate && (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="post-read-more-btn"
+                >
+                  {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                </button>
+              )}
+            </p>
+          </div>
+        )}
 
-                          <Link to={comment.username ? `/profile/${comment.username}` : '#'} className="comment-author-link" style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: 'inherit' }}>
-                              <Avatar user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }} className="mini-avatar" style={{ width: '24px', height: '24px' }} />
-                              <span className="comment-author" style={{ fontWeight: '600', fontSize: '13px' }}>{comment.username}: </span>
-                          </Link>
+        {/* Post Image */}
+        {post.imageUrl && (
+          <div className="post-media-box">
+            <img
+              src={mediaUrl(post.imageUrl)}
+              alt="Hình ảnh bài viết"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsImageViewerOpen(true);
+              }}
+              loading="lazy"
+            />
+          </div>
+        )}
 
-                          <span className="comment-text" style={{ fontSize: '13px' }}>{comment.comment_text || comment.content}</span>
+        {/* Shared Post Container */}
+        {post.shared_post && (
+          <div className="shared-post-nested-card">
+            <div className="shared-post-header">
+              <Avatar user={{ username: post.shared_post.username, profile_photo_url: post.shared_post.profile_photo_url }} size={24} />
+              <strong style={{ fontSize: '13px' }}>{post.shared_post.username}</strong>
+            </div>
+            {post.shared_post.caption && (
+              <div className="shared-post-caption">{post.shared_post.caption}</div>
+            )}
+            {post.shared_post.photo_url && (
+              <img
+                src={mediaUrl(post.shared_post.photo_url)}
+                alt="Nội dung bài chia sẻ"
+                style={{ width: '100%', maxHeight: '360px', objectFit: 'cover' }}
+              />
+            )}
+          </div>
+        )}
 
-                          <span style={{ fontSize: '10px', color: '#888', marginLeft: 'auto' }}>
-                            {comment.created_at
-                                ? new Date(comment.created_at).toLocaleString('vi-VN', {
-                                    timeZone: 'Asia/Ho_Chi_Minh',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })
-                                : ''}
-                        </span>
+        {/* Action Bar */}
+        <div className="post-action-bar">
+          <div className="post-action-group">
+            {/* Like */}
+            <button
+              type="button"
+              onClick={() => onLike(post.id)}
+              className={`post-action-btn ${post.isLiked ? 'liked' : ''}`}
+              title="Thích"
+            >
+              <Heart size={20} />
+              <span>{post.likes ?? 0}</span>
+            </button>
 
-                          {/* NÚT XÓA BÌNH LUẬN (Hiển thị khi đúng là chủ nhân comment) */}
-                          {currentUser && Number(currentUser.user_id || currentUser.id) === Number(comment.user_id) && onDeleteComment && (
-                              <button
-                                  onClick={() => onDeleteComment(comment.comment_id || comment.id)}
-                                  style={{ color: '#ff4d4f', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', marginLeft: '6px', padding: 0 }}
-                              >
-                                  Xóa
-                              </button>
-                          )}
-                      </div>
-                  ))}
+            {/* Comment */}
+            <Link
+              to={`/post/${post.id}`}
+              className="post-action-btn"
+              title="Bình luận"
+              style={{ textDecoration: 'none' }}
+            >
+              <MessageCircle size={20} />
+              <span>{post.comments ? post.comments.length : 0}</span>
+            </Link>
 
-                  {post.comments && post.comments.length > 2 && (
-                      <Link to={`/post/${post.id}`} style={{ color: '#8e8e8e', cursor: 'pointer', margin: '8px 12px', textDecoration: 'none', display: 'block', fontSize: '13px' }}>
-                          Xem tất cả {post.comments.length} bình luận
-                      </Link>
+            {/* Share */}
+            <button
+              type="button"
+              className="post-action-btn"
+              onClick={() => handleShare(post.id)}
+              title="Chia sẻ"
+            >
+              <Share2 size={19} />
+            </button>
+          </div>
+
+          {/* Bookmark */}
+          <button
+            type="button"
+            onClick={() => handleSavePost(post.id)}
+            disabled={loading}
+            className={`post-action-btn ${isSaved ? 'saved' : ''}`}
+            title={isSaved ? "Đã lưu" : "Lưu bài viết"}
+          >
+            <Bookmark size={20} />
+          </button>
+        </div>
+
+        {/* Comments Preview & Input */}
+        <div className="post-comments-container">
+          {post.comments && post.comments.slice(0, 2).map(comment => (
+            <div key={comment.comment_id || comment.id} className="post-comment-item">
+              <Avatar user={{ username: comment.username, profile_photo_url: comment.profile_photo_url }} size={26} />
+              <div className="comment-bubble">
+                <Link
+                  to={comment.username ? `/profile/${comment.username}` : '#'}
+                  className="comment-author-name"
+                >
+                  {comment.username}
+                </Link>
+                <span className="comment-text-body">{comment.comment_text || comment.content}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>
+                  <span className="comment-time">
+                    {comment.created_at ? new Date(comment.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                  {currentUser && Number(currentUser.user_id || currentUser.id) === Number(comment.user_id) && onDeleteComment && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteComment(comment.comment_id || comment.id)}
+                      className="comment-delete-btn"
+                    >
+                      Xóa
+                    </button>
                   )}
-
-                  {currentUser && (
-                      <form onSubmit={handleCommentFormSubmit} className="comment-form">
-                          <input
-                              type="text"
-                              placeholder="Thêm bình luận..."
-                              value={commentText}
-                              onChange={(e) => setCommentText(e.target.value)}
-                          />
-                          <button type="submit" className="btn-send-comment">Đăng</button>
-                      </form>
-                  )}
+                </div>
               </div>
-      </div>
+            </div>
+          ))}
+
+          {post.comments && post.comments.length > 2 && (
+            <Link to={`/post/${post.id}`} className="view-all-comments-link">
+              Xem tất cả {post.comments.length} bình luận...
+            </Link>
+          )}
+
+          {currentUser && (
+            <form onSubmit={handleCommentFormSubmit} className="comment-input-form">
+              <input
+                type="text"
+                placeholder="Viết bình luận..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <button type="submit" className="btn-submit-comment" disabled={!commentText.trim()}>
+                <Send size={13} />
+              </button>
+            </form>
+          )}
+        </div>
+      </article>
+
+      {/* Fullscreen Image Zoom Modal */}
+      {isImageViewerOpen && (
+        <div
+          className="modal-backdrop image-modal-view"
+          onClick={() => setIsImageViewerOpen(false)}
+          style={{ cursor: 'zoom-out' }}
+        >
+          <button
+            type="button"
+            onClick={() => setIsImageViewerOpen(false)}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(0,0,0,0.6)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100001
+            }}
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={mediaUrl(post.imageUrl)}
+            alt="Full size"
+            style={{
+              maxWidth: '92vw',
+              maxHeight: '92vh',
+              objectFit: 'contain',
+              borderRadius: '12px',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.8)'
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }

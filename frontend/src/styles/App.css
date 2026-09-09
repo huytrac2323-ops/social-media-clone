@@ -1,1566 +1,1245 @@
-@import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 @import "tailwindcss";
 
+/* =================================================== */
+/* GLOBAL CSS VARIABLES & DESIGN TOKENS (MODERN DARK)  */
+/* =================================================== */
+:root {
+  --bg-main: #0b0e14;
+  --bg-card: #151921;
+  --bg-card-hover: #1c222c;
+  --bg-elevated: #1e2634;
+  --bg-input: #11151c;
+  --bg-input-focus: #18202d;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border-subtle: #242c3d;
+  --border-light: #2e384d;
+  --accent-primary: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --danger: #ef4444;
+  --success: #10b981;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 10px 25px -3px rgba(0, 0, 0, 0.5);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-
-* {
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-body {
-  background-color: #ffffff;
-  color: #000000;
 }
 
-
-
-/* =================================================== */
-/* TRANG PROFILE (DESKTOP): Canh giữa hoàn toàn avatar và thông tin */
-/* =================================================== */
-.profile-container {
-  max-width: 935px !important;
-  margin: 0 auto !important;
-  padding: 30px 20px !important;
+html, body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+  width: 100%;
 }
 
-.profile-header {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  text-align: center !important;
-  gap: 20px !important;
-  margin-bottom: 44px !important;
-  padding: 0 20px !important;
-}
-
-.profile-avatar-section {
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-}
-
-/* Kích thước ảnh đại diện vừa vặn, nằm giữa */
-.profile-avatar-large {
-  width: 120px !important;
-  height: 120px !important;
-  border-radius: 50% !important;
-  object-fit: cover !important;
-}
-
-.profile-info-section {
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  text-align: center !important;
-}
-
-.profile-info-header {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 20px !important;
-  margin-bottom: 20px !important;
-}
-
-.profile-username {
-  font-size: 26px !important;
-  font-weight: 400 !important;
-}
-
-.btn-edit-profile {
-  background-color: transparent !important;
-  border: 1px solid #dbdbdb !important;
-  border-radius: 6px !important;
-  color: #ffffff !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  padding: 6px 14px !important;
-  cursor: pointer !important;
-}
-
-.profile-stats-list {
-  display: flex !important;
-  justify-content: center !important;
-  gap: 40px !important;
-  list-style: none !important;
-  margin-bottom: 20px !important;
-  font-size: 16px !important;
-  padding: 0 !important;
-}
-
-.profile-stats-list li b {
-  font-weight: 600 !important;
-  color: #ffffff !important;
-}
-
-.profile-bio {
-  font-size: 15px !important;
-  color: #ffffff !important;
-  text-align: center !important;
-}
-
-.profile-bio b {
-  display: block !important;
-  font-weight: 600 !important;
-  margin-bottom: 4px !important;
-}
-/* =================================================== */
-/* THANH BÊN TRÁI (Dành cho máy tính): Tàng hình, 60px  */
-/* =================================================== */
-.home-left-sidebar {
-  box-sizing: border-box;
-  position: fixed !important;
-  top: 20px !important;
-  left: 20px !important;
-  width: 60px !important;
-  background-color: transparent !important;
-  border-radius: 12px;
-  display: flex !important;
-  flex-direction: column !important;
-  height: calc(100vh - 40px);
-  z-index: 9999;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
-  overflow-x: hidden !important;
-  overflow-y: hidden !important;
-  box-shadow: none !important;
-}
-
-.home-left-sidebar .sidebar-box {
-  box-sizing: border-box;
-  width: 280px !important;
-  padding: 12px 18px !important;
-  color: white;
-  cursor: pointer;
-  background: transparent !important;
-  border: none !important;
-}
-
-.home-left-sidebar .sidebar-box h3 {
-  margin: 0;
-  font-size: 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  white-space: nowrap !important;
-}
-
-/* Ẩn chữ và danh sách khi chưa hover */
-.home-left-sidebar .sidebar-box h3 span,
-.home-left-sidebar .sidebar-content {
-  display: none !important;
-}
-
-/* Khi rơ chuột vào: Sổ rộng ra 280px */
-.home-left-sidebar:hover {
-  width: 280px !important;
-  background-color: #242526 !important;
-  box-shadow: 5px 0 20px rgba(0,0,0,0.5) !important;
-  overflow: visible !important;
-}
-
-.home-left-sidebar:hover .sidebar-box h3 span {
-  display: inline !important;
-  margin-left: 15px !important;
-  font-size: 16px !important;
-}
-
-.home-left-sidebar:hover .sidebar-content {
-  display: flex !important;
-  flex-direction: column !important;
-  margin-top: 10px !important;
-}
-
-.home-left-sidebar::-webkit-scrollbar { width: 5px; }
-.home-left-sidebar::-webkit-scrollbar-thumb { background: #555; border-radius: 5px; }
-
-.sidebar-search {
-  width: 280px;
-  min-height: 48px;
-  padding: 8px 18px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: white;
-}
-
-.sidebar-search-icon {
-  font-size: 22px;
-  flex: 0 0 auto;
-}
-
-.sidebar-search input {
-  display: none;
-  width: 220px;
-  padding: 9px 12px;
-  border: 1px solid #555;
-  border-radius: 20px;
-  outline: none;
-  background: #3a3b3c;
-  color: white;
-}
-
-.home-left-sidebar:hover .sidebar-search input {
+img, video {
+  max-width: 100%;
+  height: auto;
   display: block;
 }
 
-.home-left-sidebar button.sidebar-box {
-  font: inherit;
-  text-align: left;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.sidebar-notification {
-  display: flex !important;
-  align-items: center;
-  gap: 15px;
-}
-
-.sidebar-notification .sidebar-label {
-  display: none;
-  color: white;
-  font-size: 16px;
-}
-
-.home-left-sidebar:hover .sidebar-notification .sidebar-label {
-  display: inline;
-}
-
-.sidebar-notification .notification-dropdown {
-  left: 68px !important;
-  right: auto !important;
-  top: 2px !important;
-}
-
-.sidebar-logout h3 {
-  color: #ff4d4d;
-}
-
-.notification-container {
-  position: relative;
-  z-index: 11001;
-}
-
-.notification-btn {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  position: relative;
-  border: 1px solid #4a4b4d;
-  border-radius: 12px;
-  background: #303134;
-  color: white;
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
   cursor: pointer;
-  transition: background .2s, border-color .2s, transform .2s;
 }
 
-.notification-btn:hover,
-.notification-btn.active {
-  background: #3d3f42;
-  border-color: #73767a;
-  transform: translateY(-1px);
+input, textarea {
+  font-family: inherit;
+  color: inherit;
 }
 
-.notification-icon { font-size: 19px; line-height: 1; }
-
-.notification-badge {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  min-width: 19px;
-  height: 19px;
-  padding: 0 5px;
-  display: grid;
-  place-items: center;
-  border: 2px solid #242526;
-  border-radius: 99px;
-  background: #e1306c;
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.notification-dropdown {
-  position: absolute;
-  width: 350px;
-  max-width: min(350px, calc(100vw - 92px));
-  overflow: hidden;
-  border: 1px solid #45474a;
-  border-radius: 14px;
-  background: #242526;
-  color: white;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, .45);
-}
-
-.notification-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid #3e4042;
-}
-
-.notification-header h3 { margin: 0 0 3px; font-size: 18px; }
-.notification-header span { color: #aeb0b3; font-size: 12px; }
-.mark-all-read {
-  border: 0;
-  background: transparent;
-  color: #4da3ff;
-  cursor: pointer;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.notification-list { max-height: 390px; overflow-y: auto; padding: 6px; }
-.notification-item {
+/* =================================================== */
+/* LAYOUT ARCHITECTURE (3-COLUMN SYSTEM)               */
+/* =================================================== */
+.app-shell {
+  min-height: 100vh;
   width: 100%;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  position: relative;
-  padding: 11px 12px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: white;
-  text-align: left;
-  cursor: pointer;
-}
-.notification-item:hover { background: #303134; }
-.notification-item.unread { background: rgba(0, 149, 246, .12); }
-.notification-item-icon {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: #3b3d40;
-}
-.notification-item-content { min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.35; }
-.notification-item-content > span { overflow-wrap: anywhere; }
-.notification-item-content time { color: #96999d; font-size: 11px; }
-.unread-dot { width: 7px; height: 7px; flex: 0 0 auto; margin: 9px 2px 0 auto; border-radius: 50%; background: #0095f6; }
-.notification-empty { padding: 34px 12px; color: #aeb0b3; text-align: center; }
-.notification-empty span { display: block; margin-bottom: 8px; font-size: 28px; }
-.notification-empty p { margin: 0; font-size: 13px; }
-
-.story-viewer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, .82);
-  backdrop-filter: blur(8px);
-}
-
-.story-viewer {
-  position: relative;
-  width: min(390px, calc(100vw - 32px));
-  height: min(700px, calc(100vh - 32px));
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .18);
-  border-radius: 18px;
-  background: #111;
-  box-shadow: 0 20px 70px rgba(0, 0, 0, .6);
-}
-
-.story-viewer > img,
-.story-viewer > video {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.story-viewer-user {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  right: 55px;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: white;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
-}
-
-.story-viewer-user img {
-  width: 34px;
-  height: 34px;
-  object-fit: cover;
-  border: 2px solid white;
-  border-radius: 50%;
-}
-
-.story-close-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, .5);
-  color: white;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.story-sticker {
-  position: absolute;
-  top: 25%;
-  left: 50%;
-  z-index: 2;
-  font-size: 48px;
-  transform: translateX(-50%);
-}
-
-.story-reactions {
-  position: absolute;
-  right: 12px;
-  bottom: 18px;
-  left: 12px;
-  z-index: 3;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
   display: flex;
   justify-content: center;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, .2);
-  border-radius: 28px;
-  background: rgba(0, 0, 0, .48);
-  backdrop-filter: blur(8px);
+  position: relative;
 }
 
-.story-reactions button {
-  width: 40px;
-  height: 40px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  font-size: 23px;
-  cursor: pointer;
-  transition: transform .15s, background .15s;
+.app-root-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-main);
 }
 
-.story-reactions button:hover,
-.story-reactions button.selected {
-  background: rgba(255, 255, 255, .22);
-  transform: scale(1.18);
+.app-layout,
+.app-main-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
 }
 
-.story-view-count {
-  position: fixed;
-  right: calc(50% - 175px);
-  bottom: 18px;
-  z-index: 10001;
-  padding: 7px 11px;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, .65);
-  color: white;
-  font-size: 12px;
-}
-
-.suggestion-avatar,
-.explore-avatar,
-.chat-avatar {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-}
-
-.explore-avatar {
-  width: 44px;
-  height: 44px;
-}
-
-/* =================================================== */
-/* ẨN CÁC CỘT PHỤ KHI MÀN HÌNH NHỎ                     */
-/* =================================================== */
-@media (max-width: 1000px) {
-  .home-right-sidebar {
-    display: none !important;
-  }
-}
-
-/* =================================================== */
-/* TỐI ƯU HÓA CHO ĐIỆN THOẠI (Dưới 768px)              */
-/* =================================================== */
-@media screen and (max-width: 768px) {
-  .home-page-container {
-    right: 0 !important;
-    padding: 10px !important;
-    margin-bottom: 80px !important;
-  }
-
-  /* Biến thanh menu trái thành thanh đáy cố định */
-  .home-left-sidebar {
-    position: fixed !important;
-    top: auto !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 60px !important;
-    background-color: #242526 !important;
-    border-radius: 0 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-around !important;
-    align-items: center !important;
-    z-index: 999999 !important;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
-    overflow: visible !important;
-  }
-
-  .home-left-sidebar .sidebar-box {
-    display: none !important;
-  }
-
-  .home-left-sidebar .sidebar-box.mobile-only-btn {
-    display: flex !important;
-    width: auto !important;
-    padding: 5px !important;
-    background: transparent !important;
-    border: none !important;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .home-left-sidebar .sidebar-box.mobile-only-btn h3 span {
-    display: none !important;
-  }
-
-  .home-left-sidebar .sidebar-box.mobile-only-btn h3 {
-    font-size: 24px !important;
-    margin: 0 !important;
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .home-left-sidebar .sidebar-search {
-    width: auto !important;
-    min-height: 48px;
-    padding: 5px !important;
-    justify-content: center;
-  }
-
-  .home-left-sidebar .sidebar-search input {
-    display: none !important;
-  }
-
-  .sidebar-notification .sidebar-label {
-    display: none !important;
-  }
-
-  .sidebar-notification .notification-dropdown {
-    left: 0 !important;
-    right: auto !important;
-    top: auto !important;
-    bottom: 55px !important;
-    width: 330px;
-    max-width: calc(100vw - 20px);
-  }
-
-  .home-left-sidebar:hover {
-    width: 100vw !important;
-    height: 60px !important;
-    background-color: #242526 !important;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.5) !important;
-  }
-
-  .home-left-sidebar:hover .sidebar-content {
-    display: none !important;
-  }
-
-  .chat-bottom-right {
-    position: fixed !important;
-    bottom: 70px !important;
-    right: 10px !important;
-    left: auto !important;
-    width: 280px !important;
-    max-width: 90vw !important;
-    z-index: 99999999 !important;
-  }
-
-  /* Tối ưu hóa trang Profile trên điện thoại */
-  .profile-container {
-    padding: 10px !important;
-    margin-bottom: 70px !important;
-  }
-
-  .profile-header {
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    gap: 15px !important;
-    padding: 0 10px !important;
-  }
-
-  .profile-avatar-section {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: center !important;
-  }
-
-  .profile-avatar-large {
-    width: 90px !important;
-    height: 90px !important;
-  }
-
-  .profile-info-section {
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-  }
-
-  .profile-info-header {
-    flex-direction: column !important;
-    gap: 10px !important;
-    width: 100% !important;
-  }
-
-  .profile-stats-list {
-    justify-content: center !important;
-    gap: 20px !important;
-    width: 100% !important;
-    padding: 0 !important;
-  }
-
-  .profile-bio {
-    text-align: center !important;
-    width: 100% !important;
-  }
-
-  .btn-edit-profile,
-  .profile-info-section button,
-  .btn-chat {
-    width: 80% !important;
-    max-width: 250px !important;
-    margin: 5px 0 !important;
-  }
-
-
-
-  .profile-posts-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 2px !important;
-  }
-}
-
-
-
-@custom-variant dark (&:is(.dark *));
-/* Reset định dạng cơ bản theo chuẩn Instagram */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-body {
-  background-color: #ffffff; /* Instagram dùng nền trắng tinh hoặc đen */
-  color: #000000;
-}
-
-/* Thanh Navbar trên cùng kiểu Instagram */
-.fb-navbar {
+/* Left Sidebar Column - Sticky follows on scroll */
+.app-sidebar-col {
+  width: 255px;
+  flex-shrink: 0;
   position: sticky;
   top: 0;
-  z-index: 100;
-  height: 60px;
-  background-color: #ffffff;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 20px 14px;
+  z-index: 40;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid #dbdbdb; /* Đường kẻ mảnh đặc trưng của IG */
+  flex-direction: column;
+  border-right: 1px solid var(--border-subtle);
+  background-color: var(--bg-main);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Đổi chữ facebook thành font mềm mại của Instagram */
-.fb-logo {
-  color: #000000;
-  font-family: 'Style Script', 'Grand Hotel', cursive, sans-serif; /* Nếu có font script */
-  font-size: 24px;
-  font-style: italic;
-  font-weight: bold;
+.app-sidebar-col::-webkit-scrollbar {
+  display: none;
 }
 
-.nav-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+/* Center Feed Column */
+.app-feed-col {
+  flex: 1;
+  max-width: 630px;
+  width: 100%;
+  min-width: 0;
+  padding: 20px 16px 80px;
+  min-height: 100vh;
 }
 
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 10px !important;
-}
-
-.search-bar {
-  background-color: #efefef;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  outline: none;
-  width: 140px !important;
-  padding: 6px 10px !important;
-}
-
-.user-avatar-btn {
-  background-color: #000000;
-  color: #ffffff;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-logout {
-  background-color: #efefef;
-  color: #000000;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* Thân trang web 3 cột */
-.fb-body {
-  display: flex;
-  justify-content: center;
-  padding: 30px 20px 0 20px;
-  max-width: 935px; /* Chiều rộng chuẩn hiển thị của IG */
-  margin: 0 auto;
-  gap: 28px;
-}
-
-/* Menu bên trái (Sidebar) */
-.fb-sidebar {
-  width: 220px;
+/* Right Widget Column - Sticky follows on scroll */
+.app-widget-col {
+  width: 320px;
+  flex-shrink: 0;
   position: sticky;
-  top: 90px;
-  height: calc(100vh - 110px);
+  top: 0;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 20px 16px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-left: 1px solid var(--border-subtle);
+  background-color: var(--bg-main);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.sidebar-item, .contact-item {
-  padding: 12px 10px;
+.app-widget-col::-webkit-scrollbar {
+  display: none;
+}
+
+/* =================================================== */
+/* SIDEBAR NAVIGATION                                  */
+/* =================================================== */
+.modern-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.brand-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 20px;
+  text-decoration: none;
+}
+
+.brand-logo-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.brand-logo-text {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebar-search-box {
+  position: relative;
+  margin-bottom: 18px;
+  padding: 0 2px;
+}
+
+.sidebar-search-box input {
+  width: 100%;
+  padding: 9px 14px 9px 36px;
+  border-radius: 999px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.sidebar-search-box input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.sidebar-search-box .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.nav-links-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-link-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 11px 15px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  font-weight: 500;
+  transition: all 0.18s ease;
+  text-decoration: none;
+}
+
+.nav-link-item:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transform: translateX(3px);
+}
+
+.nav-link-item.active {
+  background: var(--bg-elevated);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-link-item svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.nav-link-item:hover svg {
+  transform: scale(1.08);
+}
+
+.sidebar-post-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.sidebar-post-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+}
+
+.sidebar-user-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.sidebar-user-meta {
+  overflow: hidden;
+}
+
+.sidebar-user-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.sidebar-user-role {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.sidebar-logout-btn {
+  padding: 8px;
   border-radius: 8px;
-  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.18s ease;
+}
+
+.sidebar-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+/* =================================================== */
+/* STORIES BAR                                         */
+/* =================================================== */
+.story-bar-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.story-scroll-track {
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 16px;
-  transition: background 0.2s;
+  overflow-x: auto;
 }
 
-.sidebar-item:hover, .contact-item:hover {
-  background-color: #fafafa;
-  font-weight: 600;
+.story-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  flex-shrink: 0;
 }
 
-/* Cột phải gợi ý kết bạn */
-.fb-rightbar {
-  width: 280px;
-  position: sticky;
-  top: 90px;
-  height: calc(100vh - 110px);
-}
-
-.fb-rightbar h3 {
-  color: #737373;
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-/* Vòng tròn viền màu hồng-tím-cam Gradient của Instagram */
-.avatar-placeholder {
-  width: 42px;
-  height: 42px;
-  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+.story-avatar-wrapper {
+  padding: 2.5px;
   border-radius: 50%;
-  padding: 2px; /* Khoảng trống để tạo hiệu ứng viền */
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s ease;
 }
 
-.avatar-placeholder .avatar-image {
+.story-card-item:hover .story-avatar-wrapper {
+  transform: scale(1.05);
+}
+
+.story-avatar-inner {
+  border-radius: 50%;
+  overflow: hidden;
+  width: 54px;
+  height: 54px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+}
+
+.story-avatar-inner img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
-  background-color: #dbdbdb; /* Màu nền dự phòng */
 }
 
-.avatar-placeholder .avatar-initial {
-  display: flex;
-  width: 100%;
-  height: 100%;
+.story-add-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  background: #3b82f6;
   border-radius: 50%;
-  background-color: #c4c4c4; /* Màu nền cho chữ cái */
+  display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: bold;
-  font-size: 18px;
+  border: 2px solid var(--bg-card);
 }
 
-.mini-avatar {
-  width: 32px;
-  height: 32px;
+.story-username-label {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  max-width: 64px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Bảng tin chính giữa (Feed) */
-.fb-feed {
-  width: 470px; /* Độ rộng bài đăng chuẩn khít của IG */
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Khung tạo bài viết mới */
-.create-post {
-  background-color: #ffffff;
-  border: 1px solid #dbdbdb;
-  border-radius: 8px;
+/* =================================================== */
+/* FEED CREATE POST TRIGGER                            */
+/* =================================================== */
+.create-post-trigger-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-card);
 }
 
-.create-post textarea {
-  width: 100%;
-  height: 60px;
-  border: none;
-  resize: none;
-  outline: none;
-  font-size: 15px;
-  color: #000000;
+.create-post-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-.btn-post {
-  display: block;
-  width: 100%;
-  background-color: #0095f6; /* Màu xanh neon nút bấm của IG */
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px;
-  font-weight: 600;
+.create-post-input-mock {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
-  margin-top: 10px;
+  transition: all 0.2s ease;
 }
 
-.btn-post:hover {
-  background-color: #1877f2;
+.create-post-input-mock:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
 }
 
-/* Khung bài viết (Post Card) */
-.post-card {
-  background-color: #ffffff;
-  border: 1px solid #dbdbdb;
+.create-post-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.create-post-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
   border-radius: 8px;
-  padding-bottom: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.create-post-action-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* =================================================== */
+/* MODERN POST CARD                                    */
+/* =================================================== */
+.modern-post-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.modern-post-card:hover {
+  border-color: var(--border-light);
 }
 
 .post-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.post-author-group {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 12px;
-  position: relative;
+  text-decoration: none;
+  color: inherit;
 }
 
-.post-author {
-  font-size: 14px;
+.post-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-author-name {
   font-weight: 600;
+  font-size: 14.5px;
+  color: var(--text-primary);
+  line-height: 1.3;
 }
 
-.post-time {
+.post-author-name:hover {
+  color: var(--accent-primary);
+}
+
+.post-time-stamp {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.post-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add-friend-post {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 5px 12px;
+  border-radius: 999px;
   font-size: 12px;
-  color: #737373;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
-/* --- Post Menu (Edit/Delete) --- */
-.post-menu-container {
-  position: absolute;
-  right: 12px;
-  top: 12px;
+.btn-add-friend-post:hover {
+  background: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
 }
 
 .post-menu-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
-  font-weight: bold;
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  padding: 5px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.post-menu-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
 }
 
 .post-menu-dropdown {
   position: absolute;
   right: 0;
   top: 100%;
-  background-color: white;
-  border: 1px solid #dbdbdb;
-  border-radius: 6px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  width: 100px;
-  overflow: hidden;
+  margin-top: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hover);
+  padding: 6px;
+  min-width: 140px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .post-menu-dropdown button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  padding: 10px;
-  border: none;
-  background: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
   text-align: left;
   cursor: pointer;
-  font-size: 14px;
 }
 
 .post-menu-dropdown button:hover {
-  background-color: #fafafa;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .post-menu-dropdown button.delete {
-  color: #ed4956;
-  font-weight: bold;
+  color: var(--danger);
 }
 
-.post-content {
-  font-size: 14px;
-  line-height: 1.5;
-  padding: 0 12px 12px 12px;
+.post-menu-dropdown button.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
 }
 
-/* Thống kê lượt thích */
-.post-stats {
-  padding: 0 12px;
+.post-caption-box {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.post-read-more-btn {
+  color: #60a5fa;
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 8px;
-  display: flex; /* Thêm display: flex */
-  gap: 16px; /* Thêm khoảng cách */
-}
-
-/* Khu vực nút bấm Thích, Bình luận */
-.post-actions {
-  display: flex;
-  gap: 16px;
-  padding: 8px 12px;
-}
-
-.action-btn {
+  margin-left: 6px;
+  cursor: pointer;
   background: none;
   border: none;
-  color: #000000;
-  font-size: 20px; /* Kích thước icon to rõ kiểu IG */
+  font-size: 13.5px;
+}
+
+/* Constrain Post Images to Feed Width */
+.post-media-box {
+  width: 100%;
+  max-height: 580px;
+  background: #06080d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  margin: 10px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.post-media-box img {
+  width: 100%;
+  max-height: 580px;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: transform 0.25s ease;
+  display: block;
+}
+
+.post-media-box:hover img {
+  transform: scale(1.01);
+}
+
+.shared-post-nested-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: 12px;
+  margin: 10px 0 14px;
+}
+
+.shared-post-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.shared-post-caption {
+  font-size: 13.5px;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.post-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+}
+
+.post-action-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.post-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: all 0.18s ease;
+  text-decoration: none;
+  background: transparent;
 }
 
-.action-btn:active {
-  transform: scale(1.2);
+.post-action-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
 }
 
-/* Khi đã bấm Thích đổi sang màu đỏ tim của IG */
-.action-btn.liked {
-  color: #ff3040;
+.post-action-btn.liked {
+  color: #f43f5e;
 }
 
-/* Vùng hiển thị bình luận */
-.comments-section {
-  padding: 0 12px;
+.post-action-btn.liked svg {
+  fill: #f43f5e;
+}
+
+.post-action-btn.saved {
+  color: #fbbf24;
+}
+
+.post-action-btn.saved svg {
+  fill: #fbbf24;
+}
+
+.post-comments-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.comment-item {
-  background: none; /* IG không dùng khung xám cho comment */
-  padding: 2px 0;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
   gap: 8px;
 }
 
-.comment-author {
-  font-weight: 600;
-  margin-right: 6px;
-}
-
-.comment-text {
-  color: #262626;
-}
-
-/* Ô nhập bình luận ở đáy bài viết */
-.comment-form {
+.post-comment-item {
   display: flex;
-  align-items: center;
-  border-top: 1px solid #efefef;
-  margin-top: 12px;
-  padding: 12px 12px 0 12px;
-}
-
-.comment-form input {
-  flex-grow: 1;
-  background: none;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  color: #000000;
-}
-
-.btn-send-comment {
-  background: none;
-  border: none;
-  color: #0095f6;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-send-comment:hover {
-  color: #00376b;
-}
-
-/* Tối ưu hóa trang Profile trên điện thoại */
-.profile-container {
-  padding: 10px !important;
-  margin-bottom: 70px !important;
-}
-
-.profile-header {
-  flex-direction: column !important;
-  align-items: center !important;
-  text-align: center !important;
-  gap: 15px !important;
-  padding: 0 10px !important;
-}
-
-.profile-avatar-section {
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-}
-
-.profile-avatar-large {
-  width: 90px !important;
-  height: 90px !important;
-}
-
-.profile-info-section {
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-}
-
-.profile-info-header {
-  flex-direction: column !important;
-  gap: 10px !important;
-  width: 100% !important;
-}
-
-.profile-stats-list {
-  justify-content: center !important;
-  gap: 20px !important;
-  width: 100% !important;
-  padding: 0 !important;
-}
-
-.profile-bio {
-  text-align: center !important;
-  width: 100% !important;
-}
-
-.btn-edit-profile,
-.profile-info-section button,
-.btn-chat {
-  width: 80% !important;
-  max-width: 250px !important;
-  margin: 5px 0 !important;
-}
-
-
-.profile-posts-grid {
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 2px !important;
-}
-
-
-.grid-post-item {
-  aspect-ratio: 1 / 1;
-  background-color: #efefef;
-  position: relative;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.grid-post-content {
-  padding: 20px;
-  text-align: center;
-  font-size: 14px;
-  color: #262626;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.grid-post-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  opacity: 0;
-  transition: opacity 0.2s;
-  font-weight: bold;
-  gap: 20px;
-  pointer-events: none; /* Thêm thuộc tính này */
-}
-
-.grid-post-item:hover .grid-post-overlay {
-  opacity: 1;
-}
-
-.fb-logo {
-  cursor: pointer;
-}
-
-/* --- CSS CHO KHUNG ĐĂNG BÀI --- */
-.create-post-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 8px;
-}
-
-.btn-add-photo {
-  background-color: #e4e6eb;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-add-photo:hover {
-  background-color: #d8dadf;
-}
-
-/* --- CSS CHO ẢNH XEM TRƯỚC (PREVIEW) --- */
-.image-preview {
-  position: relative;
-  margin-top: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  max-height: 400px; /* Giới hạn chiều cao tối đa */
-  overflow: hidden; /* Ẩn phần ảnh bị thừa */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f0f2f5;
-}
-
-.image-preview img {
-  width: 100%; /* Chiều rộng tự động co giãn theo khung */
-  height: auto; /* Chiều cao tự động để giữ đúng tỷ lệ */
-  max-height: 400px; /* Chiều cao ảnh không vượt quá khung */
-  object-fit: contain; /* Đảm bảo toàn bộ ảnh được hiển thị, không bị cắt */
-}
-
-.remove-image-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: rgba(15, 20, 25, 0.75);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: background-color 0.2s;
-}
-
-.remove-image-btn:hover {
-  background-color: rgba(0, 0, 0, 0.6);
-}
-
-/* --- CSS CHO ẢNH TRONG BÀI VIẾT ĐÃ ĐĂNG --- */
-.post-image {
-  width: 100%;
-  height: auto;
-  margin-top: 10px;
-  border-radius: 0; /* Có thể để border-radius: 8px nếu muốn bo góc */
-  border-top: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-}
-
-/* --- CSS CHO LINK TÁC GIẢ --- */
-.post-author-link, .comment-author-link {
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.comment-author-link {
-  gap: 8px;
-}
-
-@theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-
-  html {
-    @apply font-sans;
-  }
-}
-/* Tối ưu hóa trang Profile trên điện thoại / màn hình nhỏ */
-.profile-container {
-  padding: 10px !important;
-  margin-bottom: 70px !important;
-}
-
-/* Định hình header dạng hàng ngang (Avatar bên trái, Info bên phải) */
-.profile-header {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: flex-start !important;
-  text-align: left !important;
-  gap: 12px !important;
-  padding: 0 5px !important;
-  margin-bottom: 15px !important;
-}
-
-.profile-avatar-section {
-  width: auto !important;
-  flex-shrink: 0 !important;
-  display: flex !important;
-  justify-content: flex-start !important;
-}
-
-.profile-avatar-large {
-  width: 75px !important;
-  height: 75px !important;
-}
-
-.profile-info-section {
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-}
-
-.profile-info-header {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: 5px !important;
-  width: 100% !important;
-  margin-bottom: 6px !important;
-}
-
-.profile-username {
-  font-size: 17px !important;
-  font-weight: 600 !important;
-}
-
-/* Nút chỉnh sửa / thêm bạn / nhắn tin */
-.btn-edit-profile,
-.profile-info-section button[style*="background"],
-.btn-chat {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 2px 0 !important;
-  padding: 5px 10px !important;
-  font-size: 12px !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin-left: 0 !important;
-}
-
-.profile-stats-list {
-  display: flex !important;
-  justify-content: flex-start !important;
-  gap: 10px !important;
-  width: 100% !important;
-  padding: 0 !important;
-  margin-bottom: 6px !important;
-  font-size: 10px !important;
-  list-style: none !important;
-}
-
-.profile-bio {
-  text-align: left !important;
-  width: 100% !important;
-  font-size: 12px !important;
-}
-
-/* Căn chỉnh các tab Bài viết, Đã lưu, Gắn thẻ thành hàng ngang tuyệt đối */
-.profile-tabs {
-  display: flex !important;
-  flex-direction: row !important;
-  justify-content: space-around !important;
-  align-items: center !important;
-  gap: 5px !important;
-  width: 100% !important;
-  border-top: 1px solid #3a3b3c !important;
-  margin-bottom: 10px !important;
-}
-
-.profile-tab, .profile-tabs a, .profile-tabs div {
-  font-size: 11px !important;
-  height: 40px !important;
-  letter-spacing: 0px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex: 1 !important;
-  text-align: center !important;
-  white-space: nowrap !important;
-  border-top: none !important;
-}
-
-.profile-tab.active {
-  border-top: 1px solid #ffffff !important;
-}
-
-.profile-posts-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 2px !important;
-}
-
-
-/* Các định dạng lưới ảnh bài viết chung */
-/* Các định dạng lưới ảnh bài viết chung */
-.grid-post-item {
-  aspect-ratio: 1 / 1;
-  background-color: #efefef;
-  position: relative;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* Ép ảnh trong lưới luôn vừa khít ô vuông, không bị phóng to tràn màn hình */
-.grid-post-item img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-
-.grid-post-content {
-  padding: 20px;
-  text-align: center;
-  font-size: 14px;
-  color: #262626;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.grid-post-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  opacity: 0;
-  transition: opacity 0.2s;
-  font-weight: bold;
-  gap: 20px;
-  pointer-events: none;
-}
-
-.grid-post-item:hover .grid-post-overlay {
-  opacity: 1;
-}
-/* Ẩn thanh cuộn nhưng vẫn cho phép cuộn nội dung */
-.no-scrollbar::-webkit-scrollbar {
-  display: none; /* Ẩn trên Chrome, Safari, Edge, Cốc Cốc */
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;  /* Ẩn trên IE và Edge cũ */
-  scrollbar-width: none;  /* Ẩn trên Firefox */
-}
-.username-container {
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
 
-.private-badge {
-  font-size: 12px;
-  font-weight: normal;
-  background-color: #3a3b3c; /* Tông màu tối phù hợp với nền đen */
-  color: #e4e6eb;
-  padding: 4px 8px;
-  border-radius: 12px;
+.comment-bubble {
+  background: var(--bg-elevated);
+  border-radius: 14px;
+  padding: 8px 12px;
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.comment-author-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 8px;
+  text-decoration: none;
+}
+
+.comment-text-body {
+  color: #cbd5e1;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.comment-delete-btn {
+  font-size: 11px;
+  color: var(--danger);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.view-all-comments-link {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.view-all-comments-link:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+.comment-input-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 6px 4px 14px;
+  margin-top: 6px;
+}
+
+.comment-input-form input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  outline: none;
+}
+
+.btn-submit-comment {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.18s ease;
+  border: none;
+}
+
+.btn-submit-comment:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* =================================================== */
+/* RIGHT SIDEBAR WIDGETS                               */
+/* =================================================== */
+.widget-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.widget-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.suggestion-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.suggestion-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+  overflow: hidden;
+}
+
+.suggestion-username {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.btn-connect-user {
   display: flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid #4e4f50;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.btn-connect-user:hover {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+/* =================================================== */
+/* PROFILE PAGE                                        */
+/* =================================================== */
+.profile-header-card {
+  display: flex;
+  gap: 36px;
+  align-items: flex-start;
+  padding: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.profile-avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.profile-details-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.profile-username-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.private-badge-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-profile-primary {
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  color: white;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  transition: all 0.18s ease;
+}
+
+.btn-profile-secondary {
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-profile-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+}
+
+.profile-stats-row {
+  display: flex;
+  gap: 22px;
+}
+
+.profile-stats-row .stat-item {
+  display: flex;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.profile-stats-row .stat-value {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-stats-row .stat-label {
+  color: var(--text-secondary);
+}
+
+.profile-bio-box {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.friends-preview-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.profile-tabs-strip {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border-subtle);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-top: 2px solid transparent;
+  margin-top: -1px;
+  cursor: pointer;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  transition: all 0.18s ease;
+}
+
+.profile-tab-button.active {
+  color: var(--accent-primary);
+  border-top-color: var(--accent-primary);
+}
+
+.profile-posts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.profile-grid-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #0e121a;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.profile-grid-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.profile-grid-card:hover img {
+  transform: scale(1.04);
+}
+
+.grid-overlay-stats {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.profile-grid-card:hover .grid-overlay-stats {
+  opacity: 1;
+}
+
+/* =================================================== */
+/* NOTIFICATIONS DROPDOWN                              */
+/* =================================================== */
+.notification-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.notification-dropdown {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 340px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-hover);
+  z-index: 100;
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease;
+}
+
+/* =================================================== */
+/* UTILITY CLASSES & SCROLLBAR                         */
+/* =================================================== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =================================================== */
+/* KEYFRAME ANIMATIONS                                 */
+/* =================================================== */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(16px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* =================================================== */
+/* RESPONSIVE DESIGN (TABLET & MOBILE)                 */
+/* =================================================== */
+@media screen and (max-width: 1023px) {
+  .app-widget-col {
+    display: none !important;
+  }
+
+  .app-sidebar-col {
+    width: 72px;
+    padding: 16px 8px;
+  }
+
+  .brand-logo-text,
+  .nav-link-item span,
+  .sidebar-user-meta,
+  .sidebar-post-btn span,
+  .sidebar-search-box {
+    display: none !important;
+  }
+
+  .sidebar-post-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin: 8px auto 0;
+    border-radius: 50%;
+  }
+
+  .nav-link-item {
+    justify-content: center;
+    padding: 12px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .app-sidebar-col {
+    display: none !important;
+  }
+
+  .app-feed-col {
+    padding: 12px 10px 80px;
+    max-width: 100%;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(21, 25, 33, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 50;
+  }
+
+  .profile-header-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 18px;
+    padding: 20px 14px;
+  }
+
+  .profile-stats-row {
+    justify-content: center;
+  }
+
+  .profile-title-row {
+    justify-content: center;
+  }
+
+  .notification-dropdown {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 70px;
+    width: auto;
+  }
 }

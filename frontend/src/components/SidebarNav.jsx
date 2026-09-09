@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import NotificationDropdown from './NotificationDropdown.jsx';
+import Avatar from './Avatar.jsx';
+import { Home, Compass, Bookmark, User, PlusCircle, LogOut, LogIn, Search, Sparkles } from 'lucide-react';
 
 function SidebarNav({ onCreatePost }) {
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [query, setQuery] = useState('');
 
     const submitSearch = (event) => {
         event.preventDefault();
-        navigate(`/explore${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
+        if (!query.trim()) return;
+        navigate(`/explore?q=${encodeURIComponent(query.trim())}`);
     };
 
     const handleLogout = () => {
@@ -18,47 +22,115 @@ function SidebarNav({ onCreatePost }) {
         navigate('/login');
     };
 
+    const isActive = (path) => {
+        if (path === '/' && location.pathname === '/') return true;
+        if (path !== '/' && location.pathname.startsWith(path)) return true;
+        return false;
+    };
+
     return (
-        <nav className="home-left-sidebar" aria-label="Điều hướng chính">
-            <form className="sidebar-search" onSubmit={submitSearch}>
-                <span className="sidebar-search-icon">🔎</span>
-                <input
-                    value={query}
-                    onChange={event => setQuery(event.target.value)}
-                    placeholder="Tìm kiếm"
-                    aria-label="Tìm kiếm"
-                />
-            </form>
-
-            <Link to="/explore" className="sidebar-box mobile-only-btn" title="Khám phá">
-                <h3>🧭<span>Khám phá</span></h3>
-            </Link>
-            <Link to="/" className="sidebar-box mobile-only-btn" title="Trang chủ">
-                <h3>🏠<span>Trang chủ</span></h3>
-            </Link>
-            <div className="sidebar-box mobile-only-btn sidebar-notification" title="Thông báo">
-                <NotificationDropdown />
-                <span className="sidebar-label">Thông báo</span>
-            </div>
-
-            {currentUser ? (
-                <>
-                    <Link to={`/profile/${currentUser.username}`} className="sidebar-box mobile-only-btn" title="Trang cá nhân">
-                        <h3>👤<span>{currentUser.username}</span></h3>
-                    </Link>
-                    <button type="button" className="sidebar-box mobile-only-btn" onClick={onCreatePost} title="Đăng bài">
-                        <h3>✍️<span>Đăng bài</span></h3>
-                    </button>
-                    <button type="button" className="sidebar-box mobile-only-btn sidebar-logout" onClick={handleLogout} title="Đăng xuất">
-                        <h3>🚪<span>Đăng xuất</span></h3>
-                    </button>
-                </>
-            ) : (
-                <Link to="/login" className="sidebar-box mobile-only-btn" title="Đăng nhập">
-                    <h3>🔑<span>Đăng nhập</span></h3>
+        <aside className="app-sidebar-col" aria-label="Điều hướng chính">
+            <nav className="modern-sidebar">
+                {/* Brand Logo */}
+                <Link to="/" className="brand-logo-container" title="Trang chủ">
+                    <div className="brand-logo-icon">
+                        <Sparkles size={20} />
+                    </div>
+                    <span className="brand-logo-text">SocialHub</span>
                 </Link>
-            )}
-        </nav>
+
+                {/* Quick Search */}
+                <form className="sidebar-search-box" onSubmit={submitSearch}>
+                    <Search size={16} className="search-icon" />
+                    <input
+                        value={query}
+                        onChange={event => setQuery(event.target.value)}
+                        placeholder="Tìm kiếm..."
+                        aria-label="Tìm kiếm"
+                    />
+                </form>
+
+                {/* Nav Links */}
+                <ul className="nav-links-list">
+                    <li>
+                        <Link to="/" className={`nav-link-item ${isActive('/') ? 'active' : ''}`} title="Trang chủ">
+                            <Home size={20} />
+                            <span>Trang chủ</span>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/explore" className={`nav-link-item ${isActive('/explore') ? 'active' : ''}`} title="Khám phá">
+                            <Compass size={20} />
+                            <span>Khám phá</span>
+                        </Link>
+                    </li>
+                    <li>
+                        <NotificationDropdown />
+                    </li>
+
+                    {currentUser ? (
+                        <>
+                            <li>
+                                <Link
+                                    to="/saved-posts"
+                                    className={`nav-link-item ${isActive('/saved-posts') ? 'active' : ''}`}
+                                    title="Đã lưu"
+                                >
+                                    <Bookmark size={20} />
+                                    <span>Đã lưu</span>
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    to={`/profile/${currentUser.username}`}
+                                    className={`nav-link-item ${isActive(`/profile/${currentUser.username}`) ? 'active' : ''}`}
+                                    title="Trang cá nhân"
+                                >
+                                    <User size={20} />
+                                    <span>Trang cá nhân</span>
+                                </Link>
+                            </li>
+
+                            <li style={{ marginTop: '10px' }}>
+                                <button type="button" className="sidebar-post-btn" onClick={onCreatePost} title="Đăng bài">
+                                    <PlusCircle size={18} />
+                                    <span>Tạo bài viết</span>
+                                </button>
+                            </li>
+                        </>
+                    ) : (
+                        <li>
+                            <Link to="/login" className={`nav-link-item ${isActive('/login') ? 'active' : ''}`} title="Đăng nhập">
+                                <LogIn size={20} />
+                                <span>Đăng nhập</span>
+                            </Link>
+                        </li>
+                    )}
+                </ul>
+
+                {/* Current User Card in Sidebar Footer */}
+                {currentUser && (
+                    <div className="sidebar-user-footer">
+                        <Link to={`/profile/${currentUser.username}`} className="sidebar-user-info" title="Xem hồ sơ">
+                            <Avatar user={currentUser} size={36} />
+                            <div className="sidebar-user-meta">
+                                <div className="sidebar-user-name">{currentUser.username}</div>
+                                <div className="sidebar-user-role">@{currentUser.username}</div>
+                            </div>
+                        </Link>
+                        <button
+                            type="button"
+                            className="sidebar-logout-btn"
+                            onClick={handleLogout}
+                            title="Đăng xuất"
+                            aria-label="Đăng xuất"
+                        >
+                            <LogOut size={18} />
+                        </button>
+                    </div>
+                )}
+            </nav>
+        </aside>
     );
 }
 

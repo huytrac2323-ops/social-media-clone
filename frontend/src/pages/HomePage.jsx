@@ -2,19 +2,11 @@ import React, { useState, useEffect } from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
 import SidebarNav from '../components/SidebarNav.jsx';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
 import Avatar from '../components/Avatar.jsx';
-
-const parseJsonValue = value => {
-    if (typeof value !== 'string') return value;
-    try {
-        return JSON.parse(value);
-    } catch {
-        return null;
-    }
-};
+import { Plus, X, Users, UserPlus, Image as ImageIcon, Eye } from 'lucide-react';
 
 export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     const { currentUser } = useAuth();
@@ -22,38 +14,19 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
     const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
-    const [conversations, setConversations] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
-    const [friendRequests, setFriendRequests] = useState([]);
     const [stories, setStories] = useState([]);
     const [storyFile, setStoryFile] = useState(null);
     const [storySticker, setStorySticker] = useState('');
     const [activeStory, setActiveStory] = useState(null);
     const [selectedReaction, setSelectedReaction] = useState(null);
     const [showCreatePost, setShowCreatePost] = useState(false);
-    const [isChatExpanded, setIsChatExpanded] = useState(false);
 
     const fetchSuggestions = async () => {
         const currentId = currentUser?.user_id || currentUser?.id || 'guest';
         try {
             const res = await fetch(`${API_URL}/suggestions/${currentId}`);
             if (res.ok) setSuggestions(await res.json());
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchConversations = async () => {
-        if (!currentUser?.user_id) return;
-        try {
-            const res = await fetch(`${API_URL}/conversations/${currentUser.user_id}`);
-            if (res.ok) setConversations(await res.json());
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchFriendRequests = async () => {
-        if (!currentUser?.user_id) return;
-        try {
-            const res = await fetch(`${API_URL}/friends/requests/${currentUser.user_id}`);
-            if (res.ok) setFriendRequests(await res.json());
         } catch (err) { console.error(err); }
     };
 
@@ -74,15 +47,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     useEffect(() => {
         fetchSuggestions();
         fetchStories();
-        if (currentUser?.user_id || currentUser?.id) {
-            fetchConversations();
-            fetchFriendRequests();
-            const interval = setInterval(() => {
-                fetchConversations();
-                fetchFriendRequests();
-            }, 3000);
-            return () => clearInterval(interval);
-        }
     }, [currentUser]);
 
     const handleCreateStory = async (event) => {
@@ -149,130 +113,293 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
             });
-            if (res.ok) { alert("Đã gửi yêu cầu!"); fetchSuggestions(); }
-            else alert("Lỗi máy chủ");
+            if (res.ok) {
+                alert("Đã gửi yêu cầu kết bạn!");
+                fetchSuggestions();
+            } else {
+                alert("Lỗi máy chủ khi gửi kết bạn.");
+            }
         } catch (err) { console.error(err); }
     };
 
-    const handleAcceptFriend = async (requesterId) => {
-        await fetch(`${API_URL}/friends/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUser.user_id, friend_id: requesterId }) });
-        alert("Đã chấp nhận kết bạn!"); window.location.reload();
-    };
-
-    const handleRejectFriend = async (requesterId) => {
-        await fetch(`${API_URL}/friends/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUser.user_id, friend_id: requesterId }) });
-        fetchFriendRequests();
-    };
-
     return (
-        <div className="home-page-container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', position: 'relative', right: '60px' }}>
-            <section style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '10px 0 18px', marginBottom: '12px' }}>
-                {currentUser && (
-                    <form onSubmit={handleCreateStory} style={{ minWidth: '76px', textAlign: 'center' }}>
-                        <label htmlFor="story-upload" style={{ cursor: 'pointer' }}>
-                            <span style={{ display: 'grid', placeItems: 'center', width: '58px', height: '58px', borderRadius: '50%', border: '2px dashed #888', color: '#aaa', fontSize: '24px' }}>+</span>
-                            <small>Story của bạn</small>
-                        </label>
-                        <input id="story-upload" type="file" accept="image/*,video/*" hidden onChange={(e) => setStoryFile(e.target.files?.[0] || null)} />
-                        {storyFile && (
-                            <div style={{ position: 'fixed', inset: 0, zIndex: 120000, background: 'rgba(0,0,0,.85)', display: 'grid', placeItems: 'center' }} onClick={() => setStoryFile(null)}>
-                                <div onClick={e => e.stopPropagation()} style={{ width: 'min(420px, 92vw)', background: '#242526', padding: 20, borderRadius: 10, textAlign: 'left' }}>
-                                    <h3 style={{ marginBottom: 12 }}>Tùy chỉnh story</h3>
-                                    <input value={storySticker} onChange={e => setStorySticker(e.target.value)} placeholder="Sticker (ví dụ: 🎉)" style={{ width: '100%', marginBottom: 8, padding: 8 }} />
-                                    <button type="submit" style={{ width: '100%', padding: 10, background: '#0095f6', color: 'white', border: 0, borderRadius: 6 }}>Đăng story</button>
-                                </div>
-                            </div>
-                        )}
-                    </form>
-                )}
-                {stories.map(story => (
-                    <button key={story.story_id} type="button" onClick={() => handleOpenStory(story)} style={{ minWidth: '76px', border: 'none', background: 'none', color: 'white', cursor: 'pointer' }}>
-                        <img src={story.profile_photo_url || 'https://via.placeholder.com/60'} alt={story.username} style={{ width: '58px', height: '58px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #e1306c', padding: '2px' }} />
-                        <small style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{story.username}</small>
-                    </button>
-                ))}
-            </section>
-            {activeStory && (
-                <div className="story-viewer-backdrop" onClick={() => setActiveStory(null)}>
-                    <div className="story-viewer" onClick={e => e.stopPropagation()}>
-                        <button type="button" className="story-close-button" onClick={() => setActiveStory(null)} aria-label="Đóng Story">×</button>
-                        <div className="story-viewer-user">
-                            <img src={activeStory.profile_photo_url} alt="" />
-                            <strong>{activeStory.username}</strong>
-                        </div>
-                        {activeStory.media_type === 'video'
-                            ? <video src={mediaUrl(activeStory.media_url)} controls autoPlay />
-                            : <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />}
-                        {activeStory.sticker && <div className="story-sticker">{activeStory.sticker}</div>}
-                        <div className="story-reactions" onClick={e => e.stopPropagation()}>
-                            {['❤️', '😂', '😮', '😢', '👏', '🔥'].map(reaction => (
-                                <button type="button" key={reaction} className={selectedReaction === reaction ? 'selected' : ''} onClick={() => handleReactToStory(reaction)} aria-label={`Thả ${reaction}`}>
-                                    {reaction}
+        <div className="app-shell">
+            <div className="app-layout">
+                {/* CỘT TRÁI: THANH ĐIỀU HƯỚNG */}
+                <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
+
+                {/* CỘT GIỮA: BẢNG TIN TRUNG TÂM */}
+                <main className="app-feed-col">
+                    {/* BĂNG CHUYỀN STORIES */}
+                    <section className="story-bar-container">
+                        <div className="story-scroll-track no-scrollbar">
+                            {/* Nút đăng story của người dùng */}
+                            {currentUser && (
+                                <form onSubmit={handleCreateStory} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <label htmlFor="story-upload" className="story-card-item">
+                                        <div className="story-avatar-wrapper" style={{ background: 'var(--border-hover)' }}>
+                                            <div className="story-avatar-inner">
+                                                <Avatar user={currentUser} size={54} />
+                                            </div>
+                                            <span className="story-add-badge">
+                                                <Plus size={12} strokeWidth={3} />
+                                            </span>
+                                        </div>
+                                        <span className="story-username-label">Tạo Story</span>
+                                    </label>
+                                    <input
+                                        id="story-upload"
+                                        type="file"
+                                        accept="image/*,video/*"
+                                        hidden
+                                        onChange={(e) => setStoryFile(e.target.files?.[0] || null)}
+                                    />
+
+                                    {/* Modal xác nhận đăng story */}
+                                    {storyFile && (
+                                        <div className="modal-backdrop" onClick={() => setStoryFile(null)}>
+                                            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+                                                <div className="modal-header">
+                                                    <h2>Tạo Story mới</h2>
+                                                    <button type="button" className="close-btn" onClick={() => setStoryFile(null)}>
+                                                        <X size={20} />
+                                                    </button>
+                                                </div>
+                                                <div style={{ padding: '20px' }}>
+                                                    <input
+                                                        value={storySticker}
+                                                        onChange={e => setStorySticker(e.target.value)}
+                                                        placeholder="Thêm nhãn dán sticker (ví dụ: 🎉, 🔥)..."
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px 14px',
+                                                            borderRadius: '10px',
+                                                            border: '1px solid var(--border-subtle)',
+                                                            background: 'var(--bg-input)',
+                                                            color: 'var(--text-primary)',
+                                                            marginBottom: '16px',
+                                                            outline: 'none'
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="submit"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px',
+                                                            background: 'var(--accent-gradient)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '12px',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        Chia sẻ lên Story
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </form>
+                            )}
+
+                            {/* Danh sách story của bạn bè */}
+                            {stories.map(story => (
+                                <button
+                                    key={story.story_id}
+                                    type="button"
+                                    onClick={() => handleOpenStory(story)}
+                                    className="story-card-item"
+                                >
+                                    <div className="story-avatar-wrapper">
+                                        <div className="story-avatar-inner">
+                                            <img
+                                                src={story.profile_photo_url || 'https://picsum.photos/60'}
+                                                alt={story.username}
+                                            />
+                                        </div>
+                                    </div>
+                                    <span className="story-username-label">{story.username}</span>
                                 </button>
                             ))}
                         </div>
-                    </div>
-                    {Number(activeStory.user_id) === Number(currentUser?.user_id) && (
-                        <div className="story-view-count">
-                            👁 {activeStory.view_count || 0} lượt xem
+                    </section>
+
+                    {/* STORY VIEWER FULLSCREEN */}
+                    {activeStory && (
+                        <div className="story-viewer-backdrop" onClick={() => setActiveStory(null)}>
+                            <div className="story-viewer" onClick={e => e.stopPropagation()}>
+                                <button
+                                    type="button"
+                                    className="story-close-button"
+                                    onClick={() => setActiveStory(null)}
+                                    aria-label="Đóng Story"
+                                >
+                                    <X size={20} />
+                                </button>
+                                <div className="story-viewer-user">
+                                    <Avatar user={{ username: activeStory.username, profile_photo_url: activeStory.profile_photo_url }} size={36} />
+                                    <strong>{activeStory.username}</strong>
+                                </div>
+                                {activeStory.media_type === 'video'
+                                    ? <video src={mediaUrl(activeStory.media_url)} controls autoPlay />
+                                    : <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />}
+                                {activeStory.sticker && <div className="story-sticker">{activeStory.sticker}</div>}
+                                <div className="story-reactions" onClick={e => e.stopPropagation()}>
+                                    {['❤️', '😂', '😮', '😢', '👏', '🔥'].map(reaction => (
+                                        <button
+                                            type="button"
+                                            key={reaction}
+                                            className={selectedReaction === reaction ? 'selected' : ''}
+                                            onClick={() => handleReactToStory(reaction)}
+                                            aria-label={`Thả ${reaction}`}
+                                        >
+                                            {reaction}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {Number(activeStory.user_id) === Number(currentUser?.user_id) && (
+                                <div className="story-view-count">
+                                    <Eye size={14} style={{ display: 'inline', marginRight: '6px' }} />
+                                    {activeStory.view_count || 0} lượt xem
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
-            )}
 
-            {/* POPUP ĐĂNG BÀI */}
-            {showCreatePost && currentUser && (
-                <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 120000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setShowCreatePost(false)}>
-                    <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxWidth: '500px', backgroundColor: '#242526', padding: '20px', borderRadius: '10px', zIndex: 120001,
-                    }}>
-                        <CreatePost onPostCreated={() => { onPostCreated(); setShowCreatePost(false); }} />
-                        <button onClick={() => setShowCreatePost(false)} style={{ width: '100%', marginTop: '10px', padding: '10px', background: '#3a3b3c', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy / Đóng</button>
+                    {/* KHUNG TẠO BÀI VIẾT NHANH TRÊN FEED */}
+                    {currentUser && (
+                        <div className="create-post-trigger-card">
+                            <div className="create-post-top-row">
+                                <Avatar user={currentUser} size={42} />
+                                <div
+                                    className="create-post-input-mock"
+                                    onClick={() => setShowCreatePost(true)}
+                                >
+                                    Bạn đang nghĩ gì thế, {currentUser.username}?
+                                </div>
+                            </div>
+                            <div className="create-post-actions-row">
+                                <button
+                                    type="button"
+                                    className="create-post-action-btn"
+                                    onClick={() => setShowCreatePost(true)}
+                                >
+                                    <ImageIcon size={18} color="#10b981" />
+                                    <span>Ảnh / Video</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className="create-post-action-btn"
+                                    onClick={() => setShowCreatePost(true)}
+                                >
+                                    <Plus size={18} color="#3b82f6" />
+                                    <span>Đăng bài</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL ĐĂNG BÀI ĐẦY ĐỦ */}
+                    {showCreatePost && currentUser && (
+                        <div className="modal-backdrop" onClick={() => setShowCreatePost(false)}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2>Tạo bài viết</h2>
+                                    <button type="button" className="close-btn" onClick={() => setShowCreatePost(false)}>
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                <CreatePost
+                                    onPostCreated={() => {
+                                        onPostCreated();
+                                        setShowCreatePost(false);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* DANH SÁCH BÀI VIẾT */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {posts && posts.length > 0 ? (
+                            posts.map(post => (
+                                <PostCard
+                                    key={post.post_id || post.id}
+                                    post={post}
+                                    onLike={onLike}
+                                    onCommentSubmit={onCommentSubmit}
+                                    onPostDeleted={onPostDeleted}
+                                    onPostUpdated={onPostUpdated}
+                                />
+                            ))
+                        ) : (
+                            <div style={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: 'var(--radius-lg)',
+                                padding: '48px 24px',
+                                textAlign: 'center',
+                                color: 'var(--text-muted)'
+                            }}>
+                                <p style={{ fontSize: '15px' }}>Chưa có bài viết nào trong bảng tin.</p>
+                                <p style={{ fontSize: '13px', marginTop: '6px' }}>Hãy theo dõi bạn bè hoặc đăng bài viết đầu tiên!</p>
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
+                </main>
 
-            {/* BẢNG TIN TRUNG TÂM */}
-            <div className="posts-list">
-                {posts && posts.length > 0 ? (
-                    posts.map(post => <PostCard key={post.post_id || post.id} post={post} onLike={onLike} onCommentSubmit={onCommentSubmit} onPostDeleted={onPostDeleted} onPostUpdated={onPostUpdated} />)
-                ) : (
-                    <p style={{ textAlign: 'center', color: '#888' }}>Chưa có bài viết nào.</p>
-                )}
-            </div>
-
-            {/* THANH ĐIỀU HƯỚNG DƯỚI CÙNG (Gồm Đăng nhập / Đăng xuất) */}
-            <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
-
-            {/* THANH BÊN PHẢI (Gợi ý kết bạn) */}
-            <div className="home-right-sidebar" style={{ position: 'fixed', top: '20px', right: '140px', width: '280px', zIndex: 100 }}>
-                <div style={{ background: '#242526', padding: '15px', borderRadius: '8px', color: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                    <h3 style={{ fontSize: '15px', marginBottom: '10px' }}>👥 Gợi ý kết bạn</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {suggestions && suggestions.length > 0 ? (
-                            suggestions.map(user => (
-                                <div key={user.user_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#3a3b3c', padding: '8px', borderRadius: '6px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                {/* CỘT PHẢI: GỢI Ý KẾT BẠN & TIỆN ÍCH */}
+                <aside className="app-widget-col">
+                    <div className="widget-card">
+                        <div className="widget-title">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Users size={18} color="#60a5fa" />
+                                Gợi ý kết bạn
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {suggestions && suggestions.length > 0 ? (
+                                suggestions.map(user => (
+                                    <div key={user.user_id} className="suggestion-user-row">
                                         <button
                                             type="button"
                                             onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
-                                            title={`Xem trang cá nhân của ${user.username}`}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: 0, border: 'none', background: 'none', color: 'inherit', cursor: 'pointer', overflow: 'hidden' }}
+                                            className="suggestion-user-meta"
+                                            title={`Xem trang của ${user.username}`}
                                         >
-                                            <Avatar user={user} className="suggestion-avatar" />
-                                            <span style={{ fontSize: '13px', whiteSpace: 'nowrap' }}>{user.username}</span>
+                                            <Avatar user={user} size={36} />
+                                            <div>
+                                                <div className="suggestion-username">{user.username}</div>
+                                                <div className="suggestion-subtitle">Gợi ý cho bạn</div>
+                                            </div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (!currentUser) return alert("Vui lòng đăng nhập!");
+                                                handleSendRequest(user.user_id || user.id);
+                                            }}
+                                            className="btn-connect-user"
+                                            title="Thêm bạn bè"
+                                        >
+                                            <UserPlus size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                                            Kết bạn
                                         </button>
                                     </div>
-                                    <button onClick={() => { if (!currentUser) return alert("Vui lòng đăng nhập!"); handleSendRequest(user.user_id || user.id); }} style={{ background: '#0084ff', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Thêm bạn</button>
-                                </div>
-                            ))
-                        ) : (
-                            <p style={{ fontSize: '12px', color: '#888', textAlign: 'center' }}>Không có gợi ý nào</p>
-                        )}
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>
+                                    Không có gợi ý mới
+                                </p>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </div>
+                </aside>
 
-            <ChatWidget />
+                <ChatWidget />
+            </div>
         </div>
     );
 }

@@ -1,14 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link} from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import '../styles/App.css';
 import EditProfileModal from '../modals/EditProfileModal.jsx';
 import CreatePost from '../modals/CreatePost.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
 import SidebarNav from '../components/SidebarNav.jsx';
+import Avatar from '../components/Avatar.jsx';
+import {
+  Grid,
+  Bookmark,
+  Tag,
+  Edit3,
+  MessageCircle,
+  UserPlus,
+  UserCheck,
+  Lock,
+  Heart,
+  Users,
+  X
+} from 'lucide-react';
 
-
-const API_URL =import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
 function ProfilePage() {
   const { username } = useParams();
@@ -18,24 +31,15 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // State quản lý Popup Đăng bài & Khung chat cho di động
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [isChatExpanded, setIsChatExpanded] = useState(false);
-  const [conversations, setConversations] = useState([]);
+  const [activeTab, setActiveTab] = useState('posts');
   const [friends, setFriends] = useState([]);
   const [followStatus, setFollowStatus] = useState(null);
-
-  const getAvatarUrl = (url) => {
-    if (!url) return 'https://picsum.photos/150';
-    return url.startsWith('http') ? url : `https://social-media-clone-di9z.onrender.com${url}`;
-  };
 
   const fetchUserProfile = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Đính kèm viewer_id vào query params nếu đã đăng nhập
       const viewerParam = currentUser?.user_id ? `?viewer_id=${currentUser.user_id}` : '';
       const response = await fetch(`${API_URL}/users/${username}${viewerParam}`);
 
@@ -51,16 +55,6 @@ function ProfilePage() {
       setLoading(false);
     }
   }, [username, currentUser]);
-
-
-
-  const fetchConversations = async () => {
-    if (!currentUser?.user_id) return;
-    try {
-      const res = await fetch(`${API_URL}/conversations/${currentUser.user_id}`);
-      if (res.ok) setConversations(await res.json());
-    } catch (err) { console.error(err); }
-  };
 
   const fetchFriends = useCallback(async (userId) => {
     if (!userId) return;
@@ -88,10 +82,7 @@ function ProfilePage() {
 
   useEffect(() => {
     fetchUserProfile();
-    if (currentUser?.user_id) {
-      fetchConversations();
-    }
-  }, [fetchUserProfile, currentUser]);
+  }, [fetchUserProfile]);
 
   useEffect(() => {
     if (userProfile?.user_id) {
@@ -125,171 +116,287 @@ function ProfilePage() {
     navigate(`/post/${postId}`);
   };
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: '50px' }}>Đang tải...</div>;
-  if (error) return <div style={{ textAlign: 'center', marginTop: '50px', color: 'red' }}>Lỗi: {error}</div>;
+  if (loading) {
+    return (
+      <div className="app-shell">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: 'var(--text-muted)' }}>
+          Đang tải hồ sơ...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="app-shell">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '12px' }}>
+          <p style={{ color: '#f43f5e', fontSize: '16px' }}>Lỗi: {error}</p>
+          <button onClick={() => navigate('/')} className="btn-profile-primary">Quay về trang chủ</button>
+        </div>
+      </div>
+    );
+  }
+
   if (!userProfile) return null;
 
-  const { stats = {}, bio, posts = [], profile_photo_url } = userProfile;
-  const isOwnProfile = currentUser ? currentUser.user_id === userProfile.user_id : false;
+  const { stats = {}, bio, posts = [] } = userProfile;
+  const isOwnProfile = currentUser ? Number(currentUser.user_id) === Number(userProfile.user_id) : false;
 
   return (
-      <>
-        {isEditModalOpen && (
-            <EditProfileModal
-                user={userProfile}
-                onClose={() => setIsEditModalOpen(false)}
-                navigate={navigate}
-            />
-        )}
+    <div className="app-shell">
+      <div className="app-layout">
+        <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
 
-        {/* POPUP ĐĂNG BÀI */}
-        {showCreatePost && currentUser && (
-            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999999, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setShowCreatePost(false)}>
-              <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '500px', backgroundColor: '#242526', padding: '20px', borderRadius: '10px', }}>
-                <CreatePost onPostCreated={() => { fetchUserProfile(); setShowCreatePost(false); }} />
-                <button onClick={() => setShowCreatePost(false)} style={{ width: '100%', marginTop: '10px', padding: '10px', background: '#3a3b3c', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy / Đóng</button>
-              </div>
+        <main style={{ flex: 1, maxWidth: '900px', minWidth: 0, paddingBottom: '80px' }}>
+          {/* PROFILE HEADER CARD */}
+          <section className="profile-header-card">
+            <div className="profile-avatar-wrapper">
+              <Avatar user={userProfile} size={130} style={{ border: '3px solid rgba(255,255,255,0.15)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }} />
             </div>
-        )}
 
-        <div className="profile-container" style={{ paddingBottom: '70px' }}>
-          <header className="profile-header">
-            <div className="profile-avatar-section">
-              <div className="profile-avatar-large" style={{ backgroundImage: `url(${getAvatarUrl(profile_photo_url)})`, backgroundSize: 'cover' }}>
-                {!profile_photo_url && username[0].toUpperCase()}
-              </div>
-            </div>
-            <section className="profile-info-section">
-              <div className="profile-info-header">
-                <div className="username-container">
-                  <h2 className="profile-username" style={{ margin: 0 }}>{username}</h2>
-                  {userProfile.is_private && (
-                      <span className="private-badge" title="Tài khoản riêng tư">
-                            🔒 Riêng tư
-                        </span>
-                  )}
-                </div>
-                {isOwnProfile && (
-                    <button className="btn-edit-profile" onClick={() => setIsEditModalOpen(true)}>
-                      Chỉnh sửa trang cá nhân
-                    </button>
+            <div className="profile-details-column">
+              <div className="profile-title-row">
+                <h1 className="profile-username-heading">{username}</h1>
+
+                {userProfile.is_private && (
+                  <span className="private-badge-pill" title="Tài khoản riêng tư">
+                    <Lock size={12} />
+                    Riêng tư
+                  </span>
+                )}
+
+                {isOwnProfile ? (
+                  <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
+                    <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
+                    Chỉnh sửa hồ sơ
+                  </button>
+                ) : (
+                  currentUser && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={handleFollowToggle}
+                        className="btn-profile-primary"
+                      >
+                        {followStatus?.is_following ? (
+                          <>
+                            <UserCheck size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                            Đang theo dõi
+                          </>
+                        ) : followStatus?.request_sent ? (
+                          'Đã gửi yêu cầu'
+                        ) : (
+                          <>
+                            <UserPlus size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                            {userProfile.is_private ? 'Yêu cầu theo dõi' : 'Theo dõi'}
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-profile-secondary"
+                        onClick={() => {
+                          localStorage.setItem('activeChatUser', JSON.stringify({
+                            user_id: userProfile.user_id || userProfile.id,
+                            username: userProfile.username
+                          }));
+                          window.dispatchEvent(new Event('open-chat'));
+                        }}
+                      >
+                        <MessageCircle size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                        Nhắn tin
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
 
-              {!isOwnProfile && currentUser && (
-                  <button
-                      onClick={handleFollowToggle}
-                      style={{ background: '#2d88ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
-                  >
-                    {followStatus?.is_following
-                      ? 'Đang theo dõi'
-                      : followStatus?.request_sent
-                        ? 'Đã gửi yêu cầu'
-                        : userProfile.is_private ? 'Yêu cầu theo dõi' : 'Theo dõi'}
-                  </button>
-              )}
-
-              <ul className="profile-stats-list">
-                <li><b>{stats?.post_count ?? 0}</b> bài viết</li>
-                <li><b>{stats?.follower_count ?? 0}</b> người theo dõi</li>
-                <li>Đang theo dõi <b>{stats?.following_count ?? 0}</b> người dùng</li>
+              {/* Stats Counters */}
+              <ul className="profile-metrics-list">
+                <li className="metric-item">
+                  <strong>{stats?.post_count ?? posts.length}</strong> bài viết
+                </li>
+                <li className="metric-item">
+                  <strong>{stats?.follower_count ?? 0}</strong> người theo dõi
+                </li>
+                <li className="metric-item">
+                  Đang theo dõi <strong>{stats?.following_count ?? 0}</strong>
+                </li>
               </ul>
-              <div className="profile-bio">
-                <b>{userProfile.username}</b>
-                <p>{bio || "Chưa có tiểu sử."}</p>
+
+              {/* Bio block */}
+              <div className="profile-bio-box">
+                <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  {userProfile.username}
+                </div>
+                <p style={{ color: '#cbd5e1', margin: 0 }}>
+                  {bio || "Chưa có tiểu sử cá nhân."}
+                </p>
               </div>
-            </section>
-          </header>
+            </div>
+          </section>
 
-          <div className="profile-tabs">
-            <div className="profile-tab active">☰ BÀI VIẾT</div>
-
-            {isOwnProfile ? (
-                <Link
-                    to="/saved-posts"
-                    className="profile-tab"
-                    style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  💾 ĐÃ LƯU
-                </Link>
-            ) : (
-                <div className="profile-tab" style={{ opacity: 0.5, cursor: 'not-allowed' }}>💾 ĐÃ LƯU</div>
-            )}
-
-            {!isOwnProfile && currentUser && (
-                <button
-                    className="btn-chat"
-                    onClick={() => {
-                      localStorage.setItem('activeChatUser', JSON.stringify({
-                        user_id: userProfile.user_id || userProfile.id,
-                        username: userProfile.username
-                      }));
-                      window.dispatchEvent(new Event('open-chat'));
-                    }}
-                    style={{ background: '#0084ff', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
-                >
-                  💬 Nhắn tin
-                </button>
-            )}
-
-            <div className="profile-tab">👤 ĐƯỢC GẮN THẺ</div>
-          </div>
-
-          <section style={{ margin: '16px 0', padding: '16px', background: '#242526', borderRadius: '8px', color: 'white' }}>
-            <h3 style={{ margin: '0 0 12px' }}>Bạn bè ({friends.length})</h3>
+          {/* FRIENDS CARD */}
+          <section style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '18px 22px',
+            marginBottom: '20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', fontSize: '15px', fontWeight: '700' }}>
+              <Users size={18} color="#60a5fa" />
+              <span>Bạn bè ({friends.length})</span>
+            </div>
             {friends.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {friends.map(friend => (
                   <button
                     key={friend.user_id}
                     type="button"
                     onClick={() => navigate(`/profile/${encodeURIComponent(friend.username)}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', border: '1px solid #555', borderRadius: '20px', background: '#3a3b3c', color: 'white', cursor: 'pointer' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 14px',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'var(--bg-elevated)',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      transition: 'all 0.18s ease'
+                    }}
                   >
-                    <img
-                      src={getAvatarUrl(friend.profile_photo_url)}
-                      alt={`Ảnh đại diện của ${friend.username}`}
-                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                    />
+                    <Avatar user={friend} size={24} />
                     <span>{friend.username}</span>
                   </button>
                 ))}
               </div>
             ) : (
-              <p style={{ margin: 0, color: '#aaa' }}>Chưa có bạn bè.</p>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '13px' }}>Chưa có bạn bè nào.</p>
             )}
           </section>
 
-          <div className="profile-posts-grid">
-            {Array.isArray(posts) && posts.length > 0 ? (
-                posts.map(post => (
-                    <div
-                        key={post.post_id}
-                        className="grid-post-item"
-                        onClick={() => handlePostClick(post.post_id)}
-                        style={{ cursor: 'pointer' }}
-                    >
-                      {post.photo_url ? (
-                          <img src={post.photo_url} alt={post.caption || 'Bài viết'} />
-                      ) : (
-                          <div className="grid-post-content">{post.caption}</div>
-                      )}
-                      <div className="grid-post-overlay"></div>
-                    </div>
-                ))
-            ) : (
-                <p style={{ textAlign: 'center', gridColumn: '1 / -1' }}>Chưa có bài viết nào.</p>
+          {/* TABS SELECTOR */}
+          <div className="profile-tabs-nav">
+            <button
+              type="button"
+              className={`profile-tab-button ${activeTab === 'posts' ? 'active' : ''}`}
+              onClick={() => setActiveTab('posts')}
+            >
+              <Grid size={16} />
+              <span>BÀI VIẾT</span>
+            </button>
+
+            {isOwnProfile && (
+              <Link
+                to="/saved-posts"
+                className="profile-tab-button"
+                style={{ textDecoration: 'none' }}
+              >
+                <Bookmark size={16} />
+                <span>ĐÃ LƯU</span>
+              </Link>
             )}
+
+            <button
+              type="button"
+              className={`profile-tab-button ${activeTab === 'tagged' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tagged')}
+            >
+              <Tag size={16} />
+              <span>ĐƯỢC GẮN THẺ</span>
+            </button>
           </div>
 
+          {/* POSTS GRID */}
+          <div className="profile-grid-container">
+            {Array.isArray(posts) && posts.length > 0 ? (
+              posts.map(post => (
+                <div
+                  key={post.post_id}
+                  className="profile-grid-item"
+                  onClick={() => handlePostClick(post.post_id)}
+                >
+                  {post.photo_url ? (
+                    <img src={post.photo_url} alt={post.caption || 'Bài viết'} loading="lazy" />
+                  ) : (
+                    <div style={{
+                      padding: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      textAlign: 'center',
+                      fontSize: '13.5px',
+                      color: 'var(--text-secondary)',
+                      background: 'var(--bg-input)'
+                    }}>
+                      {post.caption}
+                    </div>
+                  )}
 
-          {/* THANH ĐIỀU HƯỚNG DƯỚI CÙNG (Gồm Đăng nhập / Đăng xuất) */}
-          <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
+                  {/* Overlay on hover */}
+                  <div className="profile-grid-item-overlay">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Heart size={18} fill="white" />
+                      {post.like_count ?? 0}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <MessageCircle size={18} fill="white" />
+                      {post.comment_count ?? (post.comments ? post.comments.length : 0)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{
+                gridColumn: '1 / -1',
+                padding: '48px 0',
+                textAlign: 'center',
+                color: 'var(--text-muted)'
+              }}>
+                <p style={{ fontSize: '15px' }}>Chưa có bài viết nào.</p>
+              </div>
+            )}
+          </div>
+        </main>
 
-          <ChatWidget />
+        <ChatWidget />
+      </div>
 
+      {/* EDIT PROFILE MODAL */}
+      {isEditModalOpen && (
+        <EditProfileModal
+          user={userProfile}
+          onClose={() => setIsEditModalOpen(false)}
+          navigate={navigate}
+        />
+      )}
+
+      {/* CREATE POST MODAL */}
+      {showCreatePost && currentUser && (
+        <div className="modal-backdrop" onClick={() => setShowCreatePost(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Tạo bài viết mới</h2>
+              <button type="button" className="close-btn" onClick={() => setShowCreatePost(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <CreatePost
+              onPostCreated={() => {
+                fetchUserProfile();
+                setShowCreatePost(false);
+              }}
+            />
+          </div>
         </div>
-      </>
+      )}
+    </div>
   );
 }
 

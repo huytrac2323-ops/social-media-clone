@@ -244,7 +244,7 @@ function AppContent() {
         window.location.reload(); // Tải lại nhẹ để làm mới trạng thái hiển thị góc phải
     };
     return (
-        <div className="fb-container">
+        <div className="app-root-wrapper">
             <Routes>
                 <Route path="/" element={
                     <HomePage
@@ -270,33 +270,36 @@ function AppContent() {
             {currentUser && activeChat && (
                 <div style={{
                     position: 'fixed',
-                    bottom: '70px',      /* Đẩy hẳn lên cao hơn thanh menu dưới đáy */
-                    right: '10px',
-                    zIndex: 9999999,     /* Đảm bảo độ ưu tiên đè lên trên tất cả */
+                    bottom: '78px',
+                    right: '24px',
+                    zIndex: 9999999,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-end',
                     maxHeight: 'calc(100vh - 150px)',
-                    wordBreak: 'break-all',      // Ép bẻ gãy mọi chuỗi dính liền
-                    whiteSpace: 'pre-wrap',      // Giữ nguyên khoảng trắng và cho phép xuống dòng
-                    maxWidth: '100%',            // Chặn div phình to vượt quá khung cha
-                    /* Giới hạn không bị tràn màn hình */
+                    wordBreak: 'break-all',
+                    whiteSpace: 'pre-wrap',
+                    maxWidth: '100%',
+                    gap: '6px'
                 }}>
                     <button
+                        type="button"
                         onClick={closeChat}
                         style={{
-                            background: '#3a3b3c',
-                            border: 'none',
-                            color: 'white',
+                            background: 'rgba(30, 38, 52, 0.9)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#e2e8f0',
                             cursor: 'pointer',
                             fontSize: '12px',
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            marginBottom: '4px',
-                            fontWeight: 'bold'
+                            padding: '5px 12px',
+                            borderRadius: '999px',
+                            fontWeight: '600',
+                            backdropFilter: 'blur(8px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                            transition: 'all 0.15s ease'
                         }}
                     >
-                        ✕ Đóng chat
+                        ✕ Đóng chat ({activeChat.username})
                     </button>
                     <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username}/>
                 </div>

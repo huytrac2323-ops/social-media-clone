@@ -1,26 +1,28 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Auth.css';
-import { useAuth } from '../context/AuthContext.jsx'; // Import useAuth
+import { useAuth } from '../context/AuthContext.jsx';
+import { Sparkles, Mail, User, Lock, UserPlus } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL;
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
 
 
-function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
+function RegisterPage({ onRegisterSuccess }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Lấy hàm login từ context
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
 
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
@@ -44,7 +46,7 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
         body: JSON.stringify({ username, password }),
       });
       const loginData = await loginResponse.json();
-      if(!loginResponse.ok) throw new Error(loginData.message || "Lỗi khi tự động đăng nhập.");
+      if (!loginResponse.ok) throw new Error(loginData.message || "Lỗi khi tự động đăng nhập.");
 
 // Lưu token vào trình duyệt để các API fetch sau này hoạt động được
       if (loginData.token) {
@@ -64,6 +66,8 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
 
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,17 +76,78 @@ function RegisterPage({ onRegisterSuccess }) { // Bỏ setCurrentUser
       <div className="auth-box">
         <h1 className="auth-logo">Facebook</h1>
         <p className="auth-subtitle">Đăng ký để xem ảnh và video từ bạn bè.</p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            background: 'var(--accent-gradient)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            boxShadow: '0 8px 20px rgba(59, 130, 246, 0.4)'
+          }}>
+            <Sparkles size={26} />
+          </div>
+        </div>
+
+        <h1 className="auth-logo">SocialHub</h1>
+        <p className="auth-subtitle">Đăng ký để khám phá và chia sẻ ảnh, câu chuyện từ bạn bè</p>
+
         <form onSubmit={handleSubmit}>
           <input type="email" placeholder="Địa chỉ email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <input type="text" placeholder="Tên người dùng" value={username} onChange={(e) => setUsername(e.target.value)} required />
           <input type="password" placeholder="Mật khẩu" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <button type="submit" className="auth-button">Đăng ký</button>
+          <div style={{ position: 'relative' }}>
+            <Mail size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input
+              type="email"
+              placeholder="Địa chỉ email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ paddingLeft: '42px', width: '100%' }}
+              required
+            />
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input
+              type="text"
+              placeholder="Tên người dùng"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ paddingLeft: '42px', width: '100%' }}
+              required
+            />
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input
+              type="password"
+              placeholder="Mật khẩu"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ paddingLeft: '42px', width: '100%' }}
+              required
+            />
+          </div>
+
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Đang khởi tạo tài khoản...' : 'Tạo tài khoản'}
+          </button>
         </form>
+
         {error && <p className="error-message">{error}</p>}
         {success && <p className="success-message">{success}</p>}
       </div>
+
       <div className="switch-auth-box">
         <p>Bạn đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>
+        <p>Đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>
       </div>
     </div>
   );

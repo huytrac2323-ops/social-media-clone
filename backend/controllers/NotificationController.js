@@ -1,12 +1,33 @@
 const { pool } = require('../config/db');
 
+let notificationEmitter = null;
+
+const setNotificationEmitter = emitter => {
+    notificationEmitter = emitter;
+};
+
 const createNotification = async ({ receiverId, senderId, type, content, postId = null }) => {
     if (!receiverId || !senderId || String(receiverId) === String(senderId)) return;
-    await pool.query(
+    const result = await pool.query(
         `INSERT INTO notifications (receiver_id, sender_id, type, content, post_id)
-         VALUES ($1, $2, $3, $4, $5)`,
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING notification_id, receiver_id, sender_id, type, content, post_id, is_read, created_at`,
         [receiverId, senderId, type, content, postId]
     );
+    if (!notificationEmitter) return;
+
+    const sender = await pool.query(
+        'SELECT username, profile_photo_url FROM users WHERE user_id = $1',
+        [senderId]
+    );
+    notificationEmitter({
+        receiverId,
+        notification: {
+            ...result.rows[0],
+            username: sender.rows[0]?.username,
+            profile_photo_url: sender.rows[0]?.profile_photo_url
+        }
+    });
 };
 const getNotifications = async (req, res) => {
     try {
@@ -31,5 +52,5 @@ const markNotificationsRead = async (req, res) => {
     }
 };
 
-module.exports = { getNotifications, markNotificationsRead };
+module.exports = { getNotifications, markNotificationsRead, setNotificationEmitter };
 module.exports.createNotification = createNotification;

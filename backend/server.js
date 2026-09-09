@@ -17,7 +17,11 @@ const app = express();
 
 // 1. IMPORT CONTROLLERS & DB
 const { poolPromise } = require('./config/db'); //const { savePost, unsavePost } = require('./controllers/savedPostController');
-const { getNotifications, markNotificationsRead } = require('./controllers/NotificationController');
+const {
+    getNotifications,
+    markNotificationsRead,
+    setNotificationEmitter
+} = require('./controllers/NotificationController');
 const { getMessages } = require('./controllers/messageController');
 
 // Import các Routes cũ của bạn
@@ -26,6 +30,7 @@ const postRoutes = require('./routes/postRoutes');
 const userRoutes = require('./routes/userRoutes');
 const friendRoutes = require('./routes/friendRoutes');
 const storyRoutes = require('./routes/storyRoutes');
+const spotifyRoutes = require('./routes/spotifyRoutes');
 const exploreRoutes = require('./routes/exploreRoutes');
 
 
@@ -53,6 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api', userRoutes);
 app.use('/api/stories', storyRoutes);
+app.use('/api/spotify', spotifyRoutes);
 app.use('/api/explore', exploreRoutes);
 
 
@@ -219,18 +225,28 @@ const io = new Server(server, {
     }
 });
 const onlineUsers = new Map();
+setNotificationEmitter(({ receiverId, notification }) => {
+    const receiverSockets = onlineUsers.get(String(receiverId));
+    receiverSockets?.forEach(socketId => {
+        io.to(socketId).emit('notification_created', notification);
+    });
+});
 
 // Xử lý sự kiện Chat Real-time và lưu vào PostgreSQL
 io.on('connection', (socket) => {
     console.log(`⚡ Một người dùng vừa kết nối Socket: ${socket.id}`);
     socket.on('user_online', (userId) => {
         if (!userId) return;
-        onlineUsers.set(String(userId), socket.id);
+        const userSockets = onlineUsers.get(String(userId)) || new Set();
+        userSockets.add(socket.id);
+        onlineUsers.set(String(userId), userSockets);
         io.emit('presence_changed', { userId, online: true });
     });
     socket.on('typing', ({ sender_id, receiver_id, isTyping }) => {
-        const receiverSocket = onlineUsers.get(String(receiver_id));
-        if (receiverSocket) io.to(receiverSocket).emit('user_typing', { user_id: sender_id, isTyping });
+        const receiverSockets = onlineUsers.get(String(receiver_id));
+        receiverSockets?.forEach(socketId => {
+            io.to(socketId).emit('user_typing', { user_id: sender_id, isTyping });
+        });
     });
     socket.on('mark_messages_read', async ({ reader_id, sender_id }) => {
         try {
@@ -238,8 +254,10 @@ io.on('connection', (socket) => {
                 'UPDATE messages SET is_read = TRUE, read_at = NOW() WHERE sender_id = $1 AND receiver_id = $2 AND is_read = FALSE',
                 [sender_id, reader_id]
             );
-            const senderSocket = onlineUsers.get(String(sender_id));
-            if (senderSocket) io.to(senderSocket).emit('messages_read', { reader_id, sender_id });
+            const senderSockets = onlineUsers.get(String(sender_id));
+            senderSockets?.forEach(socketId => {
+                io.to(socketId).emit('messages_read', { reader_id, sender_id });
+            });
         } catch (error) {
             console.error('Lỗi đánh dấu tin nhắn đã đọc:', error.message);
         }
@@ -261,16 +279,23 @@ io.on('connection', (socket) => {
             );
 
             const savedMessage = result.rows[0];
-            io.emit('receive_message', savedMessage);
+            const participantIds = new Set([String(data.sender_id), String(data.receiver_id)]);
+            participantIds.forEach(userId => {
+                onlineUsers.get(userId)?.forEach(socketId => {
+                    io.to(socketId).emit('receive_message', savedMessage);
+                });
+            });
         } catch (error) {
             console.error("❌ Lỗi khi lưu tin nhắn Socket vào DB:", error.message);
         }
     });
     socket.on('disconnect', () => {
-        for (const [userId, socketId] of onlineUsers.entries()) {
-            if (socketId === socket.id) {
-                onlineUsers.delete(userId);
-                io.emit('presence_changed', { userId, online: false });
+        for (const [userId, socketIds] of onlineUsers.entries()) {
+            if (socketIds.delete(socket.id)) {
+                if (socketIds.size === 0) {
+                    onlineUsers.delete(userId);
+                    io.emit('presence_changed', { userId, online: false });
+                }
                 break;
             }
         }
@@ -291,10 +316,17 @@ const startServer = async () => {
             CREATE TABLE IF NOT EXISTS stories (
                 story_id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-                media_url VARCHAR(500) NOT NULL,
-                media_type VARCHAR(10) NOT NULL CHECK (media_type IN ('image', 'video')),
+                media_url VARCHAR(500),
+                media_type VARCHAR(10) CHECK (media_type IN ('image', 'video')),
                 poll JSONB,
                 sticker VARCHAR(100),
+                music_url VARCHAR(500),
+                music_name VARCHAR(255),
+                spotify_track_id VARCHAR(100),
+                spotify_track_name VARCHAR(255),
+                spotify_artist_name VARCHAR(255),
+                spotify_external_url VARCHAR(500),
+                shared_post_id INTEGER REFERENCES post(post_id) ON DELETE CASCADE,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 expires_at TIMESTAMP NOT NULL
             )
@@ -302,6 +334,15 @@ const startServer = async () => {
         await client.query('CREATE INDEX IF NOT EXISTS stories_expires_at_idx ON stories(expires_at)');
         await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS poll JSONB');
         await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS sticker VARCHAR(100)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS music_url VARCHAR(500)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS music_name VARCHAR(255)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS spotify_track_id VARCHAR(100)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS spotify_track_name VARCHAR(255)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS spotify_artist_name VARCHAR(255)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS spotify_external_url VARCHAR(500)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS shared_post_id INTEGER REFERENCES post(post_id) ON DELETE CASCADE');
+        await client.query('ALTER TABLE stories ALTER COLUMN media_url DROP NOT NULL');
+        await client.query('ALTER TABLE stories ALTER COLUMN media_type DROP NOT NULL');
         await client.query(`
             CREATE TABLE IF NOT EXISTS story_views (
                 story_id INTEGER NOT NULL REFERENCES stories(story_id) ON DELETE CASCADE,

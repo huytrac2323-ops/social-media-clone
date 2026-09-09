@@ -16,7 +16,9 @@ import {
   Trash2,
   Send,
   X,
-  Clock
+  Clock,
+  PlusCircle,
+  Repeat
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
@@ -26,8 +28,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
   const navigate = useNavigate();
   const [commentText, setCommentText] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const menuRef = useRef(null);
+  const shareMenuRef = useRef(null);
   const [isSaved, setIsSaved] = useState(post.isSaved || false);
   const [loading, setLoading] = useState(false);
   const isOwner = currentUser && Number(currentUser.user_id) === Number(post.userId);
@@ -41,6 +45,9 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
+      }
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target)) {
+        setShareMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -340,14 +347,40 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
             </Link>
 
             {/* Share */}
-            <button
-              type="button"
-              className="post-action-btn"
-              onClick={() => handleShare(post.id)}
-              title="Chia sẻ"
-            >
-              <Share2 size={19} />
-            </button>
+            <div style={{ position: 'relative' }} ref={shareMenuRef}>
+              <button
+                type="button"
+                className="post-action-btn"
+                onClick={() => setShareMenuOpen(!shareMenuOpen)}
+                title="Chia sẻ bài viết"
+              >
+                <Share2 size={19} />
+              </button>
+              {shareMenuOpen && (
+                <div className="post-share-menu-dropdown">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareMenuOpen(false);
+                      window.dispatchEvent(new CustomEvent('open-story-with-post', { detail: post }));
+                    }}
+                  >
+                    <PlusCircle size={15} color="var(--accent-primary, #0095f6)" />
+                    <span>Chia sẻ lên Story</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareMenuOpen(false);
+                      handleShare(post.id);
+                    }}
+                  >
+                    <Repeat size={15} />
+                    <span>Đăng lại lên bảng tin</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Bookmark */}

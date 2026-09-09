@@ -13,7 +13,6 @@ import {
   MessageCircle,
   Users,
   Smile,
-  Sparkles,
   Check,
   CheckCheck,
   UserCheck
@@ -637,3 +636,4 @@ function MessagesPage() {
 }
 
 export default MessagesPage;
+

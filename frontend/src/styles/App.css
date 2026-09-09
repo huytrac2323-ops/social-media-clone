@@ -4,30 +4,31 @@
 /* GLOBAL CSS VARIABLES & DESIGN TOKENS (MODERN DARK)  */
 /* =================================================== */
 :root {
-  --bg-main: #0b0e14;
-  --bg-card: #151921;
-  --bg-card-hover: #1c222c;
-  --bg-elevated: #1e2634;
-  --bg-input: #11151c;
-  --bg-input-focus: #18202d;
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --border-subtle: #242c3d;
-  --border-light: #2e384d;
-  --accent-primary: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  --danger: #ef4444;
-  --success: #10b981;
+  --bg-main: #000000;
+  --bg-card: #121212;
+  --bg-card-hover: #181818;
+  --bg-elevated: #262626;
+  --bg-input: #1a1a1a;
+  --bg-input-focus: #242424;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a8a8a8;
+  --text-muted: #737373;
+  --border-subtle: #262626;
+  --border-light: #363636;
+  --accent-primary: #0095f6;
+  --accent-hover: #1877f2;
+  --accent-gradient: #0095f6;
+  --story-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  --danger: #ed4956;
+  --success: #00ba7c;
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 999px;
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 10px 25px -3px rgba(0, 0, 0, 0.5);
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 *, *::before, *::after {
@@ -179,21 +180,18 @@ input, textarea {
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  background: var(--accent-gradient);
+  background: var(--accent-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
 }
 
 .brand-logo-text {
   font-size: 21px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
 }
 
 .sidebar-search-box {
@@ -276,20 +274,18 @@ input, textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px 18px;
-  border-radius: 999px;
-  background: var(--accent-gradient);
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  background: var(--accent-primary);
   color: #fff;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-  transition: all 0.2s ease;
+  transition: background-color 0.15s ease;
   margin-top: 6px;
 }
 
 .sidebar-post-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  background: var(--accent-hover);
 }
 
 .sidebar-user-footer {
@@ -376,7 +372,7 @@ input, textarea {
 .story-avatar-wrapper {
   padding: 2.5px;
   border-radius: 50%;
-  background: var(--accent-gradient);
+  background: var(--story-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -831,13 +827,13 @@ input, textarea {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--accent-gradient);
+  background: var(--accent-primary);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity 0.18s ease;
+  transition: background-color 0.18s ease;
   border: none;
 }
 
@@ -997,33 +993,35 @@ input, textarea {
 }
 
 .btn-profile-primary {
-  padding: 7px 18px;
-  border-radius: 999px;
-  background: var(--accent-gradient);
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-primary);
   color: white;
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   border: none;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
-  transition: all 0.18s ease;
+  transition: background-color 0.15s ease;
+}
+
+.btn-profile-primary:hover {
+  background: var(--accent-hover);
 }
 
 .btn-profile-secondary {
-  padding: 7px 18px;
-  border-radius: 999px;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-light);
   color: var(--text-primary);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: background-color 0.15s ease;
 }
 
 .btn-profile-secondary:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-light);
+  background: #333333;
 }
 
 .profile-stats-row {
@@ -1870,19 +1868,17 @@ input, textarea {
 }
 
 .bubble-me {
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  background: #3797f0;
   color: #ffffff;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
   align-self: flex-end;
 }
 
 .bubble-them {
-  background: #1e2634;
+  background: #262626;
   color: var(--text-primary);
   border-bottom-left-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   align-self: flex-start;
 }
 
@@ -1909,7 +1905,7 @@ input, textarea {
   align-items: center;
   gap: 4px;
   padding: 10px 14px;
-  background: #1e2634;
+  background: #262626;
   border-radius: 16px;
   border-bottom-left-radius: 4px;
 }
@@ -1956,7 +1952,7 @@ input, textarea {
   gap: 10px;
   padding: 10px 18px 16px;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(18, 24, 38, 0.4);
+  background: rgba(18, 18, 18, 0.8);
 }
 
 .messages-input-form input {
@@ -1972,8 +1968,7 @@ input, textarea {
 }
 
 .messages-input-form input:focus {
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #363636;
 }
 
 .messages-send-btn {
@@ -1992,14 +1987,9 @@ input, textarea {
 }
 
 .messages-send-btn.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%);
+  background: var(--accent-primary);
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
-}
-
-.messages-send-btn.active:hover {
-  transform: scale(1.05);
 }
 
 /* Instagram Direct Empty Placeholder */
@@ -2167,12 +2157,11 @@ input, textarea {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background: var(--accent-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
     transition: transform 0.18s ease;
   }
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Auth.css';
-import { Sparkles, Mail, KeyRound, Lock, ArrowLeft } from 'lucide-react';
+import { Mail, KeyRound, Lock, ArrowLeft } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -41,18 +41,16 @@ export default function ForgotPasswordPage() {
     return (
         <div className="auth-container">
             <div className="auth-box">
-                <h1 className="auth-logo">Khôi phục mật khẩu</h1>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
                     <div style={{
                         width: '48px',
                         height: '48px',
                         borderRadius: '14px',
-                        background: 'var(--accent-gradient)',
+                        background: 'var(--accent-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
-                        boxShadow: '0 8px 20px rgba(59, 130, 246, 0.4)'
+                        color: 'white'
                     }}>
                         <KeyRound size={24} />
                     </div>

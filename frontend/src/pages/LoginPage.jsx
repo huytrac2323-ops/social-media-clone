@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/Auth.css';
-import { Sparkles, User, Lock } from 'lucide-react';
+import { Globe, User, Lock } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -133,14 +133,13 @@ function LoginPage() {
             width: '48px',
             height: '48px',
             borderRadius: '14px',
-            background: 'var(--accent-gradient)',
+            background: 'var(--accent-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
-            boxShadow: '0 8px 20px rgba(59, 130, 246, 0.4)'
+            color: 'white'
           }}>
-            <Sparkles size={26} />
+            <Globe size={26} />
           </div>
         </div>
 

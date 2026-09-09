@@ -12,7 +12,7 @@ import {
     LogOut,
     LogIn,
     Search,
-    Sparkles,
+    Globe,
     MessageCircle
 } from 'lucide-react';
 
@@ -47,7 +47,7 @@ function SidebarNav({ onCreatePost }) {
             <header className="mobile-top-header">
                 <Link to="/" className="mobile-header-logo" title="Trang chủ">
                     <div className="brand-logo-icon" style={{ width: '32px', height: '32px' }}>
-                        <Sparkles size={16} />
+                        <Globe size={18} />
                     </div>
                     <span className="brand-logo-text" style={{ fontSize: '18px' }}>SocialHub</span>
                 </Link>
@@ -74,7 +74,7 @@ function SidebarNav({ onCreatePost }) {
                     {/* Brand Logo */}
                     <Link to="/" className="brand-logo-container" title="Trang chủ">
                         <div className="brand-logo-icon">
-                            <Sparkles size={20} />
+                            <Globe size={20} />
                         </div>
                         <span className="brand-logo-text">SocialHub</span>
                     </Link>

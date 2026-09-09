@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Auth.css';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Sparkles, Mail, User, Lock, UserPlus } from 'lucide-react';
+import { Globe, Mail, User, Lock, UserPlus } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -74,21 +74,18 @@ function RegisterPage({ onRegisterSuccess }) {
   return (
     <div className="auth-container">
       <div className="auth-box">
-        <h1 className="auth-logo">Facebook</h1>
-        <p className="auth-subtitle">Đăng ký để xem ảnh và video từ bạn bè.</p>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
           <div style={{
             width: '48px',
             height: '48px',
             borderRadius: '14px',
-            background: 'var(--accent-gradient)',
+            background: 'var(--accent-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
-            boxShadow: '0 8px 20px rgba(59, 130, 246, 0.4)'
+            color: 'white'
           }}>
-            <Sparkles size={26} />
+            <Globe size={26} />
           </div>
         </div>
 

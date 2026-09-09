@@ -19,7 +19,10 @@ import {
   Heart,
   Users,
   X,
-  Menu
+  Menu,
+  RotateCw,
+  WifiOff,
+  AlertCircle
 } from 'lucide-react';
 import ProfileMenuModal from '../components/ProfileMenuModal.jsx';
 
@@ -38,24 +41,80 @@ function ProfilePage() {
   const [activeTab, setActiveTab] = useState('posts');
   const [friends, setFriends] = useState([]);
   const [followStatus, setFollowStatus] = useState(null);
+  const [retryStatus, setRetryStatus] = useState('');
+  const [isRetrying, setIsRetrying] = useState(false);
 
-  const fetchUserProfile = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Điều hướng an toàn nếu username không hợp lệ hoặc 'undefined'
+  useEffect(() => {
+    if (!username || username === 'undefined') {
+      const fallbackUsername = currentUser?.username || currentUser?.user?.username;
+      if (fallbackUsername) {
+        navigate(`/profile/${encodeURIComponent(fallbackUsername)}`, { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
+    }
+  }, [username, currentUser, navigate]);
+
+  const fetchUserProfile = useCallback(async (attempt = 1) => {
+    if (!username || username === 'undefined') return;
+
+    if (attempt === 1) {
+      setLoading(true);
+      setError(null);
+      setRetryStatus('');
+    } else {
+      setIsRetrying(true);
+      setRetryStatus(`Máy chủ Render đang thức giấc... Đang tự động kết nối lại (lần ${attempt}/2)`);
+    }
+
     try {
       const viewerParam = currentUser?.user_id ? `?viewer_id=${currentUser.user_id}` : '';
-      const response = await fetch(`${API_URL}/users/${username}${viewerParam}`);
+      const response = await fetch(`${API_URL}/users/${encodeURIComponent(username)}${viewerParam}`);
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Không tìm thấy người dùng.');
+        let errMessage = 'Không tìm thấy người dùng.';
+        try {
+          const errData = await response.json();
+          if (errData?.message) errMessage = errData.message;
+        } catch {
+          const rawText = await response.text();
+          if (rawText) errMessage = rawText;
+        }
+        throw new Error(errMessage);
       }
       const data = await response.json();
       setUserProfile(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
+      setError(null);
+      setRetryStatus('');
       setLoading(false);
+      setIsRetrying(false);
+    } catch (err) {
+      console.error(`Lỗi khi tải hồ sơ (lần ${attempt}):`, err);
+      const isNetworkError =
+        err.name === 'AbortError' ||
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('Load failed') ||
+        err.message?.includes('network');
+
+      // Tự động thử lại 1 lần nếu gặp lỗi mạng (Render cold-start)
+      if (isNetworkError && attempt < 2) {
+        setRetryStatus('Máy chủ đang khởi động lại (Render sleep mode), đang tự động kết nối lại sau 2.5s...');
+        setTimeout(() => {
+          fetchUserProfile(attempt + 1);
+        }, 2500);
+        return;
+      }
+
+      if (isNetworkError) {
+        setError('Không thể kết nối đến máy chủ. Máy chủ Render có thể đang khởi động lại sau thời gian không hoạt động (mất 30-50 giây). Vui lòng bấm "Thử lại".');
+      } else {
+        setError(err.message || 'Không tìm thấy người dùng.');
+      }
+      setLoading(false);
+      setIsRetrying(false);
+      setRetryStatus('');
     }
   }, [username, currentUser]);
 
@@ -122,8 +181,24 @@ function ProfilePage() {
   if (loading) {
     return (
       <div className="app-shell">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: 'var(--text-muted)' }}>
-          Đang tải hồ sơ...
+        <div className="app-layout">
+          <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
+          <main style={{ flex: 1, maxWidth: '900px', minWidth: 0, paddingBottom: '80px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center', padding: '24px' }}>
+              <RotateCw className="spin-animation" size={36} color="var(--accent-blue, #0095f6)" />
+              <div>
+                <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-main, #ffffff)', marginBottom: '6px' }}>
+                  {retryStatus ? 'Đang kết nối lại máy chủ...' : 'Đang tải hồ sơ...'}
+                </p>
+                {retryStatus && (
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted, #a8a8a8)', maxWidth: '380px', lineHeight: 1.5 }}>
+                    {retryStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+          </main>
+          <ChatWidget />
         </div>
       </div>
     );
@@ -132,9 +207,94 @@ function ProfilePage() {
   if (error) {
     return (
       <div className="app-shell">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '12px' }}>
-          <p style={{ color: '#f43f5e', fontSize: '16px' }}>Lỗi: {error}</p>
-          <button onClick={() => navigate('/')} className="btn-profile-primary">Quay về trang chủ</button>
+        <div className="app-layout">
+          <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
+          <main style={{ flex: 1, maxWidth: '900px', minWidth: 0, paddingBottom: '80px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '36px 24px',
+              backgroundColor: 'var(--bg-surface, #121212)',
+              border: '1px solid var(--border-color, #262626)',
+              borderRadius: '16px',
+              maxWidth: '440px',
+              width: '90%',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+              gap: '16px'
+            }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ef4444'
+              }}>
+                <WifiOff size={28} />
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main, #ffffff)', marginBottom: '8px' }}>
+                  Không thể tải trang cá nhân
+                </h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted, #a8a8a8)', lineHeight: 1.5 }}>
+                  {error}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => fetchUserProfile(1)}
+                  disabled={isRetrying}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'var(--accent-blue, #0095f6)',
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: isRetrying ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    opacity: isRetrying ? 0.7 : 1,
+                    transition: 'opacity 0.2s'
+                  }}
+                >
+                  <RotateCw size={16} className={isRetrying ? 'spin-animation' : ''} />
+                  {isRetrying ? 'Đang thử lại...' : 'Thử lại'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    backgroundColor: 'transparent',
+                    color: 'var(--text-muted, #a8a8a8)',
+                    fontWeight: 600,
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color, #262626)',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Quay về trang chủ
+                </button>
+              </div>
+            </div>
+          </main>
+          <ChatWidget />
         </div>
       </div>
     );

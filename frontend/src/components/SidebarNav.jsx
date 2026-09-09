@@ -22,6 +22,9 @@ function SidebarNav({ onCreatePost }) {
     const location = useLocation();
     const [query, setQuery] = useState('');
 
+    const currentUsername = currentUser?.username || currentUser?.user?.username || '';
+    const profilePath = currentUsername ? `/profile/${currentUsername}` : '/login';
+
     const submitSearch = (event) => {
         event.preventDefault();
         if (!query.trim()) return;
@@ -128,8 +131,8 @@ function SidebarNav({ onCreatePost }) {
                                 </li>
                                 <li>
                                     <Link
-                                        to={`/profile/${currentUser.username}`}
-                                        className={`nav-link-item ${isActive(`/profile/${currentUser.username}`) ? 'active' : ''}`}
+                                        to={profilePath}
+                                        className={`nav-link-item ${currentUsername && isActive(`/profile/${currentUsername}`) ? 'active' : ''}`}
                                         title="Trang cá nhân"
                                     >
                                         <User size={20} />
@@ -157,11 +160,11 @@ function SidebarNav({ onCreatePost }) {
                     {/* Current User Card in Sidebar Footer */}
                     {currentUser && (
                         <div className="sidebar-user-footer">
-                            <Link to={`/profile/${currentUser.username}`} className="sidebar-user-info" title="Xem hồ sơ">
+                            <Link to={profilePath} className="sidebar-user-info" title="Xem hồ sơ">
                                 <Avatar user={currentUser} size={36} />
                                 <div className="sidebar-user-meta">
-                                    <div className="sidebar-user-name">{currentUser.username}</div>
-                                    <div className="sidebar-user-role">@{currentUser.username}</div>
+                                    <div className="sidebar-user-name">{currentUser.username || currentUser.full_name || 'Người dùng'}</div>
+                                    <div className="sidebar-user-role">@{currentUser.username || 'user'}</div>
                                 </div>
                             </Link>
                             <button
@@ -216,8 +219,8 @@ function SidebarNav({ onCreatePost }) {
                         </Link>
 
                         <Link
-                            to={`/profile/${currentUser.username}`}
-                            className={`mobile-nav-item ${isActive(`/profile/${currentUser.username}`) ? 'active' : ''}`}
+                            to={profilePath}
+                            className={`mobile-nav-item ${currentUsername && isActive(`/profile/${currentUsername}`) ? 'active' : ''}`}
                             title="Trang cá nhân"
                         >
                             <Avatar user={currentUser} size={24} />

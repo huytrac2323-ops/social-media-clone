@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import '../styles/App.css';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
@@ -19,13 +19,32 @@ import { io } from 'socket.io-client';
 
 CapacitorUpdater.notifyAppReady();
 
-const SOCKET_URL = 'https://social-media-clone-di9z.onrender.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://social-media-clone-di9z.onrender.com';
 const socket = io(SOCKET_URL, {
     secure: true,
     transports: ['websocket', 'polling']
 });
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
+const FALLBACK_API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+
+const safeFetch = async (path, options) => {
+    try {
+        const res = await fetch(`${API_URL}${path}`, options);
+        if (res.ok) return res;
+        if (res.status !== 502 && res.status !== 503) return res;
+    } catch (e) {
+        console.warn(`Lỗi kết nối tới ${API_URL}${path}, chuyển sang API dự phòng...`);
+    }
+    if (API_URL !== FALLBACK_API_URL) {
+        try {
+            return await fetch(`${FALLBACK_API_URL}${path}`, options);
+        } catch (err) {
+            console.error('Lỗi kết nối tới API dự phòng:', err);
+        }
+    }
+    return await fetch(`${API_URL}${path}`, options);
+};
 
 function App() {
     return (
@@ -38,13 +57,16 @@ function App() {
 }
 
 function AppContent() {
-    const navigate = useNavigate();
-    const {currentUser, logout} = useAuth();
+    const {currentUser} = useAuth();
     const [posts, setPosts] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
+    const [friends, setFriends] = useState([]);
     const [dataVersion, setDataVersion] = useState(0);
     const [activeChat, setActiveChat] = useState(null);
-    const [activeChatUser, setActiveChatUser] = useState(null);
+
+    const friendUserIds = new Set(
+        friends.map(f => Number(f.user_id || f.id))
+    );
 
     useEffect(() => {
         const handleOpenChat = () => {
@@ -73,11 +95,11 @@ function AppContent() {
         // 2. Lắng nghe tin nhắn mới từ máy chủ
         const handleNewMessage = async (newMessage) => {
             // Kiểm tra xem tin nhắn có phải gửi cho mình không
-            const isForMe = newMessage.receiver_id === currentUser?.user_id;
+            const isForMe = String(newMessage.receiver_id) === String(currentUser?.user_id);
 
             // Kiểm tra xem mình có đang mở khung chat với người đó không
             // Nếu đang mở chat rồi thì không cần ting ting nữa
-            const isChattingWithThem = activeChat?.user_id === newMessage.sender_id;
+            const isChattingWithThem = String(activeChat?.user_id) === String(newMessage.sender_id);
 
             if (isForMe && !isChattingWithThem) {
                 // Hiển thị thông báo nổi trên điện thoại
@@ -90,6 +112,12 @@ function AppContent() {
                         }
                     ]
                 });
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Bạn có tin nhắn mới', {
+                        body: newMessage.message_text,
+                        tag: `message-${newMessage.message_id || newMessage.id}`
+                    });
+                }
             }
         };
 
@@ -128,6 +156,7 @@ function AppContent() {
                 console.error('Không thể đồng bộ thông báo thiết bị:', error);
             }
         };
+
         notifyActivity();
         const interval = setInterval(notifyActivity, 10000);
         return () => {
@@ -139,21 +168,43 @@ function AppContent() {
     const refreshData = () => setDataVersion(v => v + 1);
 
     useEffect(() => {
+        const fetchFriends = async () => {
+            if (!currentUser?.user_id) {
+                setFriends([]);
+                return;
+            }
+            try {
+                const response = await safeFetch(`/friends/${currentUser.user_id}/list`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setFriends(Array.isArray(data) ? data : []);
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải danh sách bạn bè:", error);
+            }
+        };
+
         const fetchPosts = async () => {
             try {
                 const userIdQuery = currentUser ? `?currentUserId=${currentUser.user_id}` : '';
-                const response = await fetch(`${API_URL}/posts${userIdQuery}`);
+                const response = await safeFetch(`/posts${userIdQuery}`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
+                const currentFriendSet = new Set(
+                    (Array.isArray(friends) ? friends : []).map(f => Number(f.user_id || f.id))
+                );
                 const formattedPosts = data.map(post => ({
                     id: post.post_id,
                     userId: post.user_id,
                     author: post.username,
+                    isVerified: Boolean(post.is_verified),
                     time: post.created_at || post.time || new Date().toISOString(),
                     content: post.caption,
                     imageUrl: post.photo_url || null,
                     likes: post.like_count,
                     isLiked: post.is_liked_by_user,
+                    isFriend: Boolean(post.is_friend || currentFriendSet.has(Number(post.user_id))),
+                    friendRequestSent: Boolean(post.friend_request_sent),
                     comments: post.comments || [],
                     authorAvatar: post.profile_photo_url
                 }));
@@ -166,7 +217,7 @@ function AppContent() {
 
         const fetchAllUsers = async () => {
             try {
-                const response = await fetch(`${API_URL}/users`);
+                const response = await safeFetch('/users');
                 if (!response.ok) throw new Error('Lỗi khi tải danh sách người dùng');
                 const data = await response.json();
                 setAllUsers(data);
@@ -175,6 +226,7 @@ function AppContent() {
             }
         };
 
+        fetchFriends();
         fetchPosts();
         fetchAllUsers();
     }, [dataVersion, currentUser]);
@@ -234,13 +286,8 @@ function AppContent() {
         }
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
     const closeChat = () => {
         setActiveChat(null);
-        setActiveChatUser(null);
         localStorage.removeItem('activeChatUser');
         window.location.reload(); // Tải lại nhẹ để làm mới trạng thái hiển thị góc phải
     };
@@ -251,6 +298,8 @@ function AppContent() {
                     <HomePage
                         posts={posts}
                         allUsers={allUsers}
+                        friends={friends}
+                        friendUserIds={friendUserIds}
                         onLike={handleLike}
                         onCommentSubmit={handleCommentSubmit}
                         onPostCreated={refreshData}
@@ -261,6 +310,7 @@ function AppContent() {
                 <Route path="/post/:postId"
                        element={<PostPage onPostDeleted={refreshData} onPostUpdated={refreshData}/>}/>
                 <Route path="/profile/:username" element={<ProfilePage/>}/>
+                <Route path="/profile" element={<ProfilePage/>}/>
                 <Route path="/register" element={<RegisterPage onRegisterSuccess={refreshData}/>}/>
                 <Route path="/login" element={<LoginPage/>}/>
                 <Route path="/forgot-password" element={<ForgotPasswordPage/>}/>

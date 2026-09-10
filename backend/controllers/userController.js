@@ -13,7 +13,7 @@ cloudinary.config({
 // Lấy danh sách tất cả người dùng
 const getUsers = async (req, res) => {
     try {
-        const result = await pool.query('SELECT user_id, username, profile_photo_url FROM users ORDER BY created_at DESC');
+        const result = await pool.query('SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, profile_photo_url, (is_verified IS TRUE) AS is_verified FROM users ORDER BY created_at DESC');
         res.json(result.rows); // PostgreSQL trả kết quả về trong mảng .rows
     } catch (err) {
         res.status(500).send({ message: 'Lỗi server khi lấy danh sách người dùng.', error: err.message });
@@ -26,10 +26,19 @@ const getUserByUsername = async (req, res) => {
     // Hỗ trợ lấy viewer_id từ nhiều nguồn khác nhau để không bị thiếu sót
     const viewer_id = req.user?.id || req.query.viewer_id || req.headers['x-viewer-id'];
     try {
-        const userResult = await pool.query(
-            'SELECT user_id, username, bio, profile_photo_url, (is_private IS TRUE) AS is_private FROM users WHERE username = $1',
-            [username]
-        );
+        const isNumeric = /^\d+$/.test(username);
+        let userResult;
+        if (isNumeric) {
+            userResult = await pool.query(
+                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified FROM users WHERE user_id = $1 OR username ILIKE $2',
+                [parseInt(username, 10), username]
+            );
+        } else {
+            userResult = await pool.query(
+                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified FROM users WHERE username ILIKE $1',
+                [username]
+            );
+        }
         if (userResult.rows.length === 0) {
             return res.status(404).send({ message: 'Không tìm thấy người dùng.' });
         }

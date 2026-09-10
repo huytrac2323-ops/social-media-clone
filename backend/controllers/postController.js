@@ -25,19 +25,27 @@ const getPosts = async (req, res) => {
             SELECT
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
+                (u.is_verified IS TRUE) AS is_verified,
                 (SELECT COUNT(*) FROM post_likes pr WHERE pr.post_id = p.post_id) AS like_count,
                 (SELECT COUNT(*) FROM shares s WHERE s.post_id = p.post_id) AS sharesCount,
-                ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user` : 'FALSE AS is_liked_by_user'},
+                ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user,` : 'FALSE AS is_liked_by_user,'}
+                ${currentUserId ? `EXISTS (SELECT 1 FROM friends WHERE ((user_id = $1 AND friend_id = p.user_id) OR (user_id = p.user_id AND friend_id = $1)) AND status = 'accepted') AS is_friend,` : 'FALSE AS is_friend,'}
+                ${currentUserId ? `EXISTS (SELECT 1 FROM friends WHERE user_id = $1 AND friend_id = p.user_id AND status = 'pending') AS friend_request_sent,` : 'FALSE AS friend_request_sent,'}
                 p.shared_post_id,
                 (
-                    SELECT json_build_object('post_id', op.post_id, 'caption', op.caption, 'photo_url', op.photo_url, 'username', ou.username, 'profile_photo_url', ou.profile_photo_url)
+                    SELECT json_build_object(
+                        'post_id', op.post_id, 'caption', op.caption, 'photo_url', op.photo_url,
+                        'username', ou.username, 'profile_photo_url', ou.profile_photo_url,
+                        'is_verified', (ou.is_verified IS TRUE)
+                    )
                     FROM post op JOIN users ou ON op.user_id = ou.user_id
                     WHERE op.post_id = p.shared_post_id
                 ) AS shared_post,
                 COALESCE(
                         (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text,
                                                            'created_at', c.created_at, 'user_id', cu.user_id, 'username',
-                                                           cu.username,'profile_photo_url', cu.profile_photo_url))
+                                                           cu.username,'profile_photo_url', cu.profile_photo_url,
+                                                           'is_verified', (cu.is_verified IS TRUE)))
                          FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
                                   JOIN users cu ON c.user_id = cu.user_id),
                         '[]'::json) AS comments
@@ -56,8 +64,8 @@ const getPosts = async (req, res) => {
             `;
             params.push(currentUserId);
         } else {
-            // Khách vãng lai chỉ được xem bài viết từ tài khoản công khai.
-            query += ` WHERE u.is_private IS NOT TRUE `;
+            // Người chưa tạo/đăng nhập tài khoản chỉ được xem bài viết từ tài khoản KOL có tích xanh (is_verified = TRUE)
+            query += ` WHERE u.is_private IS NOT TRUE AND u.is_verified IS TRUE `;
         }
 
         query += ` ORDER BY p.created_at DESC`;
@@ -68,8 +76,9 @@ const getPosts = async (req, res) => {
         console.error("Lỗi getPosts:", err);
         res.status(500).send({ message: "Lỗi server khi lấy bài viết", error: err.message });
     }
-};// Lấy chi tiết 1 bài viết
-// Sửa hàm getPostById trong postController.js thành như sau:
+};
+
+// Lấy chi tiết 1 bài viết
 const getPostById = async (req, res) => {
     const { postId } = req.params;
     const currentUserId = req.query.currentUserId || null;
@@ -81,17 +90,21 @@ const getPostById = async (req, res) => {
                    OR u.user_id IN (SELECT friend_id FROM friends WHERE user_id = $2 AND status = 'accepted')
                    OR u.user_id IN (SELECT user_id FROM friends WHERE friend_id = $2 AND status = 'accepted')
                )`
-            : 'AND u.is_private IS NOT TRUE';
+            : 'AND u.is_private IS NOT TRUE AND u.is_verified IS TRUE';
 
         let query = `
             SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
+                   (u.is_verified IS TRUE) AS is_verified,
                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-                   ${currentUserId ? 'EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user' : 'FALSE AS is_liked_by_user'},
+                   ${currentUserId ? 'EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user,' : 'FALSE AS is_liked_by_user,'}
+                   ${currentUserId ? 'EXISTS (SELECT 1 FROM friends WHERE ((user_id = $2 AND friend_id = p.user_id) OR (user_id = p.user_id AND friend_id = $2)) AND status = \'accepted\') AS is_friend,' : 'FALSE AS is_friend,'}
+                   ${currentUserId ? 'EXISTS (SELECT 1 FROM friends WHERE user_id = $2 AND friend_id = p.user_id AND status = \'pending\') AS friend_request_sent,' : 'FALSE AS friend_request_sent,'}
                    COALESCE(
                            (SELECT json_agg(json_build_object(
                                    'comment_id', c.comment_id, 'comment_text', c.comment_text,
                                    'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username,
-                                   'profile_photo_url', cu.profile_photo_url
+                                   'profile_photo_url', cu.profile_photo_url,
+                                   'is_verified', (cu.is_verified IS TRUE)
                                             ))
                             FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
                                      JOIN users cu ON c.user_id = cu.user_id),

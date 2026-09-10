@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Bell, CheckCheck, BellOff, MessageSquare, Heart, UserPlus } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
+const SOCKET_URL = API_URL.replace(/\/api$/, '');
 
 function NotificationDropdown({ compact = false }) {
     const { currentUser } = useAuth();
@@ -14,7 +16,6 @@ function NotificationDropdown({ compact = false }) {
 
     useEffect(() => {
         if (!currentUser?.user_id) {
-            setNotifications([]);
             return undefined;
         }
 
@@ -28,9 +29,37 @@ function NotificationDropdown({ compact = false }) {
             }
         };
 
+        const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+        socket.emit('user_online', currentUser.user_id);
+        const handleRealtimeNotification = notification => {
+            if (String(notification.receiver_id) !== String(currentUser.user_id)) return;
+            setNotifications(previous => {
+                if (previous.some(item => item.notification_id === notification.notification_id)) return previous;
+                return [notification, ...previous].slice(0, 50);
+            });
+
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(notification.username || 'Thông báo mới', {
+                    body: notification.content,
+                    icon: notification.profile_photo_url || undefined,
+                    tag: `notification-${notification.notification_id}`
+                });
+            }
+        };
+        socket.on('notification_created', handleRealtimeNotification);
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().catch(error => {
+                console.error('Không thể xin quyền thông báo trình duyệt:', error);
+            });
+        }
+
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 10000);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            socket.off('notification_created', handleRealtimeNotification);
+            socket.disconnect();
+        };
     }, [currentUser]);
 
     useEffect(() => {
@@ -41,7 +70,8 @@ function NotificationDropdown({ compact = false }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const unreadCount = notifications.filter(item => !(item.is_read || item.isRead)).length;
+    const visibleNotifications = currentUser?.user_id ? notifications : [];
+    const unreadCount = visibleNotifications.filter(item => !(item.is_read || item.isRead)).length;
 
     const markAsRead = async (e) => {
         e?.stopPropagation();
@@ -140,12 +170,12 @@ function NotificationDropdown({ compact = false }) {
                         )}
                     </div>
                     <div className="no-scrollbar" style={{ maxHeight: '380px', overflowY: 'auto' }}>
-                        {notifications.length === 0 ? (
+                        {visibleNotifications.length === 0 ? (
                             <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                 <BellOff size={32} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
                                 <p style={{ fontSize: '13px' }}>Chưa có thông báo nào</p>
                             </div>
-                        ) : notifications.map(notification => {
+                        ) : visibleNotifications.map(notification => {
                             const isRead = notification.is_read || notification.isRead;
                             return (
                                 <button

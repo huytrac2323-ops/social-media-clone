@@ -22,16 +22,111 @@ import {
     ChevronUp,
     Play,
     Pause,
-    FileText
+    FileText,
+    Smile,
+    Palette,
+    Send
 } from 'lucide-react';
 
-export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
+const STORY_GRADIENTS = [
+    { name: 'Sunset', value: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', colors: ['#f09433', '#dc2743', '#bc1888'] },
+    { name: 'Purple', value: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #7c3aed 100%)', colors: ['#1e1b4b', '#4338ca', '#7c3aed'] },
+    { name: 'Cyber', value: 'linear-gradient(135deg, #091e3a 0%, #2563eb 60%, #38bdf8 100%)', colors: ['#091e3a', '#2563eb', '#38bdf8'] },
+    { name: 'Emerald', value: 'linear-gradient(135deg, #064e3b 0%, #059669 60%, #34d399 100%)', colors: ['#064e3b', '#059669', '#34d399'] },
+    { name: 'Noir', value: 'linear-gradient(180deg, #18181b 0%, #09090b 100%)', colors: ['#18181b', '#09090b'] }
+];
+
+const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, sticker) => {
+    return new Promise(resolve => {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1080;
+            canvas.height = 1920;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return resolve(null);
+
+            const grad = ctx.createLinearGradient(0, 0, 1080, 1920);
+            if (gradientColors && gradientColors.length >= 2) {
+                gradientColors.forEach((col, idx) => {
+                    grad.addColorStop(idx / (gradientColors.length - 1), col);
+                });
+            } else {
+                grad.addColorStop(0, '#18181b');
+                grad.addColorStop(1, '#09090b');
+            }
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1080, 1920);
+
+            if (sticker) {
+                ctx.font = '120px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(sticker, 540, 720);
+            }
+
+            if (text && text.trim()) {
+                const fontSize = 64;
+                ctx.font = `bold ${fontSize}px "Segoe UI", -apple-system, Roboto, sans-serif`;
+                ctx.textAlign = 'center';
+
+                const words = text.split(/\s+/);
+                const lines = [];
+                let currentLine = '';
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = currentLine ? `${currentLine} ${words[n]}` : words[n];
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > 860 && n > 0) {
+                        lines.push(currentLine);
+                        currentLine = words[n];
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+
+                const lineHeight = 86;
+                const startY = 960 - ((lines.length - 1) * lineHeight) / 2;
+
+                lines.forEach((line, i) => {
+                    const lineY = startY + i * lineHeight;
+                    if (textBg) {
+                        const lineWidth = ctx.measureText(line).width;
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                        const padX = 32;
+                        const padY = 16;
+                        const x = 540 - lineWidth / 2 - padX;
+                        const y = lineY - fontSize + 6;
+                        const w = lineWidth + padX * 2;
+                        const h = fontSize + padY;
+                        const r = 24;
+                        ctx.beginPath();
+                        ctx.moveTo(x + r, y);
+                        ctx.arcTo(x + w, y, x + w, y + h, r);
+                        ctx.arcTo(x + w, y + h, x, y + h, r);
+                        ctx.arcTo(x, y + h, x, y, r);
+                        ctx.arcTo(x, y, x + w, y, r);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = textColor || '#ffffff';
+                    ctx.fillText(line, 540, lineY);
+                });
+            }
+
+            canvas.toBlob(blob => resolve(blob), 'image/png');
+        } catch {
+            resolve(null);
+        }
+    });
+};
+
+export default function HomePage({ posts, allUsers, friendUserIds, friends, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
     const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
     const [suggestions, setSuggestions] = useState([]);
+    const [sentSuggestionRequests, setSentSuggestionRequests] = useState(new Set());
     const [stories, setStories] = useState([]);
     const [storyFile, setStoryFile] = useState(null);
     const [storyMusic, setStoryMusic] = useState(null);
@@ -43,6 +138,12 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const [playingTrackId, setPlayingTrackId] = useState(null);
     const [previewAudio, setPreviewAudio] = useState(null);
     const [storySticker, setStorySticker] = useState('');
+    const [storyText, setStoryText] = useState('');
+    const [storyTextColor, setStoryTextColor] = useState('#ffffff');
+    const [storyTextBg, setStoryTextBg] = useState(true);
+    const [storyBgIndex, setStoryBgIndex] = useState(0);
+    const [activeStoryDrawer, setActiveStoryDrawer] = useState(null);
+    const [isSubmittingStory, setIsSubmittingStory] = useState(false);
     const [activeStory, setActiveStory] = useState(null);
     const [selectedReaction, setSelectedReaction] = useState(null);
     const [storyMenuOpen, setStoryMenuOpen] = useState(false);
@@ -53,11 +154,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     const [removeSpotifyMusic, setRemoveSpotifyMusic] = useState(false);
     const [storyEditSticker, setStoryEditSticker] = useState('');
     const [selectedStoryPost, setSelectedStoryPost] = useState(null);
-    const [showPostPicker, setShowPostPicker] = useState(false);
-    const [showPostDropdown, setShowPostDropdown] = useState(false);
     const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
-    const [postPickerQuery, setPostPickerQuery] = useState('');
-    const [isSharingPost, setIsSharingPost] = useState(false);
     const [showCreatePost, setShowCreatePost] = useState(false);
 
     // Phát/dừng nghe thử bài hát 30s
@@ -91,17 +188,28 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     // Lắng nghe sự kiện chia sẻ bài viết lên Story từ PostCard
     useEffect(() => {
         const handleOpenStoryWithPost = (e) => {
+            if (typeof window !== 'undefined' && window.innerWidth > 768) {
+                alert('Tính năng chia sẻ và đăng Story chỉ hỗ trợ trên thiết bị di động.');
+                return;
+            }
             const postToShare = e.detail;
             if (postToShare) {
                 setSelectedStoryPost(postToShare);
                 setIsCreateStoryOpen(true);
-                setShowPostDropdown(false);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
         window.addEventListener('open-story-with-post', handleOpenStoryWithPost);
         return () => window.removeEventListener('open-story-with-post', handleOpenStoryWithPost);
     }, []);
+
+    const handleOpenCreateStory = () => {
+        if (typeof window !== 'undefined' && window.innerWidth > 768) {
+            alert('Tính năng đăng Story chỉ khả dụng trên thiết bị di động.');
+            return;
+        }
+        setIsCreateStoryOpen(true);
+    };
 
     const searchSpotify = async () => {
         if (spotifyQuery.trim().length < 2) return;
@@ -129,35 +237,38 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         }
     };
 
-    const sharePostToStory = async () => {
-        if (!currentUser || !selectedStoryPost) return;
+    useEffect(() => {
+        if (!Array.isArray(allUsers) || allUsers.length === 0) return;
+        const currentId = currentUser ? Number(currentUser.user_id || currentUser.id) : null;
+        const friendSet = friendUserIds instanceof Set ? friendUserIds : new Set();
+        const filtered = allUsers.filter(u => {
+            if (!u || !u.user_id) return false;
+            const uId = Number(u.user_id);
+            if (currentId && uId === currentId) return false;
+            if (friendSet.has(uId)) return false;
+            return true;
+        });
+        setSuggestions(filtered);
+    }, [allUsers, currentUser, friendUserIds]);
 
-        setIsSharingPost(true);
-        const formData = new FormData();
-        formData.append('user_id', currentUser.user_id);
-        formData.append('shared_post_id', selectedStoryPost.id);
-
-        try {
-            const response = await fetch(`${API_URL}/stories`, { method: 'POST', body: formData });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Không thể chia sẻ bài viết lên Story.');
-            setSelectedStoryPost(null);
-            setPostPickerQuery('');
-            setShowPostPicker(false);
-            fetchStories();
-        } catch (error) {
-            alert(error.message);
-        } finally {
-            setIsSharingPost(false);
+    const handleAddFriendSuggestion = async (targetUserId, e) => {
+        if (e) e.stopPropagation();
+        if (!currentUser) {
+            navigate('/login');
+            return;
         }
-    };
-
-    const fetchSuggestions = async () => {
-        const currentId = currentUser?.user_id || currentUser?.id || 'guest';
         try {
-            const res = await fetch(`${API_URL}/suggestions/${currentId}`);
-            if (res.ok) setSuggestions(await res.json());
-        } catch (err) { console.error(err); }
+            const res = await fetch(`${API_URL}/friends/request`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser.user_id, friend_id: targetUserId })
+            });
+            if (res.ok) {
+                setSentSuggestionRequests(prev => new Set(prev).add(Number(targetUserId)));
+            }
+        } catch (err) {
+            console.error('Lỗi gửi kết bạn:', err);
+        }
     };
 
     const fetchStories = async () => {
@@ -175,7 +286,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
     };
 
     useEffect(() => {
-        fetchSuggestions();
         fetchStories();
     }, [currentUser]);
 
@@ -193,31 +303,63 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         setMusicSearchError('');
         setSelectedSpotifyTrack(null);
         setStorySticker('');
+        setStoryText('');
+        setStoryTextColor('#ffffff');
+        setStoryTextBg(true);
+        setActiveStoryDrawer(null);
         setSelectedStoryPost(null);
-        setShowPostDropdown(false);
-        setShowPostPicker(false);
     };
 
     const handleCreateStory = async (event) => {
-        event.preventDefault();
-        if (!currentUser || (!storyFile && !selectedStoryPost)) return;
-        const formData = new FormData();
-        formData.append('user_id', currentUser.user_id);
-        if (storyFile) formData.append('storyMedia', storyFile);
-        if (selectedStoryPost) formData.append('shared_post_id', selectedStoryPost.id || selectedStoryPost.post_id);
-        if (storyMusic) formData.append('storyMusic', storyMusic);
-        if (selectedSpotifyTrack) {
-            formData.append('spotify_track_id', selectedSpotifyTrack.id);
-            formData.append('spotify_track_name', selectedSpotifyTrack.name);
-            formData.append('spotify_artist_name', selectedSpotifyTrack.artists);
-            formData.append('spotify_external_url', selectedSpotifyTrack.externalUrl || '');
-            if (selectedSpotifyTrack.previewUrl) {
-                formData.append('music_url', selectedSpotifyTrack.previewUrl);
-                formData.append('music_name', `${selectedSpotifyTrack.name} - ${selectedSpotifyTrack.artists}`);
-            }
+        if (event) event.preventDefault();
+        if (!currentUser) return;
+        if (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim()) {
+            alert('Vui lòng thêm ảnh/video, văn bản hoặc biểu tượng để chia sẻ.');
+            return;
         }
-        if (storySticker.trim()) formData.append('sticker', storySticker.trim());
+
+        setIsSubmittingStory(true);
         try {
+            const formData = new FormData();
+            formData.append('user_id', currentUser.user_id);
+
+            let fileToUpload = storyFile;
+            if (!fileToUpload && !selectedStoryPost) {
+                const blob = await generateStoryCanvasBlob(
+                    storyText,
+                    storyTextColor,
+                    storyTextBg,
+                    STORY_GRADIENTS[storyBgIndex].colors,
+                    storySticker
+                );
+                if (blob) {
+                    fileToUpload = new File([blob], 'story.png', { type: 'image/png' });
+                }
+            }
+
+            if (fileToUpload) formData.append('storyMedia', fileToUpload);
+            if (selectedStoryPost) formData.append('shared_post_id', selectedStoryPost.id || selectedStoryPost.post_id);
+            if (storyMusic) formData.append('storyMusic', storyMusic);
+            if (selectedSpotifyTrack) {
+                formData.append('spotify_track_id', selectedSpotifyTrack.id);
+                formData.append('spotify_track_name', selectedSpotifyTrack.name);
+                formData.append('spotify_artist_name', selectedSpotifyTrack.artists);
+                formData.append('spotify_external_url', selectedSpotifyTrack.externalUrl || '');
+                if (selectedSpotifyTrack.previewUrl) {
+                    formData.append('music_url', selectedSpotifyTrack.previewUrl);
+                    formData.append('music_name', `${selectedSpotifyTrack.name} - ${selectedSpotifyTrack.artists}`);
+                }
+            }
+
+            const stickerPayload = {
+                sticker: storySticker || '',
+                text: storyText || '',
+                textColor: storyTextColor,
+                textBg: storyTextBg,
+                gradientIndex: storyBgIndex
+            };
+            formData.append('sticker', JSON.stringify(stickerPayload));
+
             const response = await fetch(`${API_URL}/stories`, { method: 'POST', body: formData });
             if (!response.ok) {
                 const data = await response.json();
@@ -229,6 +371,8 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         } catch (err) {
             console.error('Lỗi khi đăng story:', err);
             alert('Không thể kết nối đến máy chủ.');
+        } finally {
+            setIsSubmittingStory(false);
         }
     };
 
@@ -371,14 +515,6 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
         } catch (err) { console.error(err); }
     };
 
-    const postPickerResults = (posts || [])
-        .filter(post => {
-            const query = postPickerQuery.trim().toLowerCase();
-            if (!query) return true;
-            return `${post.author || ''} ${post.content || ''}`.toLowerCase().includes(query);
-        })
-        .slice(0, 30);
-
     return (
         <div className="app-shell">
             <div className="app-layout">
@@ -390,278 +526,300 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                     {/* BĂNG CHUYỀN STORIES */}
                     <section className="story-bar-container">
                         <div className="story-scroll-track no-scrollbar">
-                            {/* Nút đăng story của người dùng */}
+                            {/* Nút đăng story của người dùng (chỉ hiển thị trên mobile) */}
                             {currentUser && (
-                                <>
-                                    <div
-                                        className="story-card-item"
-                                        onClick={() => {
-                                            setIsCreateStoryOpen(true);
-                                            setShowPostDropdown(false);
-                                        }}
-                                        style={{ cursor: 'pointer' }}
-                                        title="Tạo Story mới"
-                                    >
-                                        <div className="story-avatar-wrapper" style={{ background: 'var(--border-hover)' }}>
-                                            <div className="story-avatar-inner">
-                                                <Avatar user={currentUser} size={54} />
-                                            </div>
-                                            <span className="story-add-badge">
-                                                <Plus size={12} strokeWidth={3} />
-                                            </span>
+                                <div
+                                    className="story-card-item story-create-item"
+                                    onClick={handleOpenCreateStory}
+                                    style={{ cursor: 'pointer' }}
+                                    title="Tạo Story mới"
+                                >
+                                    <div className="story-avatar-wrapper" style={{ background: 'var(--border-hover)' }}>
+                                        <div className="story-avatar-inner">
+                                            <Avatar user={currentUser} size={54} />
                                         </div>
-                                        <span className="story-username-label">Tạo Story</span>
+                                        <span className="story-add-badge">
+                                            <Plus size={12} strokeWidth={3} />
+                                        </span>
                                     </div>
-
-                                    <button
-                                        type="button"
-                                        className="story-share-post-button"
-                                        onClick={() => {
-                                            setIsCreateStoryOpen(true);
-                                            setShowPostDropdown(true);
-                                        }}
-                                        title="Chọn bài viết để chia sẻ lên Story"
-                                    >
-                                        <ImageIcon size={22} />
-                                        <span>Chia sẻ bài viết</span>
-                                    </button>
-                                </>
+                                    <span className="story-username-label">Tạo Story</span>
+                                </div>
                             )}
 
-                            {/* Modal Tạo Story Mới / Chia Sẻ Bài Viết Lên Story */}
-                            {(isCreateStoryOpen || storyFile || selectedStoryPost) && currentUser && (
-                                <div className="modal-backdrop" onClick={handleCloseStoryModal}>
-                                    <div
-                                        className="modal-content story-create-modal"
-                                        onClick={e => e.stopPropagation()}
-                                        style={{ maxWidth: '480px', width: '92%' }}
-                                    >
-                                        <div className="modal-header">
-                                            <h2>Tạo Story mới</h2>
-                                            <button type="button" className="close-btn" onClick={handleCloseStoryModal} aria-label="Đóng">
-                                                <X size={20} />
+                            {/* MODAL TẠO STORY KIỂU INSTAGRAM CHUYÊN NGHIỆP */}
+                            {isCreateStoryOpen && currentUser && (
+                                <div className="ig-story-backdrop" onClick={handleCloseStoryModal}>
+                                    <div className="ig-story-frame" onClick={e => e.stopPropagation()}>
+                                        {/* Top Toolbar */}
+                                        <div className="ig-story-topbar">
+                                            <button
+                                                type="button"
+                                                className="ig-story-icon-btn"
+                                                onClick={handleCloseStoryModal}
+                                                title="Đóng"
+                                                aria-label="Đóng Story"
+                                            >
+                                                <X size={22} />
                                             </button>
-                                        </div>
 
-                                        <form onSubmit={handleCreateStory} className="story-create-body">
-                                            {/* 1. SỔ BÀI VIẾT ĐỂ CHỌN CHIA SẺ */}
-                                            <div className="story-section-box">
+                                            <div className="ig-story-tool-group">
+                                                {/* Text Tool Aa */}
                                                 <button
                                                     type="button"
-                                                    className="story-section-header-btn"
-                                                    onClick={() => setShowPostDropdown(!showPostDropdown)}
+                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'text' || storyText ? 'active' : ''}`}
+                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'text' ? null : 'text')}
+                                                    title="Thêm văn bản"
                                                 >
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <FileText size={16} color={selectedStoryPost ? 'var(--accent-primary, #0095f6)' : 'currentColor'} />
-                                                        {selectedStoryPost
-                                                            ? `Đã chọn bài của @${selectedStoryPost.author}`
-                                                            : 'Chọn bài viết để chia sẻ lên Story'}
-                                                    </span>
-                                                    {showPostDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                    <span className="ig-story-tool-aa">Aa</span>
                                                 </button>
 
-                                                {/* Thẻ xem trước bài viết đã chọn */}
-                                                {selectedStoryPost && (
-                                                    <div className="story-selected-post-preview">
-                                                        {selectedStoryPost.imageUrl && (
-                                                            <img src={mediaUrl(selectedStoryPost.imageUrl)} alt="" />
-                                                        )}
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <strong style={{ fontSize: '13px', display: 'block' }}>@{selectedStoryPost.author}</strong>
-                                                            <small style={{ color: 'var(--text-muted)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                                                                {selectedStoryPost.content || 'Bài viết hình ảnh'}
-                                                            </small>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setSelectedStoryPost(null)}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                color: '#ef4444',
-                                                                fontSize: '12px',
-                                                                fontWeight: 600,
-                                                                cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            Bỏ chọn
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                {/* Sticker Tool */}
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'sticker' || storySticker ? 'active' : ''}`}
+                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'sticker' ? null : 'sticker')}
+                                                    title="Nhãn dán"
+                                                >
+                                                    <Smile size={20} />
+                                                </button>
 
-                                                {/* Danh sách bài viết sổ ra khi bấm mở */}
-                                                {showPostDropdown && (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
-                                                        <input
-                                                            value={postPickerQuery}
-                                                            onChange={e => setPostPickerQuery(e.target.value)}
-                                                            placeholder="Tìm theo người đăng hoặc nội dung bài viết..."
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '9px 12px',
-                                                                borderRadius: '8px',
-                                                                border: '1px solid var(--border-subtle)',
-                                                                background: 'var(--bg-input)',
-                                                                color: 'var(--text-primary)',
-                                                                fontSize: '13px',
-                                                                outline: 'none'
-                                                            }}
-                                                        />
-                                                        <div className="story-post-picker-list no-scrollbar" style={{ maxHeight: '200px' }}>
-                                                            {postPickerResults.length === 0 ? (
-                                                                <p className="story-post-picker-empty">Không có bài viết nào phù hợp.</p>
-                                                            ) : (
-                                                                postPickerResults.map(p => {
-                                                                    const pId = p.id || p.post_id;
-                                                                    const isSelected = (selectedStoryPost?.id || selectedStoryPost?.post_id) === pId;
-                                                                    return (
-                                                                        <button
-                                                                            type="button"
-                                                                            key={pId}
-                                                                            className={`story-post-option ${isSelected ? 'selected' : ''}`}
-                                                                            onClick={() => {
-                                                                                setSelectedStoryPost(p);
-                                                                                setShowPostDropdown(false);
-                                                                            }}
-                                                                        >
-                                                                            {p.imageUrl && <img src={mediaUrl(p.imageUrl)} alt="" />}
-                                                                            <span>
-                                                                                <strong>@{p.author || 'Người dùng'}</strong>
-                                                                                <small>{p.content || 'Bài viết hình ảnh'}</small>
-                                                                            </span>
-                                                                            {isSelected && <span className="story-post-check">Đã chọn</span>}
-                                                                        </button>
-                                                                    );
-                                                                })
-                                                            )}
-                                                        </div>
-                                                    </div>
+                                                {/* Music Tool */}
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'music' || selectedSpotifyTrack || storyMusic ? 'active' : ''}`}
+                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'music' ? null : 'music')}
+                                                    title="Thêm nhạc nền"
+                                                >
+                                                    <Music2 size={20} />
+                                                </button>
+
+                                                {/* Palette / Gradient Tool */}
+                                                {!storyFile && (
+                                                    <button
+                                                        type="button"
+                                                        className="ig-story-tool-btn"
+                                                        onClick={() => setStoryBgIndex(prev => (prev + 1) % STORY_GRADIENTS.length)}
+                                                        title="Đổi màu nền"
+                                                    >
+                                                        <Palette size={20} />
+                                                    </button>
                                                 )}
                                             </div>
+                                        </div>
 
-                                            {/* 2. TẢI ẢNH HOẶC VIDEO */}
-                                            <div className="story-section-box">
-                                                {storyFile ? (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                                        {storyFile.type.startsWith('video/') ? (
-                                                            <video src={URL.createObjectURL(storyFile)} controls style={{ maxHeight: '180px', borderRadius: '8px', width: '100%' }} />
-                                                        ) : (
-                                                            <img src={URL.createObjectURL(storyFile)} alt="Preview" style={{ maxHeight: '180px', borderRadius: '8px', objectFit: 'contain', width: '100%' }} />
-                                                        )}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setStoryFile(null)}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                color: '#ef4444',
-                                                                fontSize: '12.5px',
-                                                                fontWeight: 600,
-                                                                cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            Xóa tệp ảnh/video
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <label style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        gap: '8px',
-                                                        padding: '12px',
-                                                        borderRadius: '8px',
-                                                        border: '1px dashed var(--border-subtle)',
-                                                        background: 'rgba(255,255,255,0.02)',
-                                                        cursor: 'pointer',
-                                                        fontSize: '13px',
-                                                        color: 'var(--text-secondary)'
-                                                    }}>
-                                                        <ImageIcon size={18} />
-                                                        <span>{selectedStoryPost ? 'Thêm ảnh/video nền (tùy chọn)' : 'Chọn ảnh hoặc video từ máy'}</span>
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*,video/*"
-                                                            hidden
-                                                            onChange={e => setStoryFile(e.target.files?.[0] || null)}
-                                                        />
-                                                    </label>
-                                                )}
-                                            </div>
-
-                                            {/* 3. NHÃN DÁN STICKER */}
-                                            <input
-                                                value={storySticker}
-                                                onChange={e => setStorySticker(e.target.value)}
-                                                placeholder="Thêm nhãn dán sticker (ví dụ: 🎉, 🔥, ❤️)..."
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '11px 13px',
-                                                    borderRadius: '10px',
-                                                    border: '1px solid var(--border-subtle)',
-                                                    background: 'var(--bg-input)',
-                                                    color: 'var(--text-primary)',
-                                                    outline: 'none',
-                                                    fontSize: '13.5px'
-                                                }}
-                                            />
-
-                                            {/* 4. CHỌN NHẠC (SPOTIFY & APPLE MUSIC & MP3) */}
-                                            <div className="spotify-picker" style={{ margin: 0 }}>
-                                                <div className="spotify-picker-title">
-                                                    <Music2 size={16} /> Chọn nhạc nền Story
+                                        {/* Story Live Canvas (9:16 Aspect Ratio) */}
+                                        <div
+                                            className="ig-story-canvas"
+                                            style={{
+                                                background: storyFile ? '#000000' : STORY_GRADIENTS[storyBgIndex].value
+                                            }}
+                                        >
+                                            {/* Media File (Photo/Video) Preview */}
+                                            {storyFile && (
+                                                <div className="ig-story-media-layer">
+                                                    {storyFile.type.startsWith('video/') ? (
+                                                        <video src={URL.createObjectURL(storyFile)} controls autoPlay loop />
+                                                    ) : (
+                                                        <img src={URL.createObjectURL(storyFile)} alt="Story Media" />
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className="ig-story-remove-media-pill"
+                                                        onClick={() => setStoryFile(null)}
+                                                        title="Xóa tệp ảnh/video"
+                                                    >
+                                                        <Trash2 size={13} /> Xóa tệp
+                                                    </button>
                                                 </div>
+                                            )}
+
+                                            {/* Shared Post Card (from Feed) */}
+                                            {selectedStoryPost && (
+                                                <div className="ig-story-shared-card">
+                                                    <div className="ig-story-shared-header">
+                                                        <Avatar user={{ username: selectedStoryPost.author, profile_photo_url: selectedStoryPost.authorAvatar }} size={26} />
+                                                        <span className="ig-story-shared-author">@{selectedStoryPost.author}</span>
+                                                        <button
+                                                            type="button"
+                                                            className="ig-story-shared-close"
+                                                            onClick={() => setSelectedStoryPost(null)}
+                                                            title="Bỏ bài viết đã chọn"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                    {selectedStoryPost.imageUrl && (
+                                                        <div className="ig-story-shared-thumb">
+                                                            <img src={mediaUrl(selectedStoryPost.imageUrl)} alt="" />
+                                                        </div>
+                                                    )}
+                                                    {selectedStoryPost.content && (
+                                                        <p className="ig-story-shared-caption">{selectedStoryPost.content}</p>
+                                                    )}
+                                                    <span className="ig-story-shared-badge">Xem bài viết</span>
+                                                </div>
+                                            )}
+
+                                            {/* Floating Sticker */}
+                                            {storySticker && (
+                                                <div className="ig-story-sticker-layer">
+                                                    <span className="ig-story-sticker-display">{storySticker}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="ig-story-sticker-remove"
+                                                        onClick={() => setStorySticker('')}
+                                                        title="Xóa nhãn dán"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Floating Music Badge */}
+                                            {(selectedSpotifyTrack || storyMusic) && (
+                                                <div className="ig-story-music-badge">
+                                                    <Music2 size={14} className="ig-story-music-icon" />
+                                                    <div className="ig-story-music-meta">
+                                                        <strong>{selectedSpotifyTrack ? selectedSpotifyTrack.name : storyMusic.name}</strong>
+                                                        {selectedSpotifyTrack && <small>{selectedSpotifyTrack.artists}</small>}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="ig-story-music-remove"
+                                                        onClick={() => {
+                                                            if (previewAudio) previewAudio.pause();
+                                                            setSelectedSpotifyTrack(null);
+                                                            setStoryMusic(null);
+                                                            setPlayingTrackId(null);
+                                                        }}
+                                                        title="Xóa bài hát"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Live Text Overlay & Input */}
+                                            <div className="ig-story-text-layer">
+                                                <textarea
+                                                    value={storyText}
+                                                    onChange={e => setStoryText(e.target.value)}
+                                                    placeholder="Chạm để nhập văn bản..."
+                                                    className={`ig-story-textarea ${storyTextBg ? 'has-bg' : ''}`}
+                                                    style={{ color: storyTextColor }}
+                                                    rows={Math.max(1, (storyText.match(/\n/g) || []).length + 1)}
+                                                />
+                                            </div>
+
+                                            {/* Prompt to pick image if canvas is empty and no text */}
+                                            {!storyFile && !selectedStoryPost && !storyText && (
+                                                <label className="ig-story-upload-center">
+                                                    <ImageIcon size={34} />
+                                                    <span>Chọn ảnh hoặc video</span>
+                                                    <small>Hoặc gõ chữ trực tiếp lên màn hình</small>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*,video/*"
+                                                        hidden
+                                                        onChange={e => setStoryFile(e.target.files?.[0] || null)}
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+
+                                        {/* Drawer 1: Text Options (Color Palette + Badge Toggle) */}
+                                        {activeStoryDrawer === 'text' && (
+                                            <div className="ig-story-drawer">
+                                                <div className="ig-story-drawer-header">
+                                                    <span>Định dạng chữ</span>
+                                                    <button
+                                                        type="button"
+                                                        className={`ig-story-text-bg-toggle ${storyTextBg ? 'active' : ''}`}
+                                                        onClick={() => setStoryTextBg(!storyTextBg)}
+                                                    >
+                                                        Nền chữ: {storyTextBg ? 'Bật' : 'Tắt'}
+                                                    </button>
+                                                </div>
+                                                <div className="ig-story-color-palette">
+                                                    {['#ffffff', '#000000', '#facc15', '#f43f5e', '#22c55e', '#06b6d4', '#a855f7', '#fb923c'].map(col => (
+                                                        <button
+                                                            type="button"
+                                                            key={col}
+                                                            className={`ig-story-color-dot ${storyTextColor === col ? 'active' : ''}`}
+                                                            style={{ background: col }}
+                                                            onClick={() => setStoryTextColor(col)}
+                                                            title={col}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Drawer 2: Stickers / Emojis */}
+                                        {activeStoryDrawer === 'sticker' && (
+                                            <div className="ig-story-drawer">
+                                                <div className="ig-story-drawer-header">
+                                                    <span>Biểu tượng & Sticker</span>
+                                                    <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                        Xong
+                                                    </button>
+                                                </div>
+                                                <div className="ig-story-emoji-grid">
+                                                    {['🔥', '❤️', '✨', '🎉', '😂', '😍', '👏', '💯', '⚡', '☕', '🥳', '🍕', '🎶', '🌈', '🚀', '💫'].map(em => (
+                                                        <button
+                                                            type="button"
+                                                            key={em}
+                                                            className="ig-story-emoji-btn"
+                                                            onClick={() => {
+                                                                setStorySticker(em);
+                                                                setActiveStoryDrawer(null);
+                                                            }}
+                                                        >
+                                                            {em}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <div className="ig-story-custom-sticker-row">
+                                                    <input
+                                                        value={storySticker}
+                                                        onChange={e => setStorySticker(e.target.value)}
+                                                        placeholder="Hoặc nhập sticker / emoji khác..."
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Drawer 3: Music Search & MP3 */}
+                                        {activeStoryDrawer === 'music' && (
+                                            <div className="ig-story-drawer ig-story-music-drawer">
+                                                <div className="ig-story-drawer-header">
+                                                    <span>Chọn nhạc nền</span>
+                                                    <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                        Xong
+                                                    </button>
+                                                </div>
+
                                                 <div className="spotify-search-row">
                                                     <input
                                                         value={spotifyQuery}
                                                         onChange={e => setSpotifyQuery(e.target.value)}
                                                         onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchSpotify())}
-                                                        placeholder="Tìm bài hát hoặc ca sĩ (VD: em của, sơn tùng)..."
+                                                        placeholder="Tìm bài hát, ca sĩ..."
                                                     />
-                                                    <button
-                                                        type="button"
-                                                        onClick={searchSpotify}
-                                                        disabled={isSpotifySearching}
-                                                        aria-label="Tìm nhạc"
-                                                    >
+                                                    <button type="button" onClick={searchSpotify} disabled={isSpotifySearching}>
                                                         <Search size={16} />
                                                     </button>
                                                 </div>
 
-                                                {/* Thông báo trạng thái tìm nhạc */}
                                                 {isSpotifySearching && (
-                                                    <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>
-                                                        Đang tìm kiếm bài hát...
-                                                    </p>
+                                                    <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>Đang tìm kiếm bài hát...</p>
                                                 )}
                                                 {musicSearchError && (
-                                                    <p style={{ color: '#fca5a5', fontSize: '12.5px', marginTop: '6px' }}>
-                                                        {musicSearchError}
-                                                    </p>
+                                                    <p style={{ color: '#fca5a5', fontSize: '12.5px', marginTop: '6px' }}>{musicSearchError}</p>
                                                 )}
 
-                                                {/* Bài hát đã chọn */}
-                                                {selectedSpotifyTrack && (
-                                                    <div className="spotify-selected-track" style={{ marginTop: '8px' }}>
-                                                        <span style={{ fontSize: '13px' }}>
-                                                            🎵 {selectedSpotifyTrack.name} - {selectedSpotifyTrack.artists}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (previewAudio) previewAudio.pause();
-                                                                setSelectedSpotifyTrack(null);
-                                                                setPlayingTrackId(null);
-                                                            }}
-                                                        >
-                                                            Bỏ chọn
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                {/* Kết quả tìm nhạc có nút nghe thử 30s */}
                                                 {spotifyResults.length > 0 && (
-                                                    <div className="spotify-results no-scrollbar" style={{ maxHeight: '180px', marginTop: '8px' }}>
+                                                    <div className="spotify-results no-scrollbar" style={{ maxHeight: '160px', marginTop: '8px' }}>
                                                         {spotifyResults.map(track => {
                                                             const isPlaying = playingTrackId === track.id;
                                                             return (
@@ -670,8 +828,8 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                                                     className="story-track-item"
                                                                     onClick={() => {
                                                                         setSelectedSpotifyTrack(track);
-                                                                        setSpotifyResults([]);
-                                                                        setMusicSearchError('');
+                                                                        setStoryMusic(null);
+                                                                        setActiveStoryDrawer(null);
                                                                     }}
                                                                 >
                                                                     {track.imageUrl && (
@@ -690,7 +848,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                                                             type="button"
                                                                             className="story-track-play-btn"
                                                                             onClick={e => togglePlayPreview(track, e)}
-                                                                            title={isPlaying ? 'Dừng nghe thử' : 'Nghe thử 30s'}
+                                                                            title={isPlaying ? 'Dừng' : 'Nghe thử 30s'}
                                                                         >
                                                                             {isPlaying ? <Pause size={12} /> : <Play size={12} />}
                                                                         </button>
@@ -701,39 +859,47 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                                     </div>
                                                 )}
 
-                                                {/* Tải tệp MP3 thủ công */}
-                                                <label className="story-music-picker" style={{ marginTop: '10px' }}>
+                                                <label className="story-music-picker" style={{ marginTop: '8px' }}>
                                                     <Music2 size={16} />
                                                     {storyMusic ? storyMusic.name : 'Hoặc tải tệp MP3 từ máy'}
                                                     <input
                                                         type="file"
                                                         accept="audio/mpeg,.mp3"
-                                                        onChange={e => setStoryMusic(e.target.files?.[0] || null)}
+                                                        onChange={e => {
+                                                            setStoryMusic(e.target.files?.[0] || null);
+                                                            setSelectedSpotifyTrack(null);
+                                                            setActiveStoryDrawer(null);
+                                                        }}
                                                     />
                                                 </label>
                                             </div>
+                                        )}
 
-                                            {/* NÚT ĐĂNG STORY */}
+                                        {/* Bottom Bar: Media Picker & Share Pill */}
+                                        <div className="ig-story-bottombar">
+                                            <label className="ig-story-media-btn" title="Chọn ảnh hoặc video từ máy">
+                                                <ImageIcon size={22} />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*,video/*"
+                                                    hidden
+                                                    onChange={e => setStoryFile(e.target.files?.[0] || null)}
+                                                />
+                                            </label>
+
                                             <button
-                                                type="submit"
-                                                disabled={!storyFile && !selectedStoryPost}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '12px',
-                                                    background: (!storyFile && !selectedStoryPost) ? 'var(--bg-elevated, #262626)' : 'var(--accent-gradient, #0095f6)',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '12px',
-                                                    fontWeight: '600',
-                                                    fontSize: '14px',
-                                                    cursor: (!storyFile && !selectedStoryPost) ? 'not-allowed' : 'pointer',
-                                                    opacity: (!storyFile && !selectedStoryPost) ? 0.6 : 1,
-                                                    transition: 'all 0.2s'
-                                                }}
+                                                type="button"
+                                                className="ig-story-share-pill"
+                                                onClick={handleCreateStory}
+                                                disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim())}
                                             >
-                                                Chia sẻ lên Story
+                                                <div className="ig-story-share-avatar">
+                                                    <Avatar user={currentUser} size={28} />
+                                                </div>
+                                                <span>{isSubmittingStory ? 'Đang chia sẻ...' : 'Tin của bạn'}</span>
+                                                <Send size={15} style={{ marginLeft: '4px' }} />
                                             </button>
-                                        </form>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -819,7 +985,29 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                 ) : activeStory.media_type === 'video'
                                     ? <video src={mediaUrl(activeStory.media_url)} controls autoPlay />
                                     : <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />}
-                                {activeStory.sticker && <div className="story-sticker">{activeStory.sticker}</div>}
+                                {activeStory.sticker && (() => {
+                                    try {
+                                        const parsed = JSON.parse(activeStory.sticker);
+                                        return (
+                                            <>
+                                                {parsed.sticker && <div className="story-sticker">{parsed.sticker}</div>}
+                                                {parsed.text && (
+                                                    <div
+                                                        className={`story-text-overlay ${parsed.textBg ? 'has-bg' : ''}`}
+                                                        style={{
+                                                            color: parsed.textColor || '#ffffff',
+                                                            background: parsed.textBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'
+                                                        }}
+                                                    >
+                                                        {parsed.text}
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    } catch {
+                                        return <div className="story-sticker">{activeStory.sticker}</div>;
+                                    }
+                                })()}
                                 {activeStory.music_url && (
                                     <div className="story-music-player" onClick={e => e.stopPropagation()}>
                                         <Music2 size={15} />
@@ -1028,6 +1216,57 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                         </div>
                     )}
 
+                    {/* GỢI Ý TÀI KHOẢN DÀNH CHO MOBILE (CHUẨN INSTAGRAM) */}
+                    {suggestions && suggestions.length > 0 && (
+                        <section className="ig-mobile-suggestions-section">
+                            <div className="ig-suggestions-header">
+                                <span className="ig-suggestions-title">Gợi ý cho bạn</span>
+                                <button
+                                    type="button"
+                                    className="ig-suggestions-see-all"
+                                    onClick={() => navigate('/explore')}
+                                >
+                                    Xem tất cả
+                                </button>
+                            </div>
+                            <div className="ig-suggestions-scroll-track no-scrollbar">
+                                {suggestions.map(user => {
+                                    const isSent = sentSuggestionRequests.has(Number(user.user_id));
+                                    return (
+                                        <div key={user.user_id} className="ig-suggested-card">
+                                            <div
+                                                className="ig-suggested-card-inner"
+                                                onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
+                                                role="button"
+                                                tabIndex={0}
+                                            >
+                                                <Avatar user={user} size={54} />
+                                                <div className="ig-suggested-username-row">
+                                                    <span className="ig-suggested-username">{user.username}</span>
+                                                    {user.is_verified && (
+                                                        <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
+                                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <span className="ig-suggested-reason">Gợi ý cho bạn</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className={`ig-suggested-action-btn ${isSent ? 'sent' : ''}`}
+                                                onClick={(e) => handleAddFriendSuggestion(user.user_id, e)}
+                                                disabled={isSent}
+                                            >
+                                                <UserPlus size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                                                {isSent ? 'Đã gửi' : 'Theo dõi'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    )}
+
                     {/* DANH SÁCH BÀI VIẾT */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {posts && posts.length > 0 ? (
@@ -1035,6 +1274,7 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                 <PostCard
                                     key={post.post_id || post.id}
                                     post={post}
+                                    friendUserIds={friendUserIds}
                                     onLike={onLike}
                                     onCommentSubmit={onCommentSubmit}
                                     onPostDeleted={onPostDeleted}
@@ -1042,16 +1282,54 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                                 />
                             ))
                         ) : (
-                            <div style={{
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border-subtle)',
-                                borderRadius: 'var(--radius-lg)',
-                                padding: '48px 24px',
-                                textAlign: 'center',
-                                color: 'var(--text-muted)'
-                            }}>
-                                <p style={{ fontSize: '15px' }}>Chưa có bài viết nào trong bảng tin.</p>
-                                <p style={{ fontSize: '13px', marginTop: '6px' }}>Hãy theo dõi bạn bè hoặc đăng bài viết đầu tiên!</p>
+                            <div className="empty-feed-card">
+                                <div className="empty-feed-icon-wrap">
+                                    <Users size={32} color="#0095f6" />
+                                </div>
+                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
+                                    Chào mừng bạn đến với SocialHub
+                                </h3>
+                                <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 20px', lineHeight: 1.5 }}>
+                                    Hãy theo dõi hoặc kết bạn với các tài khoản dưới đây để khám phá bài viết thú vị trên bảng tin của bạn:
+                                </p>
+                                {suggestions && suggestions.length > 0 && (
+                                    <div className="empty-feed-suggestions-grid">
+                                        {suggestions.slice(0, 6).map(user => {
+                                            const isSent = sentSuggestionRequests.has(Number(user.user_id));
+                                            return (
+                                                <div key={user.user_id} className="empty-feed-user-chip">
+                                                    <div
+                                                        className="empty-feed-user-meta"
+                                                        onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                    >
+                                                        <Avatar user={user} size={42} />
+                                                        <div style={{ textAlign: 'left', minWidth: 0 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, fontSize: '14px', color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {user.username}
+                                                                {user.is_verified && (
+                                                                    <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
+                                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Gợi ý cho bạn</div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className={`empty-feed-connect-btn ${isSent ? 'sent' : ''}`}
+                                                        onClick={(e) => handleAddFriendSuggestion(user.user_id, e)}
+                                                        disabled={isSent}
+                                                    >
+                                                        {isSent ? 'Đã gửi' : 'Theo dõi'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1068,34 +1346,42 @@ export default function HomePage({ posts, onLike, onCommentSubmit, onPostCreated
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {suggestions && suggestions.length > 0 ? (
-                                suggestions.map(user => (
-                                    <div key={user.user_id} className="suggestion-user-row">
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
-                                            className="suggestion-user-meta"
-                                            title={`Xem trang của ${user.username}`}
-                                        >
-                                            <Avatar user={user} size={36} />
-                                            <div>
-                                                <div className="suggestion-username">{user.username}</div>
-                                                <div className="suggestion-subtitle">Gợi ý cho bạn</div>
-                                            </div>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (!currentUser) return alert("Vui lòng đăng nhập!");
-                                                handleSendRequest(user.user_id || user.id);
-                                            }}
-                                            className="btn-connect-user"
-                                            title="Thêm bạn bè"
-                                        >
-                                            <UserPlus size={14} style={{ display: 'inline', marginRight: '4px' }} />
-                                            Kết bạn
-                                        </button>
-                                    </div>
-                                ))
+                                suggestions.map(user => {
+                                    const isSent = sentSuggestionRequests.has(Number(user.user_id));
+                                    return (
+                                        <div key={user.user_id} className="suggestion-user-row">
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
+                                                className="suggestion-user-meta"
+                                                title={`Xem trang của ${user.username}`}
+                                            >
+                                                <Avatar user={user} size={36} />
+                                                <div>
+                                                    <div className="suggestion-username" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        {user.username}
+                                                        {user.is_verified && (
+                                                            <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
+                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                    <div className="suggestion-subtitle">Gợi ý cho bạn</div>
+                                                </div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleAddFriendSuggestion(user.user_id, e)}
+                                                className={`btn-connect-user ${isSent ? 'sent' : ''}`}
+                                                disabled={isSent}
+                                                title={isSent ? 'Đã gửi lời mời' : 'Thêm bạn bè'}
+                                            >
+                                                <UserPlus size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                                                {isSent ? 'Đã gửi' : 'Kết bạn'}
+                                            </button>
+                                        </div>
+                                    );
+                                })
                             ) : (
                                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>
                                     Không có gợi ý mới

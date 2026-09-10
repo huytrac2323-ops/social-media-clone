@@ -23,7 +23,7 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
-function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated, onDeleteComment }) {
+function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted, onPostUpdated, onDeleteComment }) {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [commentText, setCommentText] = useState('');
@@ -35,9 +35,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
   const [isSaved, setIsSaved] = useState(post.isSaved || false);
   const [loading, setLoading] = useState(false);
   const isOwner = currentUser && Number(currentUser.user_id) === Number(post.userId);
+  const isFriend = Boolean(post.isFriend || (currentUser && friendUserIds?.has(Number(post.userId))));
   const [isExpanded, setIsExpanded] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [friendRequestSent, setFriendRequestSent] = useState(false);
+  const [friendRequestSent, setFriendRequestSent] = useState(post.friendRequestSent || false);
 
   const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
@@ -219,7 +220,14 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
           >
             <Avatar user={authorUser} size={40} />
             <div className="post-meta">
-              <span className="post-author-name">{post.author || post.username}</span>
+              <span className="post-author-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                {post.author || post.username}
+                {(post.isVerified || post.is_verified) && (
+                  <svg className="verified-badge-icon" viewBox="0 0 24 24" width="14" height="14" fill="#0095f6" aria-label="Tài khoản đã xác minh">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                )}
+              </span>
               <span className="post-time-stamp" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <Clock size={11} />
                 {formattedTime || 'Vừa xong'}
@@ -228,13 +236,13 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
           </Link>
 
           <div className="post-header-actions">
-            {currentUser && Number(currentUser.user_id || currentUser.id) !== Number(post.userId) && (
+            {currentUser && Number(currentUser.user_id || currentUser.id) !== Number(post.userId) && !isFriend && (
               <button
                 type="button"
                 className="btn-add-friend-post"
                 onClick={handleAddFriend}
                 disabled={friendRequestSent}
-                title="Kết bạn"
+                title={friendRequestSent ? 'Đã gửi lời mời' : 'Kết bạn'}
               >
                 <UserPlus size={13} />
                 <span>{friendRequestSent ? 'Đã gửi' : 'Thêm bạn'}</span>
@@ -362,6 +370,10 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                     type="button"
                     onClick={() => {
                       setShareMenuOpen(false);
+                      if (window.innerWidth > 768) {
+                        alert('Tính năng chia sẻ và đăng Story chỉ hỗ trợ trên thiết bị di động.');
+                        return;
+                      }
                       window.dispatchEvent(new CustomEvent('open-story-with-post', { detail: post }));
                     }}
                   >
@@ -404,8 +416,14 @@ function PostCard({ post, onLike, onCommentSubmit, onPostDeleted, onPostUpdated,
                 <Link
                   to={comment.username ? `/profile/${comment.username}` : '#'}
                   className="comment-author-name"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                 >
                   {comment.username}
+                  {comment.is_verified && (
+                    <svg className="verified-badge-icon" viewBox="0 0 24 24" width="12" height="12" fill="#0095f6">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  )}
                 </Link>
                 <span className="comment-text-body">{comment.comment_text || comment.content}</span>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2px' }}>

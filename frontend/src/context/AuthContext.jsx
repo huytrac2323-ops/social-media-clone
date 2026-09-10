@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { safeFetch } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -21,6 +22,33 @@ export const AuthProvider = ({ children }) => {
       return [];
     }
   });
+
+  // Tự động kiểm tra và đồng bộ username nếu user_id có nhưng username bị null hoặc thiếu
+  useEffect(() => {
+    const syncUserInfo = async () => {
+      if (!currentUser?.user_id) return;
+      const isUsernameInvalid = !currentUser.username || currentUser.username === 'null' || currentUser.username === 'undefined';
+      if (isUsernameInvalid) {
+        try {
+          const res = await safeFetch(`/users`);
+          if (res.ok) {
+            const allUsers = await res.json();
+            const matched = allUsers.find(u => Number(u.user_id) === Number(currentUser.user_id));
+            if (matched && matched.username && matched.username !== 'null') {
+              setCurrentUser(prev => ({
+                ...prev,
+                username: matched.username,
+                profile_photo_url: matched.profile_photo_url || prev?.profile_photo_url
+              }));
+            }
+          }
+        } catch (syncErr) {
+          console.warn('Lỗi tự động đồng bộ thông tin tài khoản:', syncErr);
+        }
+      }
+    };
+    syncUserInfo();
+  }, [currentUser?.user_id, currentUser?.username]);
 
   useEffect(() => {
     try {
@@ -54,7 +82,14 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       window.localStorage.setItem('token', token);
     }
-    setCurrentUser(userData);
+    const resolvedUser = {
+      ...userData,
+      user_id: userData.user_id || userData.id,
+      username: (userData.username && userData.username !== 'null')
+        ? userData.username
+        : (userData.email ? userData.email.split('@')[0] : `user_${userData.user_id || userData.id || Date.now()}`)
+    };
+    setCurrentUser(resolvedUser);
   };
 
   const logout = () => {

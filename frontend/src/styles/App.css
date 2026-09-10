@@ -3185,3 +3185,995 @@ input, textarea {
     display: flex !important;
   }
 }
+
+/* =================================================== */
+/* STORY RESTRICTION: DESKTOP HIDES STORY CREATION     */
+/* =================================================== */
+@media screen and (min-width: 769px) {
+  .story-create-item {
+    display: none !important;
+  }
+}
+
+/* =================================================== */
+/* INSTAGRAM STORY STUDIO & CREATOR MODAL              */
+/* =================================================== */
+.ig-story-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  animation: fadeIn 0.2s ease;
+}
+
+.ig-story-frame {
+  width: 100%;
+  max-width: 430px;
+  height: min(92vh, 840px);
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+}
+
+/* Top Toolbar */
+.ig-story-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  z-index: 30;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.65) 0%, transparent 100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.ig-story-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ig-story-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.ig-story-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ig-story-tool-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ig-story-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.06);
+}
+
+.ig-story-tool-btn.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.ig-story-tool-aa {
+  font-weight: 800;
+  font-size: 16px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* 9:16 Center Story Canvas */
+.ig-story-canvas {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 18px 75px;
+  overflow: hidden;
+  transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Media Layer */
+.ig-story-media-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  z-index: 1;
+}
+
+.ig-story-media-layer img,
+.ig-story-media-layer video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ig-story-remove-media-pill {
+  position: absolute;
+  top: 66px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fca5a5;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.15s ease;
+}
+
+.ig-story-remove-media-pill:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ffffff;
+}
+
+/* Shared Post Card in Story */
+.ig-story-shared-card {
+  width: 88%;
+  max-width: 320px;
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 12;
+  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 10px;
+}
+
+.ig-story-shared-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ig-story-shared-author {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  flex: 1;
+}
+
+.ig-story-shared-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-story-shared-close:hover {
+  color: #ffffff;
+}
+
+.ig-story-shared-thumb {
+  width: 100%;
+  max-height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ig-story-shared-thumb img {
+  width: 100%;
+  height: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.ig-story-shared-caption {
+  font-size: 12.5px;
+  color: #e4e4e7;
+  margin: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.ig-story-shared-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #93c5fd;
+  align-self: flex-start;
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 6px;
+}
+
+/* Floating Sticker on Canvas */
+.ig-story-sticker-layer {
+  position: absolute;
+  top: 30%;
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: bounceIn 0.25s ease;
+}
+
+.ig-story-sticker-display {
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+.ig-story-sticker-remove {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Floating Music Badge on Canvas */
+.ig-story-music-badge {
+  position: absolute;
+  top: 72px;
+  z-index: 13;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  max-width: 85%;
+  animation: slideDown 0.2s ease;
+}
+
+.ig-story-music-icon {
+  color: #60a5fa;
+  flex-shrink: 0;
+  animation: pulse 1.8s infinite;
+}
+
+.ig-story-music-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ig-story-music-meta strong {
+  font-size: 12px;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-story-music-meta small {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-story-music-remove {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-left: 2px;
+}
+
+.ig-story-music-remove:hover {
+  color: #fb7185;
+}
+
+/* Live Text Overlay & Input */
+.ig-story-text-layer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 15;
+}
+
+.ig-story-textarea {
+  width: 90%;
+  max-width: 320px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 21px;
+  font-weight: 700;
+  text-align: center;
+  resize: none;
+  line-height: 1.4;
+  padding: 8px 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.ig-story-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.ig-story-textarea.has-bg {
+  background: rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Empty Canvas Upload Center Prompt */
+.ig-story-upload-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.ig-story-upload-center:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: scale(1.02);
+}
+
+.ig-story-upload-center span {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.ig-story-upload-center small {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* Bottom Bar: Media Picker & Share Pill */
+.ig-story-bottombar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.75) 0%, transparent 100%);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+}
+
+.ig-story-media-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ig-story-media-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.05);
+}
+
+.ig-story-share-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 6px;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ig-story-share-pill:hover:not(:disabled) {
+  transform: scale(1.04);
+  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.3);
+}
+
+.ig-story-share-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ig-story-share-avatar {
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Interactive Drawers inside Story Frame */
+.ig-story-drawer {
+  position: absolute;
+  bottom: 70px;
+  left: 12px;
+  right: 12px;
+  background: rgba(24, 24, 27, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 14px 16px;
+  z-index: 25;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ig-story-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ig-story-text-bg-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ig-story-text-bg-toggle.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.ig-story-drawer-close {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ig-story-color-palette {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ig-story-color-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.ig-story-color-dot:hover {
+  transform: scale(1.15);
+}
+
+.ig-story-color-dot.active {
+  border-color: #ffffff;
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+.ig-story-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ig-story-emoji-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 10px;
+  font-size: 24px;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-story-emoji-btn:hover {
+  transform: scale(1.25);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ig-story-custom-sticker-row input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+
+/* Story Viewer Text Overlay */
+.story-text-overlay {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 85%;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.4;
+  z-index: 10;
+  padding: 8px 14px;
+  pointer-events: none;
+  word-break: break-word;
+}
+
+.story-text-overlay.has-bg {
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Fullscreen on Mobile */
+@media screen and (max-width: 768px) {
+  .ig-story-backdrop {
+    padding: 0 !important;
+  }
+
+  .ig-story-frame {
+    max-width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+
+/* ========================================================= */
+/* VERIFIED BADGE (TÍCH XANH INSTAGRAM)                      */
+/* ========================================================= */
+.verified-badge-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 149, 246, 0.4));
+}
+
+/* ========================================================= */
+/* INSTAGRAM MOBILE SUGGESTIONS CAROUSEL                     */
+/* ========================================================= */
+.ig-mobile-suggestions-section {
+  background: var(--bg-surface, #121212);
+  border: 1px solid var(--border-color, #262626);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.ig-suggestions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ig-suggestions-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main, #ffffff);
+}
+
+.ig-suggestions-see-all {
+  background: transparent;
+  border: none;
+  color: #0095f6;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ig-suggestions-see-all:hover {
+  text-decoration: underline;
+}
+
+.ig-suggestions-scroll-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+}
+
+.ig-suggested-card {
+  flex: 0 0 145px;
+  max-width: 145px;
+  background: var(--bg-card, #18181b);
+  border: 1px solid var(--border-subtle, #27272a);
+  border-radius: 14px;
+  padding: 14px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  scroll-snap-align: start;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.ig-suggested-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.ig-suggested-card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+}
+
+.ig-suggested-username-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ig-suggested-username {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main, #ffffff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 105px;
+}
+
+.ig-suggested-reason {
+  font-size: 11px;
+  color: var(--text-muted, #a1a1aa);
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+.ig-suggested-action-btn {
+  width: 100%;
+  padding: 6px 10px;
+  background: #0095f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.ig-suggested-action-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.ig-suggested-action-btn.sent,
+.ig-suggested-action-btn:disabled {
+  background: var(--bg-elevated, #27272a);
+  color: var(--text-muted, #a1a1aa);
+  cursor: default;
+}
+
+/* ========================================================= */
+/* EMPTY FEED CARD WITH SUGGESTIONS                          */
+/* ========================================================= */
+.empty-feed-card {
+  background: var(--bg-card, #18181b);
+  border: 1px solid var(--border-subtle, #27272a);
+  border-radius: 20px;
+  padding: 36px 20px;
+  text-align: center;
+}
+
+.empty-feed-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(0, 149, 246, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.empty-feed-suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+  text-align: left;
+}
+
+.empty-feed-user-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-surface, #121212);
+  border: 1px solid var(--border-subtle, #27272a);
+  border-radius: 12px;
+}
+
+.empty-feed-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.empty-feed-connect-btn {
+  padding: 6px 12px;
+  background: #0095f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.empty-feed-connect-btn.sent,
+.empty-feed-connect-btn:disabled {
+  background: var(--bg-elevated, #27272a);
+  color: var(--text-muted, #a1a1aa);
+  cursor: default;
+}
+
+/* ========================================================= */
+/* PROFILE AVATAR STORY RING & BADGE                         */
+/* ========================================================= */
+.profile-avatar-wrapper.has-active-story {
+  position: relative;
+}
+
+.profile-avatar-story-ring {
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse-ring 3s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.02); filter: brightness(1.15); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.profile-story-badge {
+  position: absolute;
+  bottom: 0;
+  right: 8px;
+  background: linear-gradient(45deg, #f09433, #dc2743);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 2px solid var(--bg-surface, #121212);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================================================= */
+/* STORY HIGHLIGHTS (TIN NỔI BẬT INSTAGRAM / TIKTOK)         */
+/* ========================================================= */
+.profile-highlights-section {
+  margin: 18px 0 24px;
+  padding: 0 4px;
+}
+
+.profile-highlights-track {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 6px 0 10px;
+}
+
+.highlight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  position: relative;
+  flex: 0 0 76px;
+  max-width: 76px;
+  text-align: center;
+}
+
+.highlight-circle-btn {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 2.5px;
+  border: 1.5px solid var(--border-color, #3f3f46);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.highlight-circle-btn:hover {
+  transform: scale(1.04);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.highlight-circle-btn.add-btn {
+  border: 1.5px dashed var(--border-color, #52525b);
+  background: var(--bg-surface, #18181b);
+}
+
+.highlight-cover-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-card, #27272a);
+}
+
+.highlight-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.highlight-title {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-main, #ffffff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 76px;
+}
+
+.highlight-delete-trigger {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: #ffffff;
+  border: 2px solid var(--bg-surface, #121212);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.8;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.highlight-delete-trigger:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}

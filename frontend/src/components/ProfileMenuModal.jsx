@@ -49,8 +49,10 @@ function ProfileMenuModal({ isOpen, onClose }) {
       onClose();
       const accounts = savedAccounts || [];
       const target = accounts.find(a => Number(a.user_id) === Number(userId));
-      if (target?.username) {
-        navigate(`/profile/${target.username}`);
+      if (target?.username && target.username !== 'null') {
+        navigate(`/profile/${encodeURIComponent(target.username)}`);
+      } else if (target?.user_id) {
+        navigate(`/profile/${target.user_id}`);
       } else {
         window.location.reload();
       }

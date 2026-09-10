@@ -162,6 +162,7 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                                 key={msg.id || msg.message_id || index}
                                 style={{
                                     alignSelf: isMe ? 'flex-end' : 'flex-start',
+                                    background: isMe ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' : '#1e2634',
                                     background: isMe ? '#3797f0' : '#262626',
                                     padding: '8px 14px',
                                     borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
@@ -169,7 +170,8 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                                     fontSize: '13.5px',
                                     color: 'white',
                                     wordBreak: 'break-word',
-                                    whiteSpace: 'pre-wrap'
+                                    whiteSpace: 'pre-wrap',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                                 }}
                             >
                                 {msg.message_text}
@@ -204,6 +206,8 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                     placeholder="Nhập tin nhắn..."
                     style={{
                         flex: 1,
+                        background: '#1b2230',
+                        border: '1px solid rgba(255,255,255,0.1)',
                         background: '#1a1a1a',
                         border: '1px solid #262626',
                         outline: 'none',
@@ -217,6 +221,7 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                     type="submit"
                     disabled={!text.trim()}
                     style={{
+                        background: text.trim() ? 'linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%)' : '#1e2634',
                         background: text.trim() ? '#0095f6' : '#262626',
                         border: 'none',
                         color: text.trim() ? 'white' : '#64748b',

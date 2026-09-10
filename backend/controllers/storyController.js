@@ -48,8 +48,8 @@ const createStory = async (req, res) => {
     const storyMusic = getUploadedFile(req, 'storyMusic');
     const spotifyTrackId = req.body.spotify_track_id || null;
     const sharedPostId = req.body.shared_post_id || null;
-    if (!user_id || (!storyMedia && !sharedPostId)) {
-        return res.status(400).json({ message: 'Cần chọn ảnh/video hoặc bài viết để đăng Story.' });
+    if (!user_id || (!storyMedia && !sharedPostId && !req.body.sticker)) {
+        return res.status(400).json({ message: 'Cần chọn ảnh/video, bài viết hoặc văn bản để đăng Story.' });
     }
     if (storyMusic && !isMp3File(storyMusic)) {
         cleanupUploadedFiles(req);
@@ -117,6 +117,10 @@ const createStory = async (req, res) => {
 
 const getStories = async (req, res) => {
     const viewerId = req.query.userId || null;
+    if (!viewerId) {
+        // Khách chưa đăng nhập không thể xem story cá nhân
+        return res.json([]);
+    }
     try {
         const result = await pool.query(
             `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
@@ -141,20 +145,23 @@ const getStories = async (req, res) => {
                             GROUP BY option_value
                         ) v
                     ), '{}'::jsonb) AS poll_votes,
-                    u.username, u.profile_photo_url
+                    u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified
              FROM stories s
              JOIN users u ON u.user_id = s.user_id
              LEFT JOIN post sp ON sp.post_id = s.shared_post_id
              LEFT JOIN users spu ON spu.user_id = sp.user_id
              WHERE s.expires_at > NOW()
                AND (
-                 u.is_private IS NOT TRUE
-                 OR u.user_id = $1
+                 s.user_id = $1
                  OR EXISTS (
                    SELECT 1 FROM friends f
                    WHERE f.status = 'accepted'
-                     AND ((f.user_id = $1 AND f.friend_id = u.user_id)
-                       OR (f.user_id = u.user_id AND f.friend_id = $1))
+                     AND ((f.user_id = $1 AND f.friend_id = s.user_id)
+                       OR (f.user_id = s.user_id AND f.friend_id = $1))
+                 )
+                 OR EXISTS (
+                   SELECT 1 FROM follows fl
+                   WHERE fl.follower_id = $1 AND fl.followee_id = s.user_id
                  )
                )
              ORDER BY s.created_at DESC`,
@@ -337,4 +344,87 @@ const deleteStory = async (req, res) => {
     }
 };
 
-module.exports = { createStory, getStories, viewStory, reactToStory, updateStory, deleteStory };
+const getUserActiveStories = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await pool.query(
+            `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
+                    s.music_url, s.music_name, s.spotify_track_id, s.spotify_track_name,
+                    s.spotify_artist_name, s.spotify_external_url, s.shared_post_id,
+                    s.created_at, s.expires_at,
+                    u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified
+             FROM stories s
+             JOIN users u ON u.user_id = s.user_id
+             WHERE s.user_id = $1 AND s.expires_at > NOW()
+             ORDER BY s.created_at ASC`,
+            [userId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: 'Không thể tải story của người dùng.', error: err.message });
+    }
+};
+
+const getHighlights = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await pool.query(
+            `SELECT highlight_id, user_id, title, cover_url, stories, created_at
+             FROM story_highlights
+             WHERE user_id = $1
+             ORDER BY created_at DESC`,
+            [userId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: 'Không thể tải tin nổi bật.', error: err.message });
+    }
+};
+
+const createHighlight = async (req, res) => {
+    const { user_id, title, cover_url, stories } = req.body;
+    if (!user_id || !title?.trim()) {
+        return res.status(400).json({ message: 'Vui lòng nhập tên tin nổi bật.' });
+    }
+    try {
+        const result = await pool.query(
+            `INSERT INTO story_highlights (user_id, title, cover_url, stories)
+             VALUES ($1, $2, $3, $4::jsonb)
+             RETURNING highlight_id, user_id, title, cover_url, stories, created_at`,
+            [user_id, title.trim(), cover_url || null, JSON.stringify(stories || [])]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ message: 'Không thể tạo tin nổi bật.', error: err.message });
+    }
+};
+
+const deleteHighlight = async (req, res) => {
+    const { highlightId } = req.params;
+    const { user_id } = req.body;
+    try {
+        const result = await pool.query(
+            'DELETE FROM story_highlights WHERE highlight_id = $1 AND user_id = $2 RETURNING highlight_id',
+            [highlightId, user_id]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy tin nổi bật hoặc không có quyền xóa.' });
+        }
+        res.json({ message: 'Đã xóa tin nổi bật thành công.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Không thể xóa tin nổi bật.', error: err.message });
+    }
+};
+
+module.exports = {
+    createStory,
+    getStories,
+    viewStory,
+    reactToStory,
+    updateStory,
+    deleteStory,
+    getUserActiveStories,
+    getHighlights,
+    createHighlight,
+    deleteHighlight
+};

@@ -22,8 +22,15 @@ function SidebarNav({ onCreatePost }) {
     const location = useLocation();
     const [query, setQuery] = useState('');
 
-    const currentUsername = currentUser?.username || currentUser?.user?.username || '';
-    const profilePath = currentUsername ? `/profile/${currentUsername}` : '/login';
+    const currentUsername = (currentUser?.username && currentUser.username !== 'null' && currentUser.username !== 'undefined')
+        ? currentUser.username
+        : (currentUser?.user?.username && currentUser.user.username !== 'null' && currentUser.user.username !== 'undefined')
+            ? currentUser.user.username
+            : (currentUser?.user_id || currentUser?.id || '');
+
+    const profilePath = currentUser
+        ? (currentUsername ? `/profile/${encodeURIComponent(currentUsername)}` : `/profile/${currentUser.user_id || currentUser.id || ''}`)
+        : '/login';
 
     const submitSearch = (event) => {
         event.preventDefault();
@@ -132,7 +139,7 @@ function SidebarNav({ onCreatePost }) {
                                 <li>
                                     <Link
                                         to={profilePath}
-                                        className={`nav-link-item ${currentUsername && isActive(`/profile/${currentUsername}`) ? 'active' : ''}`}
+                                        className={`nav-link-item ${location.pathname.startsWith('/profile') ? 'active' : ''}`}
                                         title="Trang cá nhân"
                                     >
                                         <User size={20} />
@@ -220,7 +227,7 @@ function SidebarNav({ onCreatePost }) {
 
                         <Link
                             to={profilePath}
-                            className={`mobile-nav-item ${currentUsername && isActive(`/profile/${currentUsername}`) ? 'active' : ''}`}
+                            className={`mobile-nav-item ${location.pathname.startsWith('/profile') ? 'active' : ''}`}
                             title="Trang cá nhân"
                         >
                             <Avatar user={currentUser} size={24} />

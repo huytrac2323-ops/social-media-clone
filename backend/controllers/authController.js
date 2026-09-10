@@ -105,12 +105,28 @@ const googleLogin = async (req, res) => {
                 [username, payload.email, passwordHash, payload.picture || null]
             );
             user = result.rows[0];
-        } else if (payload.picture && user.profile_photo_url !== payload.picture) {
-            const updated = await pool.query(
-                'UPDATE users SET profile_photo_url = $1 WHERE user_id = $2 RETURNING *',
-                [payload.picture, user.user_id]
-            );
-            user = updated.rows[0];
+        } else {
+            let needsUpdate = false;
+            let newPhoto = user.profile_photo_url;
+            let newUsername = user.username;
+
+            if (payload.picture && user.profile_photo_url !== payload.picture) {
+                newPhoto = payload.picture;
+                needsUpdate = true;
+            }
+            if (!user.username || user.username === 'null') {
+                const base = (payload.email.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 20);
+                newUsername = `${base}_${user.user_id}`;
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                const updated = await pool.query(
+                    'UPDATE users SET profile_photo_url = $1, username = $2 WHERE user_id = $3 RETURNING *',
+                    [newPhoto, newUsername, user.user_id]
+                );
+                user = updated.rows[0];
+            }
         }
 
         const { password_hash: ignoredPassword, ...userWithoutPassword } = user;
@@ -142,11 +158,12 @@ const facebookLogin = async (req, res) => {
         }
         const profileResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(accessToken)}`);
         const profile = await profileResponse.json();
-        if (!profileResponse.ok || !profile.id || !profile.email) {
-            return res.status(401).json({ message: 'Facebook chưa cung cấp email cho tài khoản này.' });
+        if (!profileResponse.ok || !profile.id) {
+            return res.status(401).json({ message: 'Không thể lấy thông tin tài khoản Facebook.' });
         }
 
-        let result = await pool.query('SELECT * FROM users WHERE email ILIKE $1 LIMIT 1', [profile.email]);
+        const email = profile.email || `facebook_${profile.id}@facebook.local`;
+        let result = await pool.query('SELECT * FROM users WHERE email ILIKE $1 LIMIT 1', [email]);
         let user = result.rows[0];
         if (!user) {
             const username = `${(profile.name || 'facebook_user').replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24)}_${String(profile.id).slice(-6)}`;
@@ -154,7 +171,7 @@ const facebookLogin = async (req, res) => {
             result = await pool.query(
                 `INSERT INTO users (username, email, password_hash, profile_photo_url)
                  VALUES ($1, $2, $3, $4) RETURNING *`,
-                [username, profile.email, passwordHash, profile.picture?.data?.url || null]
+                [username, email, passwordHash, profile.picture?.data?.url || null]
             );
             user = result.rows[0];
         }

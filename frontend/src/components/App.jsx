@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import SavedPostsPage from '../components/SavedPostsPage.jsx';
 import ExplorePage from '../pages/ExplorePage.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
+import NotificationsPage from '../pages/NotificationsPage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -201,8 +202,8 @@ function AppContent() {
                     time: post.created_at || post.time || new Date().toISOString(),
                     content: post.caption,
                     imageUrl: post.photo_url || null,
-                    likes: post.like_count,
-                    isLiked: post.is_liked_by_user,
+                    likes: parseInt(post.like_count, 10) || 0,
+                    isLiked: Boolean(post.is_liked_by_user),
                     isFriend: Boolean(post.is_friend || currentFriendSet.has(Number(post.user_id))),
                     friendRequestSent: Boolean(post.friend_request_sent),
                     comments: post.comments || [],
@@ -231,21 +232,33 @@ function AppContent() {
         fetchAllUsers();
     }, [dataVersion, currentUser]);
 
-    const [isLiking, setIsLiking] = useState(false);
     const handleLike = async (postId) => {
-        if (isLiking) return;
-        setIsLiking(true);
         if (!currentUser) {
             alert("Vui lòng đăng nhập để thích bài viết!");
             return;
         }
+
+        // Cập nhật lạc quan (Optimistic update) đảm bảo tính toán số học chuẩn xác
+        setPosts(prevPosts => prevPosts.map(post => {
+            if (Number(post.id) === Number(postId) || Number(post.post_id) === Number(postId)) {
+                const isCurrentlyLiked = Boolean(post.isLiked);
+                const currentLikes = parseInt(post.likes, 10) || 0;
+                const nextLiked = !isCurrentlyLiked;
+                return {
+                    ...post,
+                    isLiked: nextLiked,
+                    likes: nextLiked ? currentLikes + 1 : Math.max(0, currentLikes - 1)
+                };
+            }
+            return post;
+        }));
 
         try {
             const response = await fetch(`${API_URL}/posts/${postId}/like`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Thêm token vào đây nếu backend yêu cầu xác thực
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({ user_id: currentUser.user_id })
             });
@@ -253,21 +266,23 @@ function AppContent() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message);
 
-            setPosts(prevPosts => prevPosts.map(post => {
-                if (post.id === postId) {
-                    const isCurrentlyLiked = post.isLiked;
-                    return {
-                        ...post,
-                        isLiked: !isCurrentlyLiked,
-                        likes: isCurrentlyLiked ? Math.max(0, post.likes - 1) : post.likes + 1
-                    };
-                }
-                return post;
-            }));
+            // Đồng bộ lại chính xác số lượng tym từ cơ sở dữ liệu
+            if (data.likeCount !== undefined) {
+                setPosts(prevPosts => prevPosts.map(post => {
+                    if (Number(post.id) === Number(postId) || Number(post.post_id) === Number(postId)) {
+                        return {
+                            ...post,
+                            isLiked: Boolean(data.isLiked),
+                            likes: parseInt(data.likeCount, 10)
+                        };
+                    }
+                    return post;
+                }));
+            }
         } catch (error) {
-            alert(`Lỗi: ${error.message}`);
-        } finally {
-            setIsLiking(false);
+            console.error("Lỗi khi thích bài viết:", error);
+            // Khôi phục lại trạng thái nếu có lỗi
+            fetchPosts();
         }
     };
 
@@ -318,6 +333,7 @@ function AppContent() {
                 <Route path="/explore" element={<ExplorePage/>}/>
                 <Route path="/messages" element={<MessagesPage/>}/>
                 <Route path="/messages/:userId" element={<MessagesPage/>}/>
+                <Route path="/notifications" element={<NotificationsPage/>}/>
             </Routes>
 
             {currentUser && activeChat && (

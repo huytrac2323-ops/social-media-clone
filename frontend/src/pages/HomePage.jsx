@@ -243,11 +243,11 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         if (!Array.isArray(allUsers) || allUsers.length === 0) return;
         const currentId = currentUser ? Number(currentUser.user_id || currentUser.id) : null;
         const friendSet = friendUserIds instanceof Set ? friendUserIds : new Set();
-        const cleanStr = (s) => (s ? String(s).trim().toLowerCase() : '');
-        const currAddress = cleanStr(currentUser?.address);
-        const currHometown = cleanStr(currentUser?.hometown);
+        const normalizeStr = (s) => (s ? String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '');
+        const currAddress = normalizeStr(currentUser?.address);
+        const currHometown = normalizeStr(currentUser?.hometown);
         const currAge = currentUser?.age ? Number(currentUser.age) : null;
-        const currInterests = cleanStr(currentUser?.interests)
+        const currInterests = normalizeStr(currentUser?.interests)
             .split(/[,\s;]+/)
             .map(t => t.trim())
             .filter(t => t.length >= 2);
@@ -264,47 +264,64 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 let score = 0;
                 let reason = '';
 
-                const uAddress = cleanStr(u.address);
-                const uHometown = cleanStr(u.hometown);
+                const uAddress = normalizeStr(userAddress(u));
+                const uHometown = normalizeStr(u.hometown);
                 const uAge = u.age ? Number(u.age) : null;
-                const uInterests = cleanStr(u.interests)
+                const uInterests = normalizeStr(u.interests)
                     .split(/[,\s;]+/)
                     .map(t => t.trim())
                     .filter(t => t.length >= 2);
 
-                // 1. So khớp địa chỉ / nơi ở
+                function userAddress(user) {
+                    return user.address || '';
+                }
+
+                // Tìm sở thích chung
+                let common = [];
+                if (currInterests.length > 0 && uInterests.length > 0) {
+                    common = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
+                }
+
+                // 1. Ưu tiên hàng đầu: Tài khoản KOL tích xanh có sở thích liên quan (+150 điểm)
+                if (u.is_verified && common.length > 0) {
+                    score += 150 + common.length * 30;
+                    const originalTags = (u.interests || '').split(',').map(s => s.trim()).filter(Boolean);
+                    const matchedTags = originalTags.filter(ot => common.some(ci => normalizeStr(ot).includes(ci)));
+                    const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : common.slice(0, 2).join(', ');
+                    reason = `⭐ KOL cùng sở thích: ${displayCommon}`;
+                } else if (common.length > 0) {
+                    score += common.length * 35;
+                    const originalTags = (u.interests || '').split(',').map(s => s.trim()).filter(Boolean);
+                    const matchedTags = originalTags.filter(ot => common.some(ci => normalizeStr(ot).includes(ci)));
+                    const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : common.slice(0, 2).join(', ');
+                    reason = `✨ Cùng sở thích: ${displayCommon}`;
+                } else if (u.is_verified) {
+                    // Tự động đề xuất KOL nổi bật (+50 điểm)
+                    score += 50;
+                    reason = '⭐ KOL nổi bật';
+                }
+
+                // 2. So khớp địa chỉ / nơi ở (+40 điểm)
                 if (currAddress && uAddress) {
                     if (currAddress === uAddress || currAddress.includes(uAddress) || uAddress.includes(currAddress)) {
-                        score += 50;
-                        reason = `📍 Cùng ở ${u.address}`;
+                        score += 40;
+                        if (!reason) {
+                            reason = `📍 Cùng ở ${u.address}`;
+                        }
                     }
                 }
 
-                // 2. So khớp quê quán
+                // 3. So khớp quê quán (+35 điểm)
                 if (currHometown && uHometown) {
                     if (currHometown === uHometown || currHometown.includes(uHometown) || uHometown.includes(currHometown)) {
-                        score += 40;
+                        score += 35;
                         if (!reason) {
                             reason = `🏡 Cùng quê ${u.hometown}`;
                         }
                     }
                 }
 
-                // 3. So khớp sở thích
-                if (currInterests.length > 0 && uInterests.length > 0) {
-                    const common = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
-                    if (common.length > 0) {
-                        score += common.length * 30;
-                        if (!reason) {
-                            const originalTags = (u.interests || '').split(',').map(s => s.trim()).filter(Boolean);
-                            const matchedTags = originalTags.filter(ot => common.some(ci => ot.toLowerCase().includes(ci)));
-                            const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : common.slice(0, 2).join(', ');
-                            reason = `✨ Cùng sở thích: ${displayCommon}`;
-                        }
-                    }
-                }
-
-                // 4. So khớp độ tuổi (~ 3 tuổi)
+                // 4. So khớp độ tuổi (~ 3 tuổi) (+20 điểm)
                 if (currAge && uAge) {
                     const diff = Math.abs(currAge - uAge);
                     if (diff <= 3) {
@@ -312,14 +329,6 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                         if (!reason) {
                             reason = `🎂 Cùng độ tuổi (~${uAge})`;
                         }
-                    }
-                }
-
-                // 5. KOL / Xác minh
-                if (u.is_verified) {
-                    score += 15;
-                    if (!reason) {
-                        reason = '⭐ Tài khoản nổi bật';
                     }
                 }
 

@@ -26,7 +26,7 @@ const getPosts = async (req, res) => {
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 u.user_id, u.username, u.profile_photo_url,
                 (u.is_verified IS TRUE) AS is_verified,
-                (SELECT COUNT(*) FROM post_likes pr WHERE pr.post_id = p.post_id) AS like_count,
+                COALESCE((SELECT COUNT(*)::int FROM post_likes pr WHERE pr.post_id = p.post_id), 0) AS like_count,
                 (SELECT COUNT(*) FROM shares s WHERE s.post_id = p.post_id) AS sharesCount,
                 ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user,` : 'FALSE AS is_liked_by_user,'}
                 ${currentUserId ? `EXISTS (SELECT 1 FROM friends WHERE ((user_id = $1 AND friend_id = p.user_id) OR (user_id = p.user_id AND friend_id = $1)) AND status = 'accepted') AS is_friend,` : 'FALSE AS is_friend,'}
@@ -95,7 +95,7 @@ const getPostById = async (req, res) => {
         let query = `
             SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
                    (u.is_verified IS TRUE) AS is_verified,
-                   (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                   COALESCE((SELECT COUNT(*)::int FROM post_likes pl WHERE pl.post_id = p.post_id), 0) AS like_count,
                    ${currentUserId ? 'EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user,' : 'FALSE AS is_liked_by_user,'}
                    ${currentUserId ? 'EXISTS (SELECT 1 FROM friends WHERE ((user_id = $2 AND friend_id = p.user_id) OR (user_id = p.user_id AND friend_id = $2)) AND status = \'accepted\') AS is_friend,' : 'FALSE AS is_friend,'}
                    ${currentUserId ? 'EXISTS (SELECT 1 FROM friends WHERE user_id = $2 AND friend_id = p.user_id AND status = \'pending\') AS friend_request_sent,' : 'FALSE AS friend_request_sent,'}
@@ -233,11 +233,13 @@ const likePost = async (req, res) => {
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
         const likeExists = await pool.query('SELECT * FROM post_likes WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
+        let isLiked = false;
         if (likeExists.rows.length > 0) {
             await pool.query('DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2', [user_id, postId]);
-            res.json({ message: 'Unliked' });
+            isLiked = false;
         } else {
-            await pool.query('INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)', [user_id, postId]);
+            await pool.query('INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [user_id, postId]);
+            isLiked = true;
             const postOwner = await pool.query('SELECT user_id FROM post WHERE post_id = $1', [postId]);
             await createNotification({
                 receiverId: postOwner.rows[0]?.user_id,
@@ -246,8 +248,10 @@ const likePost = async (req, res) => {
                 content: 'đã thích bài viết của bạn.',
                 postId
             });
-            res.json({ message: 'Liked' });
         }
+        const countRes = await pool.query('SELECT COUNT(*)::int AS like_count FROM post_likes WHERE post_id = $1', [postId]);
+        const likeCount = parseInt(countRes.rows[0]?.like_count, 10) || 0;
+        res.json({ message: isLiked ? 'Liked' : 'Unliked', isLiked, likeCount });
     } catch (err) {
         res.status(500).send({ message: "Lỗi server khi thích bài viết", error: err.message });
     }

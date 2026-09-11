@@ -156,12 +156,12 @@ app.get('/api/suggestions/:userId', async (req, res) => {
         const candidateResult = await pool.query(candidateQuery, [userId]);
         const candidates = candidateResult.rows;
 
-        const cleanStr = (s) => (s ? String(s).trim().toLowerCase() : '');
-        const currAddress = cleanStr(currentUser?.address);
-        const currHometown = cleanStr(currentUser?.hometown);
+        const normalizeStr = (s) => (s ? String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '');
+        const currAddress = normalizeStr(currentUser?.address);
+        const currHometown = normalizeStr(currentUser?.hometown);
         const currAge = currentUser?.age ? Number(currentUser.age) : null;
-        const currInterests = cleanStr(currentUser?.interests)
-            .split(/[,\s;]+/)
+        const currInterests = normalizeStr(currentUser?.interests)
+            .split(/[,;]+/)
             .map(t => t.trim())
             .filter(t => t.length >= 2);
 
@@ -169,44 +169,58 @@ app.get('/api/suggestions/:userId', async (req, res) => {
             let score = 0;
             let reason = '';
 
-            const uAddress = cleanStr(user.address);
-            const uHometown = cleanStr(user.hometown);
+            const uAddress = normalizeStr(user.address);
+            const uHometown = normalizeStr(user.hometown);
             const uAge = user.age ? Number(user.age) : null;
-            const uInterests = cleanStr(user.interests)
-                .split(/[,\s;]+/)
+            const uInterests = normalizeStr(user.interests)
+                .split(/[,;]+/)
                 .map(t => t.trim())
                 .filter(t => t.length >= 2);
 
-            // 1. So khớp địa chỉ / nơi ở
+            // Tìm sở thích chung giữa người dùng và ứng viên
+            let commonInterests = [];
+            if (currInterests.length > 0 && uInterests.length > 0) {
+                commonInterests = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
+            }
+
+            const originalTags = (user.interests || '').split(',').map(s => s.trim()).filter(Boolean);
+            const matchedTags = originalTags.filter(ot => commonInterests.some(ci => normalizeStr(ot).includes(ci)));
+            const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : commonInterests.slice(0, 2).join(', ');
+
+            // 1. Ưu tiên hàng đầu: Tài khoản KOL tích xanh có sở thích liên quan (+150 điểm)
+            if (user.is_verified && commonInterests.length > 0) {
+                score += 150 + commonInterests.length * 30;
+                reason = `⭐ KOL cùng sở thích: ${displayCommon}`;
+            } else if (commonInterests.length > 0) {
+                score += commonInterests.length * 35;
+                reason = `✨ Cùng sở thích: ${displayCommon}`;
+            } else if (user.is_verified) {
+                // Tự động đề xuất KOL nổi bật (+50 điểm)
+                score += 50;
+                reason = '⭐ KOL nổi bật';
+            }
+
+            // 2. So khớp địa chỉ / nơi ở (+40 điểm)
             if (currAddress && uAddress) {
                 if (currAddress === uAddress || currAddress.includes(uAddress) || uAddress.includes(currAddress)) {
-                    score += 50;
-                    reason = `📍 Cùng ở ${user.address}`;
+                    score += 40;
+                    if (!reason) {
+                        reason = `📍 Cùng ở ${user.address}`;
+                    }
                 }
             }
 
-            // 2. So khớp quê quán
+            // 3. So khớp quê quán (+35 điểm)
             if (currHometown && uHometown) {
                 if (currHometown === uHometown || currHometown.includes(uHometown) || uHometown.includes(currHometown)) {
-                    score += 40;
+                    score += 35;
                     if (!reason) {
                         reason = `🏡 Cùng quê ${user.hometown}`;
                     }
                 }
             }
 
-            // 3. So khớp sở thích
-            if (currInterests.length > 0 && uInterests.length > 0) {
-                const common = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
-                if (common.length > 0) {
-                    score += common.length * 30;
-                    if (!reason) {
-                        reason = `✨ Cùng sở thích: ${common.slice(0, 2).join(', ')}`;
-                    }
-                }
-            }
-
-            // 4. So khớp độ tuổi (~ 3 tuổi)
+            // 4. So khớp độ tuổi (~ 3 tuổi) (+20 điểm)
             if (currAge && uAge) {
                 const diff = Math.abs(currAge - uAge);
                 if (diff <= 3) {
@@ -214,14 +228,6 @@ app.get('/api/suggestions/:userId', async (req, res) => {
                     if (!reason) {
                         reason = `🎂 Cùng độ tuổi (~${uAge})`;
                     }
-                }
-            }
-
-            // 5. Tài khoản xác minh
-            if (user.is_verified) {
-                score += 15;
-                if (!reason) {
-                    reason = '⭐ Tài khoản nổi bật';
                 }
             }
 

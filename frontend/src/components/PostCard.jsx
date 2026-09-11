@@ -354,7 +354,7 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
               title="Thích"
             >
               <Heart size={20} />
-              <span>{post.likes ?? 0}</span>
+              <span>{Number(post.likes) || 0}</span>
             </button>
 
             {/* Comment */}

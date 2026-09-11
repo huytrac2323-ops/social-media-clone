@@ -62,9 +62,18 @@ function PostPage({ onPostDeleted, onPostUpdated }) {
     const token = localStorage.getItem('token');
 
     try {
-      setPost(p => ({ ...p, isLiked: !p.isLiked, likes: p.isLiked ? Math.max(0, p.likes - 1) : p.likes + 1 }));
+      setPost(p => {
+        if (!p) return p;
+        const currentLikes = parseInt(p.likes, 10) || 0;
+        const nextLiked = !p.isLiked;
+        return {
+          ...p,
+          isLiked: nextLiked,
+          likes: nextLiked ? currentLikes + 1 : Math.max(0, currentLikes - 1)
+        };
+      });
 
-      await fetch(`${API_URL}/posts/${postIdToLike}/like`, {
+      const response = await fetch(`${API_URL}/posts/${postIdToLike}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,8 +81,13 @@ function PostPage({ onPostDeleted, onPostUpdated }) {
         },
         body: JSON.stringify({ user_id: currentUser.user_id })
       });
+      const data = await response.json();
+      if (data.likeCount !== undefined) {
+        setPost(p => p ? { ...p, isLiked: Boolean(data.isLiked), likes: parseInt(data.likeCount, 10) } : p);
+      }
     } catch (err) {
       console.error("Lỗi khi thích bài viết:", err);
+      fetchPost();
     }
   };
 

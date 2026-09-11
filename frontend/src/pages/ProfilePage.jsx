@@ -23,6 +23,10 @@ import {
   RotateCw,
   WifiOff,
   Plus,
+  MapPin,
+  Home,
+  Calendar,
+  Sparkles,
 } from 'lucide-react';
 import ProfileMenuModal from '../components/ProfileMenuModal.jsx';
 import { safeFetch, getApiBaseUrl } from '../utils/api';
@@ -646,6 +650,60 @@ function ProfilePage() {
                 <p style={{ color: '#cbd5e1', margin: 0 }}>
                   {bio || "Chưa có tiểu sử cá nhân."}
                 </p>
+
+                {/* THÔNG TIN NƠI Ở, QUÊ QUÁN, ĐỘ TUỔI & SỞ THÍCH */}
+                {(userProfile.address || userProfile.hometown || userProfile.age || userProfile.interests) ? (
+                  <div className="profile-personal-info">
+                    <div className="profile-info-grid">
+                      {userProfile.address && (
+                        <div className="profile-info-badge" title="Nơi ở hiện tại">
+                          <MapPin size={13} />
+                          <span>Sống tại <strong>{userProfile.address}</strong></span>
+                        </div>
+                      )}
+                      {userProfile.hometown && (
+                        <div className="profile-info-badge" title="Quê quán">
+                          <Home size={13} />
+                          <span>Đến từ <strong>{userProfile.hometown}</strong></span>
+                        </div>
+                      )}
+                      {userProfile.age && (
+                        <div className="profile-info-badge" title="Độ tuổi">
+                          <Calendar size={13} />
+                          <span><strong>{userProfile.age}</strong> tuổi</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {userProfile.interests && (
+                      <div className="profile-interests-container">
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+                          <Sparkles size={12} color="#38bdf8" /> Sở thích:
+                        </span>
+                        {userProfile.interests.split(',').map((item, idx) => {
+                          const tag = item.trim();
+                          if (!tag) return null;
+                          return (
+                            <span key={idx} className="profile-interest-pill">
+                              {tag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  isOwnProfile && (
+                    <button
+                      type="button"
+                      className="profile-add-info-btn"
+                      onClick={() => setIsEditModalOpen(true)}
+                    >
+                      <Plus size={13} />
+                      <span>Thêm quê quán, địa chỉ, sở thích để kết nối bạn bè ở gần</span>
+                    </button>
+                  )
+                )}
               </div>
             </div>
           </section>

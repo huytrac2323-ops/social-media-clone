@@ -243,13 +243,98 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         if (!Array.isArray(allUsers) || allUsers.length === 0) return;
         const currentId = currentUser ? Number(currentUser.user_id || currentUser.id) : null;
         const friendSet = friendUserIds instanceof Set ? friendUserIds : new Set();
-        const filtered = allUsers.filter(u => {
-            if (!u || !u.user_id) return false;
-            const uId = Number(u.user_id);
-            if (currentId && uId === currentId) return false;
-            if (friendSet.has(uId)) return false;
-            return true;
-        });
+        const cleanStr = (s) => (s ? String(s).trim().toLowerCase() : '');
+        const currAddress = cleanStr(currentUser?.address);
+        const currHometown = cleanStr(currentUser?.hometown);
+        const currAge = currentUser?.age ? Number(currentUser.age) : null;
+        const currInterests = cleanStr(currentUser?.interests)
+            .split(/[,\s;]+/)
+            .map(t => t.trim())
+            .filter(t => t.length >= 2);
+
+        const filtered = allUsers
+            .filter(u => {
+                if (!u || !u.user_id) return false;
+                const uId = Number(u.user_id);
+                if (currentId && uId === currentId) return false;
+                if (friendSet.has(uId)) return false;
+                return true;
+            })
+            .map(u => {
+                let score = 0;
+                let reason = '';
+
+                const uAddress = cleanStr(u.address);
+                const uHometown = cleanStr(u.hometown);
+                const uAge = u.age ? Number(u.age) : null;
+                const uInterests = cleanStr(u.interests)
+                    .split(/[,\s;]+/)
+                    .map(t => t.trim())
+                    .filter(t => t.length >= 2);
+
+                // 1. So khớp địa chỉ / nơi ở
+                if (currAddress && uAddress) {
+                    if (currAddress === uAddress || currAddress.includes(uAddress) || uAddress.includes(currAddress)) {
+                        score += 50;
+                        reason = `📍 Cùng ở ${u.address}`;
+                    }
+                }
+
+                // 2. So khớp quê quán
+                if (currHometown && uHometown) {
+                    if (currHometown === uHometown || currHometown.includes(uHometown) || uHometown.includes(currHometown)) {
+                        score += 40;
+                        if (!reason) {
+                            reason = `🏡 Cùng quê ${u.hometown}`;
+                        }
+                    }
+                }
+
+                // 3. So khớp sở thích
+                if (currInterests.length > 0 && uInterests.length > 0) {
+                    const common = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
+                    if (common.length > 0) {
+                        score += common.length * 30;
+                        if (!reason) {
+                            const originalTags = (u.interests || '').split(',').map(s => s.trim()).filter(Boolean);
+                            const matchedTags = originalTags.filter(ot => common.some(ci => ot.toLowerCase().includes(ci)));
+                            const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : common.slice(0, 2).join(', ');
+                            reason = `✨ Cùng sở thích: ${displayCommon}`;
+                        }
+                    }
+                }
+
+                // 4. So khớp độ tuổi (~ 3 tuổi)
+                if (currAge && uAge) {
+                    const diff = Math.abs(currAge - uAge);
+                    if (diff <= 3) {
+                        score += Math.max(10, 25 - diff * 5);
+                        if (!reason) {
+                            reason = `🎂 Cùng độ tuổi (~${uAge})`;
+                        }
+                    }
+                }
+
+                // 5. KOL / Xác minh
+                if (u.is_verified) {
+                    score += 15;
+                    if (!reason) {
+                        reason = '⭐ Tài khoản nổi bật';
+                    }
+                }
+
+                if (!reason) {
+                    reason = 'Gợi ý cho bạn';
+                }
+
+                return {
+                    ...u,
+                    score,
+                    suggestion_reason: reason
+                };
+            });
+
+        filtered.sort((a, b) => b.score - a.score);
         setSuggestions(filtered);
     }, [allUsers, currentUser, friendUserIds]);
 
@@ -1327,7 +1412,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                         </svg>
                                                     )}
                                                 </div>
-                                                <span className="ig-suggested-reason">Gợi ý cho bạn</span>
+                                                <span className="ig-suggested-reason" title={user.suggestion_reason || 'Gợi ý cho bạn'}>
+                                                    {user.suggestion_reason || 'Gợi ý cho bạn'}
+                                                </span>
                                             </div>
                                             <button
                                                 type="button"
@@ -1354,7 +1441,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                     )}
 
                     {/* DANH SÁCH BÀI VIẾT */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {posts && posts.length > 0 ? (
                             posts.map(post => (
                                 <PostCard
@@ -1400,7 +1487,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                                     </svg>
                                                                 )}
                                                             </div>
-                                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Gợi ý cho bạn</div>
+                                                            <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 500 }} title={user.suggestion_reason || 'Gợi ý cho bạn'}>
+                                                                {user.suggestion_reason || 'Gợi ý cho bạn'}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <button
@@ -1461,7 +1550,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                             </svg>
                                                         )}
                                                     </div>
-                                                    <div className="suggestion-subtitle">Gợi ý cho bạn</div>
+                                                    <div className="suggestion-subtitle" style={{ color: '#38bdf8', fontWeight: 500, fontSize: '11.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={user.suggestion_reason || 'Gợi ý cho bạn'}>
+                                                        {user.suggestion_reason || 'Gợi ý cho bạn'}
+                                                    </div>
                                                 </div>
                                             </button>
                                             <button

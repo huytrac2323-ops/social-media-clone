@@ -13,7 +13,7 @@ cloudinary.config({
 // Lấy danh sách tất cả người dùng
 const getUsers = async (req, res) => {
     try {
-        const result = await pool.query('SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, profile_photo_url, (is_verified IS TRUE) AS is_verified FROM users ORDER BY created_at DESC');
+        const result = await pool.query('SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, profile_photo_url, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests, bio FROM users ORDER BY created_at DESC');
         res.json(result.rows); // PostgreSQL trả kết quả về trong mảng .rows
     } catch (err) {
         res.status(500).send({ message: 'Lỗi server khi lấy danh sách người dùng.', error: err.message });
@@ -30,12 +30,12 @@ const getUserByUsername = async (req, res) => {
         let userResult;
         if (isNumeric) {
             userResult = await pool.query(
-                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified FROM users WHERE user_id = $1 OR username ILIKE $2',
+                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests FROM users WHERE user_id = $1 OR username ILIKE $2',
                 [parseInt(username, 10), username]
             );
         } else {
             userResult = await pool.query(
-                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified FROM users WHERE username ILIKE $1',
+                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests FROM users WHERE username ILIKE $1',
                 [username]
             );
         }
@@ -74,6 +74,11 @@ const getUserByUsername = async (req, res) => {
                 username: userProfile.username,
                 profile_photo_url: userProfile.profile_photo_url,
                 bio: userProfile.bio,
+                address: userProfile.address,
+                hometown: userProfile.hometown,
+                age: userProfile.age,
+                interests: userProfile.interests,
+                is_verified: userProfile.is_verified,
                 is_private: true,
                 message: "Tài khoản riêng tư. Vui lòng kết bạn để xem bài viết."
             });
@@ -101,17 +106,39 @@ const getUserByUsername = async (req, res) => {
 
 // Cập nhật thông tin profile
 const updateProfile = async (req, res) => {
-    const { username, bio, user_id, is_private } = req.body;
+    const { username, bio, user_id, is_private, address, hometown, age, interests } = req.body;
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
-        // Thực hiện cập nhật đầy đủ cả username, bio và trạng thái is_private
+        const parsedAge = (age !== undefined && age !== null && age !== '' && !isNaN(Number(age))) ? parseInt(age, 10) : null;
+
+        // Thực hiện cập nhật đầy đủ username, bio, is_private, address, hometown, age, interests
         await pool.query(
-            'UPDATE users SET username = $1, bio = $2, is_private = COALESCE($3, is_private) WHERE user_id = $4',
-            [username, bio, is_private, user_id]
+            `UPDATE users 
+             SET username = $1, 
+                 bio = $2, 
+                 is_private = COALESCE($3, is_private),
+                 address = $5,
+                 hometown = $6,
+                 age = $7,
+                 interests = $8
+             WHERE user_id = $4`,
+            [
+                username, 
+                bio, 
+                is_private, 
+                user_id, 
+                address !== undefined ? address : null, 
+                hometown !== undefined ? hometown : null, 
+                parsedAge, 
+                interests !== undefined ? interests : null
+            ]
         );
 
         // Truy vấn lại chính xác thông tin mới nhất từ cơ sở dữ liệu để trả về
-        const result = await pool.query('SELECT user_id, username, bio, profile_photo_url, is_private FROM users WHERE user_id = $1', [user_id]);
+        const result = await pool.query(
+            'SELECT user_id, username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests FROM users WHERE user_id = $1', 
+            [user_id]
+        );
         const updatedUser = result.rows[0];
 
         res.status(200).json({ message: 'Cập nhật thông tin thành công!', user: updatedUser });

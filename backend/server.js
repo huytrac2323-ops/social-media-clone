@@ -121,26 +121,123 @@ app.post('/api/messages', async (req, res) => {
 app.get('/api/suggestions/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
-        let query;
-        let params = [];
-
         if (userId === 'guest' || userId === 'undefined') {
-            // Khách chưa đăng nhập: Lấy ngẫu nhiên 5 người
-            query = `SELECT user_id, username, profile_photo_url FROM users LIMIT 5;`;
-        } else {
-            // Đã đăng nhập: Lọc bỏ những người đã là bạn hoặc đã gửi lời mời
-            query = `
-                SELECT user_id, username, profile_photo_url FROM users 
-                WHERE user_id != $1 
-                AND user_id NOT IN (SELECT friend_id FROM friends WHERE user_id = $1)
-                AND user_id NOT IN (SELECT user_id FROM friends WHERE friend_id = $1)
-                LIMIT 5;
+            const query = `
+                SELECT user_id, COALESCE(username, 'user_' || user_id) AS username, profile_photo_url, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests 
+                FROM users 
+                ORDER BY (is_verified IS TRUE) DESC, created_at DESC 
+                LIMIT 10;
             `;
-            params = [userId];
+            const result = await pool.query(query);
+            const rows = result.rows.map(user => ({
+                ...user,
+                suggestion_reason: user.is_verified ? '⭐ Tài khoản nổi bật' : 'Gợi ý cho bạn'
+            }));
+            return res.json(rows);
         }
 
-        const result = await pool.query(query, params);
-        res.json(result.rows);
+        // Lấy thông tin người dùng hiện tại để so khớp vị trí & sở thích
+        const currentRes = await pool.query(
+            'SELECT user_id, username, address, hometown, age, interests FROM users WHERE user_id = $1',
+            [userId]
+        );
+        const currentUser = currentRes.rows[0] || null;
+
+        // Lấy danh sách các tài khoản chưa kết bạn
+        const candidateQuery = `
+            SELECT user_id, COALESCE(username, 'user_' || user_id) AS username, profile_photo_url, 
+                   (is_verified IS TRUE) AS is_verified, address, hometown, age, interests 
+            FROM users 
+            WHERE user_id != $1 
+              AND user_id NOT IN (SELECT friend_id FROM friends WHERE user_id = $1)
+              AND user_id NOT IN (SELECT user_id FROM friends WHERE friend_id = $1)
+            LIMIT 40;
+        `;
+        const candidateResult = await pool.query(candidateQuery, [userId]);
+        const candidates = candidateResult.rows;
+
+        const cleanStr = (s) => (s ? String(s).trim().toLowerCase() : '');
+        const currAddress = cleanStr(currentUser?.address);
+        const currHometown = cleanStr(currentUser?.hometown);
+        const currAge = currentUser?.age ? Number(currentUser.age) : null;
+        const currInterests = cleanStr(currentUser?.interests)
+            .split(/[,\s;]+/)
+            .map(t => t.trim())
+            .filter(t => t.length >= 2);
+
+        const scored = candidates.map(user => {
+            let score = 0;
+            let reason = '';
+
+            const uAddress = cleanStr(user.address);
+            const uHometown = cleanStr(user.hometown);
+            const uAge = user.age ? Number(user.age) : null;
+            const uInterests = cleanStr(user.interests)
+                .split(/[,\s;]+/)
+                .map(t => t.trim())
+                .filter(t => t.length >= 2);
+
+            // 1. So khớp địa chỉ / nơi ở
+            if (currAddress && uAddress) {
+                if (currAddress === uAddress || currAddress.includes(uAddress) || uAddress.includes(currAddress)) {
+                    score += 50;
+                    reason = `📍 Cùng ở ${user.address}`;
+                }
+            }
+
+            // 2. So khớp quê quán
+            if (currHometown && uHometown) {
+                if (currHometown === uHometown || currHometown.includes(uHometown) || uHometown.includes(currHometown)) {
+                    score += 40;
+                    if (!reason) {
+                        reason = `🏡 Cùng quê ${user.hometown}`;
+                    }
+                }
+            }
+
+            // 3. So khớp sở thích
+            if (currInterests.length > 0 && uInterests.length > 0) {
+                const common = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
+                if (common.length > 0) {
+                    score += common.length * 30;
+                    if (!reason) {
+                        reason = `✨ Cùng sở thích: ${common.slice(0, 2).join(', ')}`;
+                    }
+                }
+            }
+
+            // 4. So khớp độ tuổi (~ 3 tuổi)
+            if (currAge && uAge) {
+                const diff = Math.abs(currAge - uAge);
+                if (diff <= 3) {
+                    score += Math.max(10, 25 - diff * 5);
+                    if (!reason) {
+                        reason = `🎂 Cùng độ tuổi (~${uAge})`;
+                    }
+                }
+            }
+
+            // 5. Tài khoản xác minh
+            if (user.is_verified) {
+                score += 15;
+                if (!reason) {
+                    reason = '⭐ Tài khoản nổi bật';
+                }
+            }
+
+            if (!reason) {
+                reason = 'Gợi ý cho bạn';
+            }
+
+            return {
+                ...user,
+                score,
+                suggestion_reason: reason
+            };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        res.json(scored.slice(0, 15));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

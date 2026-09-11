@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/Modal.css';
 import { useAuth } from '../context/AuthContext.jsx';
-import { X, Camera, Lock, Globe } from 'lucide-react';
+import { X, Camera, Lock, Globe, MapPin, Home, Calendar, Sparkles } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -9,6 +9,10 @@ function EditProfileModal({ user, onClose, navigate }) {
   const { updateUser } = useAuth();
   const [username, setUsername] = useState(user.username);
   const [bio, setBio] = useState(user.bio || '');
+  const [address, setAddress] = useState(user.address || '');
+  const [hometown, setHometown] = useState(user.hometown || '');
+  const [age, setAge] = useState(user.age ? String(user.age) : '');
+  const [interests, setInterests] = useState(user.interests || '');
   const [avatarFile, setAvatarFile] = useState(null);
   const [previewAvatar, setPreviewAvatar] = useState(null);
   const [error, setError] = useState('');
@@ -63,7 +67,11 @@ function EditProfileModal({ user, onClose, navigate }) {
           username,
           bio,
           user_id: user.user_id,
-          is_private: isPrivate
+          is_private: isPrivate,
+          address,
+          hometown,
+          age,
+          interests
         }),
       });
       const textData = await textResponse.json();
@@ -177,6 +185,67 @@ function EditProfileModal({ user, onClose, navigate }) {
               rows={3}
               placeholder="Chia sẻ đôi điều về bạn..."
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MapPin size={15} color="#38bdf8" />
+              <span>Nơi ở hiện tại / Địa chỉ</span>
+            </label>
+            <input
+              id="address"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Ví dụ: Quận 1, TP. Hồ Chí Minh"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="hometown" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Home size={15} color="#38bdf8" />
+              <span>Quê quán</span>
+            </label>
+            <input
+              id="hometown"
+              type="text"
+              value={hometown}
+              onChange={(e) => setHometown(e.target.value)}
+              placeholder="Ví dụ: Nghệ An, Nam Định, Hà Nội..."
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="age" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Calendar size={15} color="#38bdf8" />
+              <span>Độ tuổi</span>
+            </label>
+            <input
+              id="age"
+              type="number"
+              min="10"
+              max="120"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="Ví dụ: 23"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="interests" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={15} color="#38bdf8" />
+              <span>Sở thích</span>
+            </label>
+            <input
+              id="interests"
+              type="text"
+              value={interests}
+              onChange={(e) => setInterests(e.target.value)}
+              placeholder="Ví dụ: Du lịch, Chụp ảnh, Cà phê, Lập trình (cách nhau bởi dấu phẩy)"
+            />
+            <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+              💡 Điền nơi ở & sở thích giúp hệ thống gợi ý bạn bè ở gần và có cùng đam mê!
+            </span>
           </div>
 
           <div className="privacy-setting">

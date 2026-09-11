@@ -121,7 +121,7 @@ const getFriendsList = async (req, res) => {
 
     try {
         const friendsList = await pool.query(
-            `SELECT u.user_id, u.username, u.profile_photo_url 
+            `SELECT u.user_id, u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified 
              FROM users u
              JOIN friends f ON (u.user_id = f.user_id OR u.user_id = f.friend_id)
              WHERE f.status = 'accepted' 
@@ -146,10 +146,7 @@ const getFollowStatus = async (req, res) => {
                     SELECT 1 FROM follows
                     WHERE follower_id = $1 AND followee_id = $2
                 ) AS is_following,
-                EXISTS (
-                    SELECT 1 FROM friends
-                    WHERE user_id = $1 AND friend_id = $2 AND status = 'pending'
-                ) AS request_sent,
+                FALSE AS request_sent,
                 EXISTS (
                     SELECT 1 FROM friends
                     WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
@@ -170,29 +167,6 @@ const followUser = async (req, res) => {
     }
 
     try {
-        const target = await pool.query('SELECT is_private FROM users WHERE user_id = $1', [followeeId]);
-        if (target.rowCount === 0) return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
-
-        const isPrivate = Boolean(target.rows[0].is_private);
-        if (isPrivate) {
-            await pool.query(`
-                INSERT INTO friends (user_id, friend_id, status)
-                VALUES ($1, $2, 'pending')
-                ON CONFLICT (user_id, friend_id) DO NOTHING
-            `, [followerId, followeeId]);
-            try {
-                await createNotification({
-                    receiverId: followeeId,
-                    senderId: followerId,
-                    type: 'follow_request',
-                    content: 'đã gửi yêu cầu theo dõi bạn.'
-                });
-            } catch (notifErr) {
-                console.warn('Lỗi gửi thông báo yêu cầu theo dõi:', notifErr.message);
-            }
-            return res.json({ status: 'pending', message: 'Đã gửi yêu cầu theo dõi.' });
-        }
-
         await pool.query(
             'INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
             [followerId, followeeId]

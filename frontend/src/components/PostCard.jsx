@@ -21,6 +21,7 @@ import {
   Repeat
 } from 'lucide-react';
 import { safeFetch } from '../utils/api';
+import ShareModal from '../modals/ShareModal.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -29,7 +30,7 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
   const navigate = useNavigate();
   const [commentText, setCommentText] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const menuRef = useRef(null);
   const shareMenuRef = useRef(null);
@@ -215,6 +216,15 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
         />
       )}
 
+      {isShareModalOpen && (
+        <ShareModal
+          post={post}
+          currentUser={currentUser}
+          onClose={() => setIsShareModalOpen(false)}
+          onPostUpdated={onPostUpdated}
+        />
+      )}
+
       <article className="modern-post-card" onClick={handleCardClick} style={{ cursor: 'pointer' }}>
         {/* Post Header */}
         <div className="post-header">
@@ -359,44 +369,14 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
             </Link>
 
             {/* Share */}
-            <div style={{ position: 'relative' }} ref={shareMenuRef}>
-              <button
-                type="button"
-                className="post-action-btn"
-                onClick={() => setShareMenuOpen(!shareMenuOpen)}
-                title="Chia sẻ bài viết"
-              >
-                <Share2 size={19} />
-              </button>
-              {shareMenuOpen && (
-                <div className="post-share-menu-dropdown">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShareMenuOpen(false);
-                      if (window.innerWidth > 768) {
-                        alert('Tính năng chia sẻ và đăng Story chỉ hỗ trợ trên thiết bị di động.');
-                        return;
-                      }
-                      window.dispatchEvent(new CustomEvent('open-story-with-post', { detail: post }));
-                    }}
-                  >
-                    <PlusCircle size={15} color="var(--accent-primary, #0095f6)" />
-                    <span>Chia sẻ lên Story</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShareMenuOpen(false);
-                      handleShare(post.id);
-                    }}
-                  >
-                    <Repeat size={15} />
-                    <span>Đăng lại lên bảng tin</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              className="post-action-btn"
+              onClick={() => setIsShareModalOpen(true)}
+              title="Chia sẻ bài viết"
+            >
+              <Share2 size={19} />
+            </button>
           </div>
 
           {/* Bookmark */}

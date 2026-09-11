@@ -358,22 +358,14 @@ function ProfilePage() {
 
   const handleFollowToggle = async () => {
     if (!currentUser?.user_id || !userProfile?.user_id) return;
-    const isUnfollowing = Boolean(followStatus?.is_following || followStatus?.request_sent);
-    const endpoint = isUnfollowing
+    const isCurrentlyFollowing = Boolean(followStatus?.is_following);
+    const endpoint = isCurrentlyFollowing
       ? `/friends/follow/${currentUser.user_id}/${userProfile.user_id}`
       : `/friends/follow`;
 
     const prevStatus = followStatus;
-    // Cập nhật giao diện tức thì (Optimistic UI)
-    if (isUnfollowing) {
-      setFollowStatus({ ...prevStatus, is_following: false, request_sent: false });
-    } else {
-      if (userProfile.is_private) {
-        setFollowStatus({ ...prevStatus, request_sent: true, is_following: false });
-      } else {
-        setFollowStatus({ ...prevStatus, is_following: true, request_sent: false });
-      }
-    }
+    // Cập nhật giao diện tức thì (Optimistic UI) - theo dõi trực tiếp không cần yêu cầu
+    setFollowStatus({ ...prevStatus, is_following: !isCurrentlyFollowing, request_sent: false });
 
     try {
       const response = await safeFetch(endpoint, {
@@ -606,12 +598,10 @@ function ProfilePage() {
                             <UserCheck size={14} style={{ display: 'inline', marginRight: '4px' }} />
                             Đang theo dõi
                           </>
-                        ) : followStatus?.request_sent ? (
-                          'Đã gửi yêu cầu'
                         ) : (
                           <>
                             <UserPlus size={14} style={{ display: 'inline', marginRight: '4px' }} />
-                            {userProfile.is_private ? 'Yêu cầu theo dõi' : 'Theo dõi'}
+                            Theo dõi
                           </>
                         )}
                       </button>

@@ -12,6 +12,7 @@ import {
     X,
     Users,
     UserPlus,
+    UserCheck,
     Image as ImageIcon,
     Eye,
     MoreVertical,
@@ -282,6 +283,56 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 return next;
             });
             console.error('Lỗi gửi kết bạn:', err);
+        }
+    };
+
+    const [followedSuggestionIds, setFollowedSuggestionIds] = useState(new Set());
+
+    const handleFollowSuggestion = async (targetUserId, e) => {
+        if (e) e.stopPropagation();
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
+        const targetIdNum = Number(targetUserId);
+        const isCurrentlyFollowing = followedSuggestionIds.has(targetIdNum);
+
+        // Cập nhật giao diện tức thì (Optimistic UI - theo dõi trực tiếp)
+        setFollowedSuggestionIds(prev => {
+            const next = new Set(prev);
+            if (isCurrentlyFollowing) next.delete(targetIdNum);
+            else next.add(targetIdNum);
+            return next;
+        });
+
+        try {
+            const endpoint = isCurrentlyFollowing
+                ? `/friends/follow/${currentUser.user_id}/${targetUserId}`
+                : `/friends/follow`;
+            const res = await safeFetch(endpoint, {
+                method: isCurrentlyFollowing ? 'DELETE' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: isCurrentlyFollowing
+                    ? undefined
+                    : JSON.stringify({ follower_id: currentUser.user_id, followee_id: targetUserId })
+            });
+            if (!res.ok) {
+                // Hoàn tác nếu lỗi
+                setFollowedSuggestionIds(prev => {
+                    const next = new Set(prev);
+                    if (isCurrentlyFollowing) next.add(targetIdNum);
+                    else next.delete(targetIdNum);
+                    return next;
+                });
+            }
+        } catch (err) {
+            setFollowedSuggestionIds(prev => {
+                const next = new Set(prev);
+                if (isCurrentlyFollowing) next.add(targetIdNum);
+                else next.delete(targetIdNum);
+                return next;
+            });
+            console.error('Lỗi theo dõi gợi ý:', err);
         }
     };
 
@@ -1280,12 +1331,20 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                             </div>
                                             <button
                                                 type="button"
-                                                className={`ig-suggested-action-btn ${isSent ? 'sent' : ''}`}
-                                                onClick={(e) => handleAddFriendSuggestion(user.user_id, e)}
-                                                disabled={isSent}
+                                                className={`ig-suggested-action-btn ${followedSuggestionIds.has(Number(user.user_id)) ? 'sent' : ''}`}
+                                                onClick={(e) => handleFollowSuggestion(user.user_id, e)}
                                             >
-                                                <UserPlus size={13} style={{ display: 'inline', marginRight: '4px' }} />
-                                                {isSent ? 'Đã gửi' : 'Theo dõi'}
+                                                {followedSuggestionIds.has(Number(user.user_id)) ? (
+                                                    <>
+                                                        <UserCheck size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                                                        Đang theo dõi
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <UserPlus size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                                                        Theo dõi
+                                                    </>
+                                                )}
                                             </button>
                                         </div>
                                     );
@@ -1322,7 +1381,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                 {suggestions && suggestions.length > 0 && (
                                     <div className="empty-feed-suggestions-grid">
                                         {suggestions.slice(0, 6).map(user => {
-                                            const isSent = sentSuggestionRequests.has(Number(user.user_id));
+                                            const isFollowed = followedSuggestionIds.has(Number(user.user_id));
                                             return (
                                                 <div key={user.user_id} className="empty-feed-user-chip">
                                                     <div
@@ -1346,11 +1405,20 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                     </div>
                                                     <button
                                                         type="button"
-                                                        className={`empty-feed-connect-btn ${isSent ? 'sent' : ''}`}
-                                                        onClick={(e) => handleAddFriendSuggestion(user.user_id, e)}
-                                                        disabled={isSent}
+                                                        className={`empty-feed-connect-btn ${isFollowed ? 'sent' : ''}`}
+                                                        onClick={(e) => handleFollowSuggestion(user.user_id, e)}
                                                     >
-                                                        {isSent ? 'Đã gửi' : 'Theo dõi'}
+                                                        {isFollowed ? (
+                                                            <>
+                                                                <UserCheck size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                                                                Đang theo dõi
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <UserPlus size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                                                                Theo dõi
+                                                            </>
+                                                        )}
                                                     </button>
                                                 </div>
                                             );

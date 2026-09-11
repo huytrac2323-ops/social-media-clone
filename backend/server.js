@@ -93,6 +93,31 @@ app.get('/api/messages/:userId/:friendId', async (req, res) => {
         res.status(500).json({ error: "Lỗi Server", details: error.message });
     }
 });
+
+app.post('/api/messages', async (req, res) => {
+    const { sender_id, receiver_id, message_text } = req.body;
+    if (!sender_id || !receiver_id || !message_text) {
+        return res.status(400).json({ error: "Thiếu thông tin gửi tin nhắn (sender_id, receiver_id hoặc message_text)" });
+    }
+    try {
+        const result = await pool.query(
+            `INSERT INTO messages (sender_id, receiver_id, message_text) 
+             VALUES ($1, $2, $3) RETURNING *`,
+            [sender_id, receiver_id, message_text]
+        );
+        const savedMessage = result.rows[0];
+        const participantIds = new Set([String(sender_id), String(receiver_id)]);
+        participantIds.forEach(userId => {
+            onlineUsers.get(userId)?.forEach(socketId => {
+                io.to(socketId).emit('receive_message', savedMessage);
+            });
+        });
+        res.status(201).json(savedMessage);
+    } catch (error) {
+        console.error("Lỗi khi gửi tin nhắn:", error.message);
+        res.status(500).json({ error: "Lỗi Server khi gửi tin nhắn", details: error.message });
+    }
+});
 app.get('/api/suggestions/:userId', async (req, res) => {
     const { userId } = req.params;
     try {

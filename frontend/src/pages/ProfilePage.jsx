@@ -948,6 +948,12 @@ function ProfilePage() {
       {/* MODAL XEM STORY / TIN NỔI BẬT FULLSCREEN */}
       {activeStoryViewer && activeStoryViewer.length > 0 && (
         <div className="story-viewer-backdrop" onClick={() => setActiveStoryViewer(null)}>
+          {activeStoryViewer[activeStoryIndex]?.media_url && (
+            <div
+              className="story-ambient-blur"
+              style={{ backgroundImage: `url(${activeStoryViewer[activeStoryIndex].media_url})` }}
+            />
+          )}
           <div className="story-viewer" onClick={e => e.stopPropagation()}>
             <button
               type="button"

@@ -41,6 +41,29 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
   const [isExpanded, setIsExpanded] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [friendRequestSent, setFriendRequestSent] = useState(post.friendRequestSent || false);
+  const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const lastTapRef = useRef(0);
+
+  const handleImageClick = (e) => {
+    e.stopPropagation();
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      if (!post.isLiked && onLike) {
+        onLike(post.id);
+      }
+      setShowHeartBurst(true);
+      setTimeout(() => setShowHeartBurst(false), 850);
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+      setTimeout(() => {
+        if (Date.now() - lastTapRef.current >= DOUBLE_TAP_DELAY && lastTapRef.current !== 0) {
+          setIsImageViewerOpen(true);
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  };
 
   const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
@@ -308,18 +331,20 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
           </div>
         )}
 
-        {/* Post Image */}
+        {/* Post Image with Double-Tap Heart Burst */}
         {post.imageUrl && (
-          <div className="post-media-box">
+          <div className="post-media-box" style={{ position: 'relative' }}>
             <img
               src={mediaUrl(post.imageUrl)}
               alt="Hình ảnh bài viết"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsImageViewerOpen(true);
-              }}
+              onClick={handleImageClick}
               loading="lazy"
             />
+            {showHeartBurst && (
+              <div className="post-double-tap-heart-box">
+                <Heart size={84} fill="#ef4444" className="post-double-tap-heart" />
+              </div>
+            )}
           </div>
         )}
 

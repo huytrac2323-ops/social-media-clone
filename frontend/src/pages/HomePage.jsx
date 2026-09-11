@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
 import SidebarNav from '../components/SidebarNav.jsx';
@@ -38,7 +38,7 @@ const STORY_GRADIENTS = [
     { name: 'Noir', value: 'linear-gradient(180deg, #18181b 0%, #09090b 100%)', colors: ['#18181b', '#09090b'] }
 ];
 
-const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, sticker) => {
+const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, sticker, textPos = { x: 50, y: 55 }, stickerPos = { x: 50, y: 35 }) => {
     return new Promise(resolve => {
         try {
             const canvas = document.createElement('canvas');
@@ -60,9 +60,11 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
             ctx.fillRect(0, 0, 1080, 1920);
 
             if (sticker) {
-                ctx.font = '120px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                ctx.font = '130px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(sticker, 540, 720);
+                const stX = 1080 * ((stickerPos?.x ?? 50) / 100);
+                const stY = 1920 * ((stickerPos?.y ?? 35) / 100);
+                ctx.fillText(sticker, stX, stY);
             }
 
             if (text && text.trim()) {
@@ -86,7 +88,9 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
                 if (currentLine) lines.push(currentLine);
 
                 const lineHeight = 86;
-                const startY = 960 - ((lines.length - 1) * lineHeight) / 2;
+                const targetX = 1080 * ((textPos?.x ?? 50) / 100);
+                const targetY = 1920 * ((textPos?.y ?? 55) / 100);
+                const startY = targetY - ((lines.length - 1) * lineHeight) / 2;
 
                 lines.forEach((line, i) => {
                     const lineY = startY + i * lineHeight;
@@ -95,7 +99,7 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
                         const padX = 32;
                         const padY = 16;
-                        const x = 540 - lineWidth / 2 - padX;
+                        const x = targetX - lineWidth / 2 - padX;
                         const y = lineY - fontSize + 6;
                         const w = lineWidth + padX * 2;
                         const h = fontSize + padY;
@@ -110,7 +114,7 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
                         ctx.fill();
                     }
                     ctx.fillStyle = textColor || '#ffffff';
-                    ctx.fillText(line, 540, lineY);
+                    ctx.fillText(line, targetX, lineY);
                 });
             }
 
@@ -144,6 +148,12 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const [storyTextColor, setStoryTextColor] = useState('#ffffff');
     const [storyTextBg, setStoryTextBg] = useState(true);
     const [storyBgIndex, setStoryBgIndex] = useState(0);
+    const [stickerPos, setStickerPos] = useState({ x: 50, y: 35 });
+    const [textPos, setTextPos] = useState({ x: 50, y: 55 });
+    const [draggingItem, setDraggingItem] = useState(null);
+    const canvasRef = useRef(null);
+    const [floatingStoryReactions, setFloatingStoryReactions] = useState([]);
+    const reactionDebounceTimer = useRef(null);
     const [activeStoryDrawer, setActiveStoryDrawer] = useState(null);
     const [isSubmittingStory, setIsSubmittingStory] = useState(false);
     const [activeStory, setActiveStory] = useState(null);
@@ -465,8 +475,36 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         setStoryText('');
         setStoryTextColor('#ffffff');
         setStoryTextBg(true);
+        setStickerPos({ x: 50, y: 35 });
+        setTextPos({ x: 50, y: 55 });
+        setDraggingItem(null);
         setActiveStoryDrawer(null);
         setSelectedStoryPost(null);
+    };
+
+    const handleDragStart = (item, e) => {
+        e.stopPropagation();
+        setDraggingItem(item);
+    };
+
+    const handleCanvasMove = (e) => {
+        if (!draggingItem || !canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const xPercent = Math.max(10, Math.min(90, ((clientX - rect.left) / rect.width) * 100));
+        const yPercent = Math.max(15, Math.min(85, ((clientY - rect.top) / rect.height) * 100));
+
+        if (draggingItem === 'sticker') {
+            setStickerPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
+        } else if (draggingItem === 'text') {
+            setTextPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDraggingItem(null);
     };
 
     const handleCreateStory = async (event) => {
@@ -489,7 +527,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                     storyTextColor,
                     storyTextBg,
                     STORY_GRADIENTS[storyBgIndex].colors,
-                    storySticker
+                    storySticker,
+                    textPos,
+                    stickerPos
                 );
                 if (blob) {
                     fileToUpload = new File([blob], 'story.png', { type: 'image/png' });
@@ -512,7 +552,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
             const stickerPayload = {
                 sticker: storySticker || '',
+                stickerPos,
                 text: storyText || '',
+                textPos,
                 textColor: storyTextColor,
                 textBg: storyTextBg,
                 gradientIndex: storyBgIndex
@@ -551,22 +593,56 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         }
     };
 
-    const handleReactToStory = async reaction => {
+    const handleReactToStory = (reaction, event) => {
         if (!currentUser?.user_id || !activeStory) {
             alert('Vui lòng đăng nhập để thả reaction.');
             return;
         }
-        const response = await fetch(`${API_URL}/stories/${activeStory.story_id}/react`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: currentUser.user_id, reaction })
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            alert(data.message || 'Không thể thả reaction.');
-            return;
+
+        const id = Date.now() + Math.random();
+        let startX = window.innerWidth / 2;
+        let startY = window.innerHeight - 90;
+        if (event?.currentTarget) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            startX = rect.left + rect.width / 2;
+            startY = rect.top;
         }
-        setSelectedReaction(data.reaction);
+
+        const randomOffset = (Math.random() - 0.5) * 50;
+        const randomScale = 0.9 + Math.random() * 0.7;
+        const randomRot = (Math.random() - 0.5) * 45;
+        const randomDuration = 1.6 + Math.random() * 0.6;
+
+        const newParticle = {
+            id,
+            emoji: reaction,
+            x: startX + randomOffset,
+            y: startY,
+            scale: randomScale,
+            rot: randomRot,
+            duration: randomDuration
+        };
+
+        setFloatingStoryReactions(prev => [...prev.slice(-30), newParticle]);
+
+        setTimeout(() => {
+            setFloatingStoryReactions(prev => prev.filter(p => p.id !== id));
+        }, randomDuration * 1000);
+
+        setSelectedReaction(reaction);
+
+        if (reactionDebounceTimer.current) clearTimeout(reactionDebounceTimer.current);
+        reactionDebounceTimer.current = setTimeout(async () => {
+            try {
+                await fetch(`${API_URL}/stories/${activeStory.story_id}/react`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.user_id, reaction })
+                });
+            } catch (err) {
+                console.error('Lỗi khi gửi reaction:', err);
+            }
+        }, 400);
     };
 
     const handleStartEditStory = () => {
@@ -718,364 +794,6 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                 </div>
                             )}
 
-                            {/* MODAL TẠO STORY KIỂU INSTAGRAM CHUYÊN NGHIỆP */}
-                            {isCreateStoryOpen && currentUser && (
-                                <div className="ig-story-backdrop" onClick={handleCloseStoryModal}>
-                                    <div className="ig-story-frame" onClick={e => e.stopPropagation()}>
-                                        {/* Top Toolbar */}
-                                        <div className="ig-story-topbar">
-                                            <button
-                                                type="button"
-                                                className="ig-story-icon-btn"
-                                                onClick={handleCloseStoryModal}
-                                                title="Đóng"
-                                                aria-label="Đóng Story"
-                                            >
-                                                <X size={22} />
-                                            </button>
-
-                                            <div className="ig-story-tool-group">
-                                                {/* Text Tool Aa */}
-                                                <button
-                                                    type="button"
-                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'text' || storyText ? 'active' : ''}`}
-                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'text' ? null : 'text')}
-                                                    title="Thêm văn bản"
-                                                >
-                                                    <span className="ig-story-tool-aa">Aa</span>
-                                                </button>
-
-                                                {/* Sticker Tool */}
-                                                <button
-                                                    type="button"
-                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'sticker' || storySticker ? 'active' : ''}`}
-                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'sticker' ? null : 'sticker')}
-                                                    title="Nhãn dán"
-                                                >
-                                                    <Smile size={20} />
-                                                </button>
-
-                                                {/* Music Tool */}
-                                                <button
-                                                    type="button"
-                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'music' || selectedSpotifyTrack || storyMusic ? 'active' : ''}`}
-                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'music' ? null : 'music')}
-                                                    title="Thêm nhạc nền"
-                                                >
-                                                    <Music2 size={20} />
-                                                </button>
-
-                                                {/* Palette / Gradient Tool */}
-                                                {!storyFile && (
-                                                    <button
-                                                        type="button"
-                                                        className="ig-story-tool-btn"
-                                                        onClick={() => setStoryBgIndex(prev => (prev + 1) % STORY_GRADIENTS.length)}
-                                                        title="Đổi màu nền"
-                                                    >
-                                                        <Palette size={20} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Story Live Canvas (9:16 Aspect Ratio) */}
-                                        <div
-                                            className="ig-story-canvas"
-                                            style={{
-                                                background: storyFile ? '#000000' : STORY_GRADIENTS[storyBgIndex].value
-                                            }}
-                                        >
-                                            {/* Media File (Photo/Video) Preview */}
-                                            {storyFile && (
-                                                <div className="ig-story-media-layer">
-                                                    {storyFile.type.startsWith('video/') ? (
-                                                        <video src={URL.createObjectURL(storyFile)} controls autoPlay loop />
-                                                    ) : (
-                                                        <img src={URL.createObjectURL(storyFile)} alt="Story Media" />
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        className="ig-story-remove-media-pill"
-                                                        onClick={() => setStoryFile(null)}
-                                                        title="Xóa tệp ảnh/video"
-                                                    >
-                                                        <Trash2 size={13} /> Xóa tệp
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Shared Post Card (from Feed) */}
-                                            {selectedStoryPost && (
-                                                <div className="ig-story-shared-card">
-                                                    <div className="ig-story-shared-header">
-                                                        <Avatar user={{ username: selectedStoryPost.author, profile_photo_url: selectedStoryPost.authorAvatar }} size={26} />
-                                                        <span className="ig-story-shared-author">@{selectedStoryPost.author}</span>
-                                                        <button
-                                                            type="button"
-                                                            className="ig-story-shared-close"
-                                                            onClick={() => setSelectedStoryPost(null)}
-                                                            title="Bỏ bài viết đã chọn"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
-                                                    </div>
-                                                    {selectedStoryPost.imageUrl && (
-                                                        <div className="ig-story-shared-thumb">
-                                                            <img src={mediaUrl(selectedStoryPost.imageUrl)} alt="" />
-                                                        </div>
-                                                    )}
-                                                    {selectedStoryPost.content && (
-                                                        <p className="ig-story-shared-caption">{selectedStoryPost.content}</p>
-                                                    )}
-                                                    <span className="ig-story-shared-badge">Xem bài viết</span>
-                                                </div>
-                                            )}
-
-                                            {/* Floating Sticker */}
-                                            {storySticker && (
-                                                <div className="ig-story-sticker-layer">
-                                                    <span className="ig-story-sticker-display">{storySticker}</span>
-                                                    <button
-                                                        type="button"
-                                                        className="ig-story-sticker-remove"
-                                                        onClick={() => setStorySticker('')}
-                                                        title="Xóa nhãn dán"
-                                                    >
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Floating Music Badge */}
-                                            {(selectedSpotifyTrack || storyMusic) && (
-                                                <div className="ig-story-music-badge">
-                                                    <Music2 size={14} className="ig-story-music-icon" />
-                                                    <div className="ig-story-music-meta">
-                                                        <strong>{selectedSpotifyTrack ? selectedSpotifyTrack.name : storyMusic.name}</strong>
-                                                        {selectedSpotifyTrack && <small>{selectedSpotifyTrack.artists}</small>}
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className="ig-story-music-remove"
-                                                        onClick={() => {
-                                                            if (previewAudio) previewAudio.pause();
-                                                            setSelectedSpotifyTrack(null);
-                                                            setStoryMusic(null);
-                                                            setPlayingTrackId(null);
-                                                        }}
-                                                        title="Xóa bài hát"
-                                                    >
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Live Text Overlay & Input */}
-                                            <div className="ig-story-text-layer">
-                                                <textarea
-                                                    value={storyText}
-                                                    onChange={e => setStoryText(e.target.value)}
-                                                    placeholder="Chạm để nhập văn bản..."
-                                                    className={`ig-story-textarea ${storyTextBg ? 'has-bg' : ''}`}
-                                                    style={{ color: storyTextColor }}
-                                                    rows={Math.max(1, (storyText.match(/\n/g) || []).length + 1)}
-                                                />
-                                            </div>
-
-                                            {/* Prompt to pick image if canvas is empty and no text */}
-                                            {!storyFile && !selectedStoryPost && !storyText && (
-                                                <label className="ig-story-upload-center">
-                                                    <ImageIcon size={34} />
-                                                    <span>Chọn ảnh hoặc video</span>
-                                                    <small>Hoặc gõ chữ trực tiếp lên màn hình</small>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*,video/*"
-                                                        hidden
-                                                        onChange={e => setStoryFile(e.target.files?.[0] || null)}
-                                                    />
-                                                </label>
-                                            )}
-                                        </div>
-
-                                        {/* Drawer 1: Text Options (Color Palette + Badge Toggle) */}
-                                        {activeStoryDrawer === 'text' && (
-                                            <div className="ig-story-drawer">
-                                                <div className="ig-story-drawer-header">
-                                                    <span>Định dạng chữ</span>
-                                                    <button
-                                                        type="button"
-                                                        className={`ig-story-text-bg-toggle ${storyTextBg ? 'active' : ''}`}
-                                                        onClick={() => setStoryTextBg(!storyTextBg)}
-                                                    >
-                                                        Nền chữ: {storyTextBg ? 'Bật' : 'Tắt'}
-                                                    </button>
-                                                </div>
-                                                <div className="ig-story-color-palette">
-                                                    {['#ffffff', '#000000', '#facc15', '#f43f5e', '#22c55e', '#06b6d4', '#a855f7', '#fb923c'].map(col => (
-                                                        <button
-                                                            type="button"
-                                                            key={col}
-                                                            className={`ig-story-color-dot ${storyTextColor === col ? 'active' : ''}`}
-                                                            style={{ background: col }}
-                                                            onClick={() => setStoryTextColor(col)}
-                                                            title={col}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Drawer 2: Stickers / Emojis */}
-                                        {activeStoryDrawer === 'sticker' && (
-                                            <div className="ig-story-drawer">
-                                                <div className="ig-story-drawer-header">
-                                                    <span>Biểu tượng & Sticker</span>
-                                                    <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
-                                                        Xong
-                                                    </button>
-                                                </div>
-                                                <div className="ig-story-emoji-grid">
-                                                    {['🔥', '❤️', '✨', '🎉', '😂', '😍', '👏', '💯', '⚡', '☕', '🥳', '🍕', '🎶', '🌈', '🚀', '💫'].map(em => (
-                                                        <button
-                                                            type="button"
-                                                            key={em}
-                                                            className="ig-story-emoji-btn"
-                                                            onClick={() => {
-                                                                setStorySticker(em);
-                                                                setActiveStoryDrawer(null);
-                                                            }}
-                                                        >
-                                                            {em}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="ig-story-custom-sticker-row">
-                                                    <input
-                                                        value={storySticker}
-                                                        onChange={e => setStorySticker(e.target.value)}
-                                                        placeholder="Hoặc nhập sticker / emoji khác..."
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Drawer 3: Music Search & MP3 */}
-                                        {activeStoryDrawer === 'music' && (
-                                            <div className="ig-story-drawer ig-story-music-drawer">
-                                                <div className="ig-story-drawer-header">
-                                                    <span>Chọn nhạc nền</span>
-                                                    <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
-                                                        Xong
-                                                    </button>
-                                                </div>
-
-                                                <div className="spotify-search-row">
-                                                    <input
-                                                        value={spotifyQuery}
-                                                        onChange={e => setSpotifyQuery(e.target.value)}
-                                                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchSpotify())}
-                                                        placeholder="Tìm bài hát, ca sĩ..."
-                                                    />
-                                                    <button type="button" onClick={searchSpotify} disabled={isSpotifySearching}>
-                                                        <Search size={16} />
-                                                    </button>
-                                                </div>
-
-                                                {isSpotifySearching && (
-                                                    <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>Đang tìm kiếm bài hát...</p>
-                                                )}
-                                                {musicSearchError && (
-                                                    <p style={{ color: '#fca5a5', fontSize: '12.5px', marginTop: '6px' }}>{musicSearchError}</p>
-                                                )}
-
-                                                {spotifyResults.length > 0 && (
-                                                    <div className="spotify-results no-scrollbar" style={{ maxHeight: '160px', marginTop: '8px' }}>
-                                                        {spotifyResults.map(track => {
-                                                            const isPlaying = playingTrackId === track.id;
-                                                            return (
-                                                                <div
-                                                                    key={track.id}
-                                                                    className="story-track-item"
-                                                                    onClick={() => {
-                                                                        setSelectedSpotifyTrack(track);
-                                                                        setStoryMusic(null);
-                                                                        setActiveStoryDrawer(null);
-                                                                    }}
-                                                                >
-                                                                    {track.imageUrl && (
-                                                                        <img src={track.imageUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover' }} />
-                                                                    )}
-                                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                                        <strong style={{ fontSize: '13px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                            {track.name}
-                                                                        </strong>
-                                                                        <small style={{ color: 'var(--text-muted)', fontSize: '11.5px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                            {track.artists}
-                                                                        </small>
-                                                                    </div>
-                                                                    {track.previewUrl && (
-                                                                        <button
-                                                                            type="button"
-                                                                            className="story-track-play-btn"
-                                                                            onClick={e => togglePlayPreview(track, e)}
-                                                                            title={isPlaying ? 'Dừng' : 'Nghe thử 30s'}
-                                                                        >
-                                                                            {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-
-                                                <label className="story-music-picker" style={{ marginTop: '8px' }}>
-                                                    <Music2 size={16} />
-                                                    {storyMusic ? storyMusic.name : 'Hoặc tải tệp MP3 từ máy'}
-                                                    <input
-                                                        type="file"
-                                                        accept="audio/mpeg,.mp3"
-                                                        onChange={e => {
-                                                            setStoryMusic(e.target.files?.[0] || null);
-                                                            setSelectedSpotifyTrack(null);
-                                                            setActiveStoryDrawer(null);
-                                                        }}
-                                                    />
-                                                </label>
-                                            </div>
-                                        )}
-
-                                        {/* Bottom Bar: Media Picker & Share Pill */}
-                                        <div className="ig-story-bottombar">
-                                            <label className="ig-story-media-btn" title="Chọn ảnh hoặc video từ máy">
-                                                <ImageIcon size={22} />
-                                                <input
-                                                    type="file"
-                                                    accept="image/*,video/*"
-                                                    hidden
-                                                    onChange={e => setStoryFile(e.target.files?.[0] || null)}
-                                                />
-                                            </label>
-
-                                            <button
-                                                type="button"
-                                                className="ig-story-share-pill"
-                                                onClick={handleCreateStory}
-                                                disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim())}
-                                            >
-                                                <div className="ig-story-share-avatar">
-                                                    <Avatar user={currentUser} size={28} />
-                                                </div>
-                                                <span>{isSubmittingStory ? 'Đang chia sẻ...' : 'Tin của bạn'}</span>
-                                                <Send size={15} style={{ marginLeft: '4px' }} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Danh sách story của bạn bè */}
                             {stories.map(story => (
                                 <button
@@ -1084,7 +802,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     onClick={() => handleOpenStory(story)}
                                     className="story-card-item"
                                 >
-                                    <div className="story-avatar-wrapper">
+                                    <div className="story-avatar-wrapper active-spinning-ring">
                                         <div className="story-avatar-inner">
                                             <img
                                                 src={story.profile_photo_url || 'https://picsum.photos/60'}
@@ -1098,9 +816,432 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                         </div>
                     </section>
 
+                    {/* MODAL TẠO STORY KIỂU INSTAGRAM CHUYÊN NGHIỆP - TÁCH KHỎI THANH CUỘN */}
+                    {isCreateStoryOpen && currentUser && (
+                        <div className="ig-story-backdrop" onClick={handleCloseStoryModal}>
+                            <div className="ig-story-frame" onClick={e => e.stopPropagation()}>
+                                {/* Top Toolbar */}
+                                <div className="ig-story-topbar">
+                                    <button
+                                        type="button"
+                                        className="ig-story-icon-btn"
+                                        onClick={handleCloseStoryModal}
+                                        title="Đóng"
+                                        aria-label="Đóng Story"
+                                    >
+                                        <X size={22} />
+                                    </button>
+
+                                    <div className="ig-story-tool-group">
+                                        {/* Text Tool Aa */}
+                                        <button
+                                            type="button"
+                                            className={`ig-story-tool-btn ${activeStoryDrawer === 'text' || storyText ? 'active' : ''}`}
+                                            onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'text' ? null : 'text')}
+                                            title="Thêm văn bản"
+                                        >
+                                            <span className="ig-story-tool-aa">Aa</span>
+                                        </button>
+
+                                        {/* Sticker Tool */}
+                                        <button
+                                            type="button"
+                                            className={`ig-story-tool-btn ${activeStoryDrawer === 'sticker' || storySticker ? 'active' : ''}`}
+                                            onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'sticker' ? null : 'sticker')}
+                                            title="Nhãn dán"
+                                        >
+                                            <Smile size={20} />
+                                        </button>
+
+                                        {/* Music Tool */}
+                                        <button
+                                            type="button"
+                                            className={`ig-story-tool-btn ${activeStoryDrawer === 'music' || selectedSpotifyTrack || storyMusic ? 'active' : ''}`}
+                                            onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'music' ? null : 'music')}
+                                            title="Thêm nhạc nền"
+                                        >
+                                            <Music2 size={20} />
+                                        </button>
+
+                                        {/* Palette / Gradient Tool */}
+                                        {!storyFile && (
+                                            <button
+                                                type="button"
+                                                className="ig-story-tool-btn"
+                                                onClick={() => setStoryBgIndex(prev => (prev + 1) % STORY_GRADIENTS.length)}
+                                                title="Đổi màu nền"
+                                            >
+                                                <Palette size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Story Live Canvas with Touch/Mouse Drag & Drop */}
+                                <div
+                                    ref={canvasRef}
+                                    className="ig-story-canvas"
+                                    style={{
+                                        background: storyFile ? '#000000' : STORY_GRADIENTS[storyBgIndex].value
+                                    }}
+                                    onMouseMove={handleCanvasMove}
+                                    onTouchMove={handleCanvasMove}
+                                    onMouseUp={handleDragEnd}
+                                    onTouchEnd={handleDragEnd}
+                                    onMouseLeave={handleDragEnd}
+                                >
+                                    {/* Media File (Photo/Video) Preview */}
+                                    {storyFile && (
+                                        <div className="ig-story-media-layer">
+                                            {storyFile.type.startsWith('video/') ? (
+                                                <video src={URL.createObjectURL(storyFile)} controls autoPlay loop />
+                                            ) : (
+                                                <img src={URL.createObjectURL(storyFile)} alt="Story Media" />
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="ig-story-remove-media-pill"
+                                                onClick={() => setStoryFile(null)}
+                                                title="Xóa tệp ảnh/video"
+                                            >
+                                                <Trash2 size={13} /> Xóa tệp
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Shared Post Card (from Feed) */}
+                                    {selectedStoryPost && (
+                                        <div className="ig-story-shared-card">
+                                            <div className="ig-story-shared-header">
+                                                <Avatar user={{ username: selectedStoryPost.author, profile_photo_url: selectedStoryPost.authorAvatar }} size={26} />
+                                                <span className="ig-story-shared-author">@{selectedStoryPost.author}</span>
+                                                <button
+                                                    type="button"
+                                                    className="ig-story-shared-close"
+                                                    onClick={() => setSelectedStoryPost(null)}
+                                                    title="Bỏ bài viết đã chọn"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                            {selectedStoryPost.imageUrl && (
+                                                <div className="ig-story-shared-thumb">
+                                                    <img src={mediaUrl(selectedStoryPost.imageUrl)} alt="" />
+                                                </div>
+                                            )}
+                                            {selectedStoryPost.content && (
+                                                <p className="ig-story-shared-caption">{selectedStoryPost.content}</p>
+                                            )}
+                                            <span className="ig-story-shared-badge">Xem bài viết</span>
+                                        </div>
+                                    )}
+
+                                    {/* Draggable Floating Sticker */}
+                                    {storySticker && (
+                                        <div
+                                            className={`ig-story-draggable ${draggingItem === 'sticker' ? 'is-dragging' : ''}`}
+                                            style={{
+                                                left: `${stickerPos.x}%`,
+                                                top: `${stickerPos.y}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                            }}
+                                            onMouseDown={e => handleDragStart('sticker', e)}
+                                            onTouchStart={e => handleDragStart('sticker', e)}
+                                        >
+                                            <div className={`ig-story-draggable-wrapper ${draggingItem === 'sticker' ? 'ig-story-drag-halo' : ''}`}>
+                                                <span className="ig-story-sticker-display">{storySticker}</span>
+                                                <button
+                                                    type="button"
+                                                    className="ig-story-sticker-remove"
+                                                    onClick={(e) => { e.stopPropagation(); setStorySticker(''); }}
+                                                    title="Xóa nhãn dán"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                                <span className="ig-story-drag-badge">⠿ Kéo để di chuyển</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Floating Music Badge */}
+                                    {(selectedSpotifyTrack || storyMusic) && (
+                                        <div className="ig-story-music-badge">
+                                            <Music2 size={14} className="ig-story-music-icon" />
+                                            <div className="ig-story-music-meta">
+                                                <strong>{selectedSpotifyTrack ? selectedSpotifyTrack.name : storyMusic.name}</strong>
+                                                {selectedSpotifyTrack && <small>{selectedSpotifyTrack.artists}</small>}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="ig-story-music-remove"
+                                                onClick={() => {
+                                                    if (previewAudio) previewAudio.pause();
+                                                    setSelectedSpotifyTrack(null);
+                                                    setStoryMusic(null);
+                                                    setPlayingTrackId(null);
+                                                }}
+                                                title="Xóa bài hát"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Draggable Live Text Overlay & Input */}
+                                    <div
+                                        className={`ig-story-draggable ${draggingItem === 'text' ? 'is-dragging' : ''}`}
+                                        style={{
+                                            left: `${textPos.x}%`,
+                                            top: `${textPos.y}%`,
+                                            transform: 'translate(-50%, -50%)',
+                                            width: '85%',
+                                            maxWidth: '320px'
+                                        }}
+                                    >
+                                        <div className={`ig-story-draggable-wrapper ${draggingItem === 'text' ? 'ig-story-drag-halo' : ''}`} style={{ width: '100%', flexDirection: 'column' }}>
+                                            <div
+                                                className="ig-story-drag-handle-bar"
+                                                onMouseDown={e => handleDragStart('text', e)}
+                                                onTouchStart={e => handleDragStart('text', e)}
+                                                style={{ cursor: 'grab', display: 'flex', justifyContent: 'center', padding: '3px 0', opacity: 0.8 }}
+                                                title="Giữ chuột hoặc ngón tay để kéo di chuyển"
+                                            >
+                                                <span className="ig-story-drag-badge" style={{ position: 'static', transform: 'none', opacity: 1 }}>⠿ Kéo để di chuyển</span>
+                                            </div>
+                                            <textarea
+                                                value={storyText}
+                                                onChange={e => setStoryText(e.target.value)}
+                                                placeholder="Chạm để nhập văn bản..."
+                                                className={`ig-story-textarea ${storyTextBg ? 'has-bg' : ''}`}
+                                                style={{ color: storyTextColor }}
+                                                rows={Math.max(1, (storyText.match(/\n/g) || []).length + 1)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Prompt to pick image if canvas is empty and no text */}
+                                    {!storyFile && !selectedStoryPost && !storyText && (
+                                        <label className="ig-story-upload-center">
+                                            <ImageIcon size={34} />
+                                            <span>Chọn ảnh hoặc video</span>
+                                            <small>Hoặc gõ chữ trực tiếp lên màn hình</small>
+                                            <input
+                                                type="file"
+                                                accept="image/*,video/*"
+                                                hidden
+                                                onChange={e => setStoryFile(e.target.files?.[0] || null)}
+                                            />
+                                        </label>
+                                    )}
+                                </div>
+
+                                {/* Drawer 1: Text Options (Color Palette + Badge Toggle) */}
+                                {activeStoryDrawer === 'text' && (
+                                    <div className="ig-story-drawer">
+                                        <div className="ig-story-drawer-header">
+                                            <span>Định dạng chữ</span>
+                                            <button
+                                                type="button"
+                                                className={`ig-story-text-bg-toggle ${storyTextBg ? 'active' : ''}`}
+                                                onClick={() => setStoryTextBg(!storyTextBg)}
+                                            >
+                                                Nền chữ: {storyTextBg ? 'Bật' : 'Tắt'}
+                                            </button>
+                                        </div>
+                                        <div className="ig-story-color-palette">
+                                            {['#ffffff', '#000000', '#facc15', '#f43f5e', '#22c55e', '#06b6d4', '#a855f7', '#fb923c'].map(col => (
+                                                <button
+                                                    type="button"
+                                                    key={col}
+                                                    className={`ig-story-color-dot ${storyTextColor === col ? 'active' : ''}`}
+                                                    style={{ background: col }}
+                                                    onClick={() => setStoryTextColor(col)}
+                                                    title={col}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Drawer 2: Stickers / Emojis */}
+                                {activeStoryDrawer === 'sticker' && (
+                                    <div className="ig-story-drawer">
+                                        <div className="ig-story-drawer-header">
+                                            <span>Biểu tượng & Sticker</span>
+                                            <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                Xong
+                                            </button>
+                                        </div>
+                                        <div className="ig-story-emoji-grid">
+                                            {['🔥', '❤️', '✨', '🎉', '😂', '😍', '👏', '💯', '⚡', '☕', '🥳', '🍕', '🎶', '🌈', '🚀', '💫'].map(em => (
+                                                <button
+                                                    type="button"
+                                                    key={em}
+                                                    className="ig-story-emoji-btn"
+                                                    onClick={() => {
+                                                        setStorySticker(em);
+                                                        setActiveStoryDrawer(null);
+                                                    }}
+                                                >
+                                                    {em}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="ig-story-custom-sticker-row">
+                                            <input
+                                                value={storySticker}
+                                                onChange={e => setStorySticker(e.target.value)}
+                                                placeholder="Hoặc nhập sticker / emoji khác..."
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Drawer 3: Music Search & MP3 */}
+                                {activeStoryDrawer === 'music' && (
+                                    <div className="ig-story-drawer ig-story-music-drawer">
+                                        <div className="ig-story-drawer-header">
+                                            <span>Chọn nhạc nền</span>
+                                            <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                Xong
+                                            </button>
+                                        </div>
+
+                                        <div className="spotify-search-row">
+                                            <input
+                                                value={spotifyQuery}
+                                                onChange={e => setSpotifyQuery(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchSpotify())}
+                                                placeholder="Tìm bài hát, ca sĩ..."
+                                            />
+                                            <button type="button" onClick={searchSpotify} disabled={isSpotifySearching}>
+                                                <Search size={16} />
+                                            </button>
+                                        </div>
+
+                                        {isSpotifySearching && (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>Đang tìm kiếm bài hát...</p>
+                                        )}
+                                        {musicSearchError && (
+                                            <p style={{ color: '#fca5a5', fontSize: '12.5px', marginTop: '6px' }}>{musicSearchError}</p>
+                                        )}
+
+                                        {spotifyResults.length > 0 && (
+                                            <div className="spotify-results no-scrollbar" style={{ maxHeight: '160px', marginTop: '8px' }}>
+                                                {spotifyResults.map(track => {
+                                                    const isPlaying = playingTrackId === track.id;
+                                                    return (
+                                                        <div
+                                                            key={track.id}
+                                                            className="story-track-item"
+                                                            onClick={() => {
+                                                                setSelectedSpotifyTrack(track);
+                                                                setStoryMusic(null);
+                                                                setActiveStoryDrawer(null);
+                                                            }}
+                                                        >
+                                                            {track.imageUrl && (
+                                                                <img src={track.imageUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover' }} />
+                                                            )}
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <strong style={{ fontSize: '13px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {track.name}
+                                                                </strong>
+                                                                <small style={{ color: 'var(--text-muted)', fontSize: '11.5px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {track.artists}
+                                                                </small>
+                                                            </div>
+                                                            {track.previewUrl && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="story-track-play-btn"
+                                                                    onClick={e => togglePlayPreview(track, e)}
+                                                                    title={isPlaying ? 'Dừng' : 'Nghe thử 30s'}
+                                                                >
+                                                                    {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        <label className="story-music-picker" style={{ marginTop: '8px' }}>
+                                            <Music2 size={16} />
+                                            {storyMusic ? storyMusic.name : 'Hoặc tải tệp MP3 từ máy'}
+                                            <input
+                                                type="file"
+                                                accept="audio/mpeg,.mp3"
+                                                onChange={e => {
+                                                    setStoryMusic(e.target.files?.[0] || null);
+                                                    setSelectedSpotifyTrack(null);
+                                                    setActiveStoryDrawer(null);
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+                                )}
+
+                                {/* Bottom Bar: Media Picker & Share Pill */}
+                                <div className="ig-story-bottombar">
+                                    <label className="ig-story-media-btn" title="Chọn ảnh hoặc video từ máy">
+                                        <ImageIcon size={22} />
+                                        <input
+                                            type="file"
+                                            accept="image/*,video/*"
+                                            hidden
+                                            onChange={e => setStoryFile(e.target.files?.[0] || null)}
+                                        />
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        className="ig-story-share-pill"
+                                        onClick={handleCreateStory}
+                                        disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim())}
+                                    >
+                                        <div className="ig-story-share-avatar">
+                                            <Avatar user={currentUser} size={28} />
+                                        </div>
+                                        <span>{isSubmittingStory ? 'Đang chia sẻ...' : 'Tin của bạn'}</span>
+                                        <Send size={15} style={{ marginLeft: '4px' }} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* STORY VIEWER FULLSCREEN */}
                     {activeStory && (
                         <div className="story-viewer-backdrop" onClick={() => setActiveStory(null)}>
+                            {/* Ambient Blur Background Layer */}
+                            {activeStory.media_url && (
+                                <div
+                                    className="story-ambient-blur"
+                                    style={{ backgroundImage: `url(${mediaUrl(activeStory.media_url)})` }}
+                                />
+                            )}
+
+                            {/* Floating Reactions Particles Swarm Layer */}
+                            <div className="story-floating-reactions-layer">
+                                {floatingStoryReactions.map(p => (
+                                    <span
+                                        key={p.id}
+                                        className="story-floating-particle"
+                                        style={{
+                                            left: `${p.x}px`,
+                                            top: `${p.y}px`,
+                                            fontSize: `${Math.round(32 * p.scale)}px`,
+                                            animationDuration: `${p.duration}s`,
+                                            '--particle-rot': `${p.rot}deg`
+                                        }}
+                                    >
+                                        {p.emoji}
+                                    </span>
+                                ))}
+                            </div>
+
                             <div className="story-viewer" onClick={e => e.stopPropagation()}>
                                 <button
                                     type="button"
@@ -1136,50 +1277,76 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     <Avatar user={{ username: activeStory.username, profile_photo_url: activeStory.profile_photo_url }} size={36} />
                                     <strong>{activeStory.username}</strong>
                                 </div>
-                                {activeStory.shared_post ? (
-                                    <button
-                                        type="button"
-                                        className="story-shared-post"
-                                        onClick={() => navigate(`/post/${activeStory.shared_post.post_id}`)}
-                                    >
-                                        {activeStory.shared_post.photo_url && (
-                                            <img
-                                                src={mediaUrl(activeStory.shared_post.photo_url)}
-                                                alt="Ảnh bài viết được chia sẻ"
-                                            />
-                                        )}
-                                        <div className="story-shared-post-content">
-                                            <strong>@{activeStory.shared_post.username}</strong>
-                                            <p>{activeStory.shared_post.caption || 'Bài viết hình ảnh'}</p>
-                                            <small>Nhấn để xem bài viết</small>
-                                        </div>
-                                    </button>
-                                ) : activeStory.media_type === 'video'
-                                    ? <video src={mediaUrl(activeStory.media_url)} controls autoPlay />
-                                    : <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />}
-                                {activeStory.sticker && (() => {
-                                    try {
-                                        const parsed = JSON.parse(activeStory.sticker);
-                                        return (
-                                            <>
-                                                {parsed.sticker && <div className="story-sticker">{parsed.sticker}</div>}
-                                                {parsed.text && (
-                                                    <div
-                                                        className={`story-text-overlay ${parsed.textBg ? 'has-bg' : ''}`}
-                                                        style={{
-                                                            color: parsed.textColor || '#ffffff',
-                                                            background: parsed.textBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent'
-                                                        }}
-                                                    >
-                                                        {parsed.text}
-                                                    </div>
-                                                )}
-                                            </>
-                                        );
-                                    } catch {
-                                        return <div className="story-sticker">{activeStory.sticker}</div>;
-                                    }
-                                })()}
+
+                                <div className="story-viewer-media-container">
+                                    {activeStory.shared_post ? (
+                                        <button
+                                            type="button"
+                                            className="story-shared-post"
+                                            onClick={() => navigate(`/post/${activeStory.shared_post.post_id}`)}
+                                        >
+                                            {activeStory.shared_post.photo_url && (
+                                                <img
+                                                    src={mediaUrl(activeStory.shared_post.photo_url)}
+                                                    alt="Ảnh bài viết được chia sẻ"
+                                                />
+                                            )}
+                                            <div className="story-shared-post-content">
+                                                <strong>@{activeStory.shared_post.username}</strong>
+                                                <p>{activeStory.shared_post.caption || 'Bài viết hình ảnh'}</p>
+                                                <small>Nhấn để xem bài viết</small>
+                                            </div>
+                                        </button>
+                                    ) : activeStory.media_type === 'video' ? (
+                                        <video src={mediaUrl(activeStory.media_url)} controls autoPlay loop />
+                                    ) : (
+                                        <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />
+                                    )}
+
+                                    {/* Text & Sticker with Dragged Position Parity */}
+                                    {activeStory.sticker && (() => {
+                                        try {
+                                            const parsed = JSON.parse(activeStory.sticker);
+                                            return (
+                                                <>
+                                                    {parsed.sticker && (
+                                                        <div
+                                                            className="story-sticker"
+                                                            style={{
+                                                                left: `${parsed.stickerPos?.x ?? 50}%`,
+                                                                top: `${parsed.stickerPos?.y ?? 35}%`,
+                                                                position: 'absolute',
+                                                                transform: 'translate(-50%, -50%)',
+                                                                zIndex: 12
+                                                            }}
+                                                        >
+                                                            {parsed.sticker}
+                                                        </div>
+                                                    )}
+                                                    {parsed.text && (
+                                                        <div
+                                                            className={`story-text-overlay ${parsed.textBg ? 'has-bg' : ''}`}
+                                                            style={{
+                                                                left: `${parsed.textPos?.x ?? 50}%`,
+                                                                top: `${parsed.textPos?.y ?? 55}%`,
+                                                                position: 'absolute',
+                                                                transform: 'translate(-50%, -50%)',
+                                                                color: parsed.textColor || '#ffffff',
+                                                                background: parsed.textBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
+                                                                zIndex: 12
+                                                            }}
+                                                        >
+                                                            {parsed.text}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            );
+                                        } catch {
+                                            return <div className="story-sticker">{activeStory.sticker}</div>;
+                                        }
+                                    })()}
+                                </div>
+
                                 {activeStory.music_url && (
                                     <div className="story-music-player" onClick={e => e.stopPropagation()}>
                                         <Music2 size={15} />
@@ -1201,14 +1368,17 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         />
                                     </div>
                                 )}
+
+                                {/* Animated Spammable Reactions Bar */}
                                 <div className="story-reactions" onClick={e => e.stopPropagation()}>
                                     {['❤️', '😂', '😮', '😢', '👏', '🔥'].map(reaction => (
                                         <button
                                             type="button"
                                             key={reaction}
-                                            className={selectedReaction === reaction ? 'selected' : ''}
-                                            onClick={() => handleReactToStory(reaction)}
+                                            className={`story-reaction-btn ${selectedReaction === reaction ? 'selected' : ''}`}
+                                            onClick={(e) => handleReactToStory(reaction, e)}
                                             aria-label={`Thả ${reaction}`}
+                                            title={`Thả ${reaction}`}
                                         >
                                             {reaction}
                                         </button>

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
 import Avatar from '../components/Avatar.jsx';
-import { safeFetch } from '../utils/api';
+import { safeFetch, getApiBaseUrl } from '../utils/api';
 import {
     Plus,
     X,
@@ -128,7 +128,7 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
 export default function HomePage({ posts, allUsers, friendUserIds, friends, onLike, onCommentSubmit, onPostCreated, onPostDeleted, onPostUpdated }) {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
-    const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
+    const API_URL = getApiBaseUrl();
     const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
 
     const [suggestions, setSuggestions] = useState([]);
@@ -442,8 +442,8 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
     const fetchStories = async () => {
         try {
-            const viewerId = currentUser?.user_id || '';
-            const res = await fetch(`${API_URL}/stories?userId=${viewerId}`);
+            const viewerId = currentUser?.user_id || currentUser?.id || '';
+            const res = await safeFetch(`/stories?userId=${viewerId}`);
             if (res.ok) {
                 const data = await res.json();
                 setStories(data.map(story => ({
@@ -503,23 +503,25 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         }
     };
 
-    const handleDragEnd = () => {
-        setDraggingItem(null);
-    };
-
     const handleCreateStory = async (event) => {
         if (event) event.preventDefault();
         if (!currentUser) return;
-        if (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim()) {
-            alert('Vui lòng thêm ảnh/video, văn bản hoặc biểu tượng để chia sẻ.');
+        const currentUserId = currentUser.user_id || currentUser.id;
+        if (!currentUserId) {
+            alert('Vui lòng đăng nhập để đăng Story.');
+            return;
+        }
+        if (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim() && !storyMusic && !selectedSpotifyTrack) {
+            alert('Vui lòng thêm ảnh/video, văn bản, biểu tượng hoặc âm nhạc để chia sẻ.');
             return;
         }
 
         setIsSubmittingStory(true);
         try {
             const formData = new FormData();
-            formData.append('user_id', currentUser.user_id);
+            formData.append('user_id', currentUserId);
 
+            let isCanvasBake = false;
             let fileToUpload = storyFile;
             if (!fileToUpload && !selectedStoryPost) {
                 const blob = await generateStoryCanvasBlob(
@@ -533,6 +535,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 );
                 if (blob) {
                     fileToUpload = new File([blob], 'story.png', { type: 'image/png' });
+                    isCanvasBake = true;
                 }
             }
 
@@ -557,13 +560,14 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 textPos,
                 textColor: storyTextColor,
                 textBg: storyTextBg,
-                gradientIndex: storyBgIndex
+                gradientIndex: storyBgIndex,
+                isCanvasBake
             };
             formData.append('sticker', JSON.stringify(stickerPayload));
 
-            const response = await fetch(`${API_URL}/stories`, { method: 'POST', body: formData });
+            const response = await safeFetch('/stories', { method: 'POST', body: formData });
             if (!response.ok) {
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
                 alert(data.message || 'Không thể đăng story.');
                 return;
             }
@@ -1199,7 +1203,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         type="button"
                                         className="ig-story-share-pill"
                                         onClick={handleCreateStory}
-                                        disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim())}
+                                        disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim() && !storyMusic && !selectedSpotifyTrack)}
                                     >
                                         <div className="ig-story-share-avatar">
                                             <Avatar user={currentUser} size={28} />
@@ -1307,6 +1311,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     {activeStory.sticker && (() => {
                                         try {
                                             const parsed = JSON.parse(activeStory.sticker);
+                                            if (parsed.isCanvasBake && activeStory.media_url) {
+                                                return null;
+                                            }
                                             return (
                                                 <>
                                                     {parsed.sticker && (

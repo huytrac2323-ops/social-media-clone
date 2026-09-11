@@ -11,7 +11,7 @@ const sendFriendRequest = async (req, res) => {
         return res.status(400).json({ message: "Thiếu dữ liệu ID người dùng!" });
     }
 
-    if (user_id === friend_id) {
+    if (String(user_id) === String(friend_id)) {
         return res.status(400).json({ message: "Không thể tự kết bạn với chính mình!" });
     }
 
@@ -24,7 +24,11 @@ const sendFriendRequest = async (req, res) => {
         );
 
         if (checkExist.rows.length > 0) {
-            return res.status(400).json({ message: "Lời mời kết bạn đã tồn tại hoặc hai người đã là bạn bè." });
+            const existing = checkExist.rows[0];
+            if (existing.status === 'accepted') {
+                return res.status(200).json({ message: "Hai bạn đã là bạn bè.", status: 'accepted' });
+            }
+            return res.status(200).json({ message: "Lời mời kết bạn đã được gửi trước đó.", status: 'pending' });
         }
 
         await pool.query(
@@ -32,15 +36,21 @@ const sendFriendRequest = async (req, res) => {
              VALUES ($1, $2, 'pending')`,
             [user_id, friend_id]
         );
-        await createNotification({
-            receiverId: friend_id,
-            senderId: user_id,
-            type: 'follow_request',
-            content: 'đã gửi lời mời kết bạn cho bạn.'
-        });
 
-        res.status(200).json({ message: "Đã gửi lời mời kết bạn thành công!" });
+        try {
+            await createNotification({
+                receiverId: friend_id,
+                senderId: user_id,
+                type: 'follow_request',
+                content: 'đã gửi lời mời kết bạn cho bạn.'
+            });
+        } catch (notifErr) {
+            console.warn('Lỗi gửi thông báo kết bạn:', notifErr.message);
+        }
+
+        res.status(200).json({ message: "Đã gửi lời mời kết bạn thành công!", status: 'pending' });
     } catch (err) {
+        console.error("Lỗi server khi gửi lời mời kết bạn:", err);
         res.status(500).json({ message: "Lỗi server khi gửi lời mời.", error: err.message });
     }
 };
@@ -68,14 +78,19 @@ const acceptFriendRequest = async (req, res) => {
              VALUES ($1, $2) ON CONFLICT DO NOTHING`,
             [friend_id, user_id]
         );
-        await createNotification({
-            receiverId: friend_id,
-            senderId: user_id,
-            type: 'follow',
-            content: 'đã chấp nhận lời mời kết bạn của bạn.'
-        });
+        try {
+            await createNotification({
+                receiverId: friend_id,
+                senderId: user_id,
+                type: 'follow',
+                content: 'đã chấp nhận lời mời kết bạn của bạn.'
+            });
+        } catch (notifErr) {
+            console.warn('Lỗi gửi thông báo accept friend:', notifErr.message);
+        }
         res.status(200).json({ message: "Đã trở thành bạn bè!" });
     } catch (err) {
+        console.error("Lỗi khi chấp nhận kết bạn:", err);
         res.status(500).json({ message: "Lỗi server khi chấp nhận kết bạn.", error: err.message });
     }
 };
@@ -95,6 +110,7 @@ const unfriendOrReject = async (req, res) => {
 
         res.status(200).json({ message: "Đã hủy kết bạn / từ chối lời mời." });
     } catch (err) {
+        console.error("Lỗi khi hủy kết bạn:", err);
         res.status(500).json({ message: "Lỗi server khi hủy kết bạn.", error: err.message });
     }
 };
@@ -121,7 +137,8 @@ const getFriendsList = async (req, res) => {
 };
 
 const getFollowStatus = async (req, res) => {
-    const { followerId, followeeId } = req.params;
+    const followerId = req.params.followerId || req.query.followerId;
+    const followeeId = req.params.followeeId || req.query.followeeId;
     try {
         const result = await pool.query(`
             SELECT
@@ -146,8 +163,8 @@ const getFollowStatus = async (req, res) => {
 };
 
 const followUser = async (req, res) => {
-    const followerId = req.body.follower_id;
-    const followeeId = req.body.followee_id;
+    const followerId = req.body.follower_id || req.body.user_id;
+    const followeeId = req.body.followee_id || req.body.target_id || req.body.friend_id;
     if (!followerId || !followeeId || String(followerId) === String(followeeId)) {
         return res.status(400).json({ message: 'Thông tin theo dõi không hợp lệ.' });
     }
@@ -156,18 +173,23 @@ const followUser = async (req, res) => {
         const target = await pool.query('SELECT is_private FROM users WHERE user_id = $1', [followeeId]);
         if (target.rowCount === 0) return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
 
-        if (target.rows[0].is_private === true) {
+        const isPrivate = Boolean(target.rows[0].is_private);
+        if (isPrivate) {
             await pool.query(`
                 INSERT INTO friends (user_id, friend_id, status)
                 VALUES ($1, $2, 'pending')
                 ON CONFLICT (user_id, friend_id) DO NOTHING
             `, [followerId, followeeId]);
-            await createNotification({
-                receiverId: followeeId,
-                senderId: followerId,
-                type: 'follow_request',
-                content: 'đã gửi yêu cầu theo dõi bạn.'
-            });
+            try {
+                await createNotification({
+                    receiverId: followeeId,
+                    senderId: followerId,
+                    type: 'follow_request',
+                    content: 'đã gửi yêu cầu theo dõi bạn.'
+                });
+            } catch (notifErr) {
+                console.warn('Lỗi gửi thông báo yêu cầu theo dõi:', notifErr.message);
+            }
             return res.json({ status: 'pending', message: 'Đã gửi yêu cầu theo dõi.' });
         }
 
@@ -175,20 +197,29 @@ const followUser = async (req, res) => {
             'INSERT INTO follows (follower_id, followee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
             [followerId, followeeId]
         );
-        await createNotification({
-            receiverId: followeeId,
-            senderId: followerId,
-            type: 'follow',
-            content: 'đã bắt đầu theo dõi bạn.'
-        });
+        try {
+            await createNotification({
+                receiverId: followeeId,
+                senderId: followerId,
+                type: 'follow',
+                content: 'đã bắt đầu theo dõi bạn.'
+            });
+        } catch (notifErr) {
+            console.warn('Lỗi gửi thông báo theo dõi:', notifErr.message);
+        }
         res.json({ status: 'following', message: 'Đã theo dõi.' });
     } catch (err) {
+        console.error('Lỗi khi theo dõi:', err);
         res.status(500).json({ message: 'Không thể theo dõi tài khoản.', error: err.message });
     }
 };
 
 const unfollowUser = async (req, res) => {
-    const { followerId, followeeId } = req.params;
+    const followerId = req.params.followerId || req.body?.follower_id || req.body?.user_id;
+    const followeeId = req.params.followeeId || req.body?.followee_id || req.body?.target_id;
+    if (!followerId || !followeeId) {
+        return res.status(400).json({ message: 'Thông tin hủy theo dõi không hợp lệ.' });
+    }
     try {
         await pool.query('DELETE FROM follows WHERE follower_id = $1 AND followee_id = $2', [followerId, followeeId]);
         await pool.query(
@@ -197,6 +228,7 @@ const unfollowUser = async (req, res) => {
         );
         res.json({ status: 'none', message: 'Đã hủy theo dõi.' });
     } catch (err) {
+        console.error('Lỗi khi hủy theo dõi:', err);
         res.status(500).json({ message: 'Không thể hủy theo dõi.', error: err.message });
     }
 };

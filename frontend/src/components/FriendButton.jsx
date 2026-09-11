@@ -1,43 +1,71 @@
 import React, { useState, useEffect } from 'react';
-
-// Tự động nhận diện môi trường Localhost hay Online
-const API_URL = 'https://social-media-clone-di9z.onrender.com/api';
+import { safeFetch } from '../utils/api';
 
 export default function FriendButton({ currentUserId, targetUserId }) {
     const [status, setStatus] = useState('NONE');
     const [loading, setLoading] = useState(true);
 
-
+    useEffect(() => {
+        if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
+            setLoading(false);
+            return;
+        }
+        let isMounted = true;
+        safeFetch(`/friends/status/${currentUserId}/${targetUserId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (isMounted && data?.status) {
+                    setStatus(data.status);
+                }
+            })
+            .catch(err => console.error('Lỗi lấy trạng thái bạn bè:', err))
+            .finally(() => {
+                if (isMounted) setLoading(false);
+            });
+        return () => { isMounted = false; };
+    }, [currentUserId, targetUserId]);
 
     // 2. Xử lý Gửi lời mời
     const handleSendRequest = async () => {
         setStatus('PENDING_SENT'); // Cập nhật UI ngay cho mượt
-        await fetch(`${API_URL}/friends/request`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requester_id: currentUserId, addressee_id: targetUserId })
-        });
+        try {
+            await safeFetch('/friends/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requester_id: currentUserId, addressee_id: targetUserId })
+            });
+        } catch (err) {
+            console.error('Lỗi gửi kết bạn:', err);
+        }
     };
 
     // 3. Xử lý Chấp nhận lời mời
     const handleAccept = async () => {
         setStatus('ACCEPTED');
-        await fetch(`${API_URL}/friends/accept`, {
-            method: 'PATCH', // Hoặc PUT tùy bạn khai báo ở Backend
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requester_id: targetUserId, addressee_id: currentUserId })
-        });
+        try {
+            await safeFetch('/friends/accept', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requester_id: targetUserId, addressee_id: currentUserId })
+            });
+        } catch (err) {
+            console.error('Lỗi chấp nhận kết bạn:', err);
+        }
     };
 
     // 4. Xử lý Hủy kết bạn / Từ chối lời mời
     const handleUnfriend = async () => {
         if (!window.confirm('Bạn có chắc chắn muốn hủy kết bạn / từ chối không?')) return;
         setStatus('NONE');
-        await fetch(`${API_URL}/friends/unfriend`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user1_id: currentUserId, user2_id: targetUserId })
-        });
+        try {
+            await safeFetch('/friends/unfriend', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user1_id: currentUserId, user2_id: targetUserId })
+            });
+        } catch (err) {
+            console.error('Lỗi hủy kết bạn:', err);
+        }
     };
 
     // --- HIỂN THỊ GIAO DIỆN TƯƠNG ỨNG ---

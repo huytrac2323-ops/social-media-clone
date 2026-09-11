@@ -358,23 +358,44 @@ function ProfilePage() {
 
   const handleFollowToggle = async () => {
     if (!currentUser?.user_id || !userProfile?.user_id) return;
-    const endpoint = followStatus?.is_following || followStatus?.request_sent
+    const isUnfollowing = Boolean(followStatus?.is_following || followStatus?.request_sent);
+    const endpoint = isUnfollowing
       ? `/friends/follow/${currentUser.user_id}/${userProfile.user_id}`
       : `/friends/follow`;
-    const response = await safeFetch(endpoint, {
-      method: followStatus?.is_following || followStatus?.request_sent ? 'DELETE' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: followStatus?.is_following || followStatus?.request_sent
-        ? undefined
-        : JSON.stringify({ follower_id: currentUser.user_id, followee_id: userProfile.user_id })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      alert(data.message || 'Không thể cập nhật theo dõi.');
-      return;
+
+    const prevStatus = followStatus;
+    // Cập nhật giao diện tức thì (Optimistic UI)
+    if (isUnfollowing) {
+      setFollowStatus({ ...prevStatus, is_following: false, request_sent: false });
+    } else {
+      if (userProfile.is_private) {
+        setFollowStatus({ ...prevStatus, request_sent: true, is_following: false });
+      } else {
+        setFollowStatus({ ...prevStatus, is_following: true, request_sent: false });
+      }
     }
-    await fetchFollowStatus(userProfile.user_id);
-    await fetchUserProfile();
+
+    try {
+      const response = await safeFetch(endpoint, {
+        method: isUnfollowing ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: isUnfollowing
+          ? undefined
+          : JSON.stringify({ follower_id: currentUser.user_id, followee_id: userProfile.user_id })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFollowStatus(prevStatus);
+        alert(data.message || 'Không thể cập nhật theo dõi.');
+        return;
+      }
+      await fetchFollowStatus(userProfile.user_id);
+      await fetchUserProfile();
+    } catch (err) {
+      setFollowStatus(prevStatus);
+      console.error('Lỗi theo dõi:', err);
+      alert('Không thể kết nối máy chủ.');
+    }
   };
 
   const handlePostClick = (postId) => {

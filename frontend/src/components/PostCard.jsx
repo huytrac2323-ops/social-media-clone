@@ -20,6 +20,7 @@ import {
   PlusCircle,
   Repeat
 } from 'lucide-react';
+import { safeFetch } from '../utils/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -168,21 +169,24 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
     if (!myId || !targetId) return alert('Lỗi: Thiếu thông tin ID!');
     if (myId === targetId) return alert('Không thể tự kết bạn với chính mình!');
 
+    // Cập nhật giao diện tức thì
+    setFriendRequestSent(true);
+
     try {
-      const res = await fetch(`${API_URL}/friends/request`, {
+      const res = await safeFetch('/friends/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
       });
-      const data = await res.json();
-      if (res.ok) {
-        setFriendRequestSent(true);
-        alert('Đã gửi yêu cầu kết bạn!');
-      } else {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFriendRequestSent(false);
         alert(data.error || data.message || 'Lỗi gửi kết bạn');
       }
     } catch (err) {
+      setFriendRequestSent(false);
       console.error("Lỗi kết bạn:", err);
+      alert('Không thể kết nối máy chủ.');
     }
   };
 

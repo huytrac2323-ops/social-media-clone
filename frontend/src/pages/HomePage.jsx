@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
 import Avatar from '../components/Avatar.jsx';
+import { safeFetch } from '../utils/api';
 import {
     Plus,
     X,
@@ -257,16 +258,29 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
             navigate('/login');
             return;
         }
+        const targetIdNum = Number(targetUserId);
+        setSentSuggestionRequests(prev => new Set(prev).add(targetIdNum));
         try {
-            const res = await fetch(`${API_URL}/friends/request`, {
+            const res = await safeFetch('/friends/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: currentUser.user_id, friend_id: targetUserId })
             });
-            if (res.ok) {
-                setSentSuggestionRequests(prev => new Set(prev).add(Number(targetUserId)));
+            if (!res.ok) {
+                setSentSuggestionRequests(prev => {
+                    const next = new Set(prev);
+                    next.delete(targetIdNum);
+                    return next;
+                });
+                const data = await res.json().catch(() => ({}));
+                alert(data.message || 'Không thể gửi lời mời kết bạn.');
             }
         } catch (err) {
+            setSentSuggestionRequests(prev => {
+                const next = new Set(prev);
+                next.delete(targetIdNum);
+                return next;
+            });
             console.error('Lỗi gửi kết bạn:', err);
         }
     };
@@ -500,19 +514,32 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         if (!myId || !targetId) return alert("Lỗi: ID trống!");
         if (myId === targetId) return alert("Không thể tự kết bạn!");
 
+        setSentSuggestionRequests(prev => new Set(prev).add(targetId));
+
         try {
-            const res = await fetch(`${API_URL}/friends/request`, {
+            const res = await safeFetch('/friends/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requester_id: myId, addressee_id: targetId })
             });
-            if (res.ok) {
-                alert("Đã gửi yêu cầu kết bạn!");
-                fetchSuggestions();
-            } else {
-                alert("Lỗi máy chủ khi gửi kết bạn.");
+            if (!res.ok) {
+                setSentSuggestionRequests(prev => {
+                    const next = new Set(prev);
+                    next.delete(targetId);
+                    return next;
+                });
+                const data = await res.json().catch(() => ({}));
+                alert(data.message || "Lỗi máy chủ khi gửi kết bạn.");
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            setSentSuggestionRequests(prev => {
+                const next = new Set(prev);
+                next.delete(targetId);
+                return next;
+            });
+            console.error("Lỗi khi gửi kết bạn:", err);
+            alert("Không thể kết nối đến máy chủ.");
+        }
     };
 
     return (

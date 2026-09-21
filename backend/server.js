@@ -15,8 +15,7 @@ const postController = require('./controllers/postController');
 // Khởi tạo Express app
 const app = express();
 
-// 1. IMPORT CONTROLLERS & DB
-const { poolPromise } = require('./config/db'); //const { savePost, unsavePost } = require('./controllers/savedPostController');
+
 const {
     getNotifications,
     markNotificationsRead,

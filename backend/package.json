@@ -16,9 +16,11 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "cloudinary": "^2.5.1",
     "google-auth-library": "^11.0.2",
-    "mssql": "^12.5.5",
+    "jsonwebtoken": "^9.0.2",
     "multer": "^2.1.1",
+    "pg": "^8.13.3",
     "socket.io": "^4.8.3"
   }
 }

@@ -34,15 +34,15 @@ import { safeFetch, getApiBaseUrl } from '../utils/api';
 const API_URL = getApiBaseUrl();
 
 const CREATOR_LABELS = {
-  illustrator:  { emoji: '🎨', label: 'Họa sĩ / Minh họa' },
-  photographer: { emoji: '📸', label: 'Nhiếp ảnh gia' },
-  musician:     { emoji: '🎵', label: 'Nhạc sĩ / Ca sĩ' },
-  videographer: { emoji: '🎬', label: 'Làm Video' },
-  writer:       { emoji: '✍️',  label: 'Nhà văn / Copywriter' },
-  dancer:       { emoji: '💃', label: 'Vũ công / Biên đạo' },
-  designer:     { emoji: '🖥️', label: 'Thiết kế đồ họa' },
-  gamer:        { emoji: '🎮', label: 'Game Creator' },
-  crafter:      { emoji: '🧶', label: 'Thủ công / DIY' },
+  illustrator:  { emoji: '🎨', label: 'Họa sĩ / Minh họa', desc: 'Vẽ tranh, Digital Art, Anime & Nghệ thuật thị giác' },
+  photographer: { emoji: '📸', label: 'Nhiếp ảnh gia', desc: 'Chuyên gia chụp ảnh phong cảnh, chân dung & sự kiện' },
+  musician:     { emoji: '🎵', label: 'Nhạc sĩ / Ca sĩ', desc: 'Sáng tác nhạc, biểu diễn, beatmaker & âm thanh' },
+  videographer: { emoji: '🎬', label: 'Làm phim / Video', desc: 'Sáng tạo nội dung video, YouTuber, dựng phim & vlog' },
+  writer:       { emoji: '✍️',  label: 'Nhà văn / Tác giả', desc: 'Sáng tác tiểu thuyết, tản văn, thơ & copywriting' },
+  dancer:       { emoji: '💃', label: 'Vũ công / Biên đạo', desc: 'Biểu diễn vũ đạo, nhảy cover & biên đạo nghệ thuật' },
+  designer:     { emoji: '🖥️', label: 'Thiết kế đồ họa', desc: 'Thiết kế nhận diện, UI/UX, poster & đồ họa truyền thông' },
+  gamer:        { emoji: '🎮', label: 'Game Creator', desc: 'Streamer, sáng tạo nội dung gaming & bình luận game' },
+  crafter:      { emoji: '🧶', label: 'Thủ công / DIY', desc: 'Sản phẩm handmade mỹ nghệ, gốm sứ & đồ decor độc bản' },
 };
 
 function ProfilePage() {
@@ -674,6 +674,56 @@ function ProfilePage() {
                   Đang theo dõi <strong>{stats?.following_count ?? 0}</strong>
                 </li>
               </ul>
+
+              {/* Thẻ nổi bật loại Nhà Sáng Tạo */}
+              {userProfile.creator_type && CREATOR_LABELS[userProfile.creator_type] && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '14px',
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)',
+                  border: '1px solid rgba(59, 130, 246, 0.28)',
+                  marginBottom: '14px',
+                  boxShadow: '0 2px 10px rgba(59, 130, 246, 0.08)'
+                }}>
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: 'rgba(59, 130, 246, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '22px',
+                    flexShrink: 0
+                  }}>
+                    {CREATOR_LABELS[userProfile.creator_type].emoji}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: '700', fontSize: '14.5px', color: '#60a5fa' }}>
+                        {CREATOR_LABELS[userProfile.creator_type].label}
+                      </span>
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                        color: '#ffffff',
+                        letterSpacing: '0.5px'
+                      }}>
+                        CREATOR
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: '1.4' }}>
+                      {CREATOR_LABELS[userProfile.creator_type].desc}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Bio block */}
               <div className="profile-bio-box">

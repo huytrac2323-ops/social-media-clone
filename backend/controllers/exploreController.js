@@ -55,38 +55,69 @@ const search = async (req, res) => {
     }
 };
 
-// Lấy danh sách nhà sáng tạo theo loại ngành
+// Lấy danh sách nhà sáng tạo với bộ lọc nâng cao (tên, từ khóa, ngành, địa chỉ, tích xanh, sắp xếp)
 const getCreators = async (req, res) => {
-    const creatorType = req.query.type || null;
-    const limit = parseInt(req.query.limit) || 20;
+    const creatorType = String(req.query.type || '').trim();
+    const query = String(req.query.q || '').trim();
+    const location = String(req.query.location || '').trim();
+    const verifiedOnly = req.query.verified === 'true' || req.query.verified === '1';
+    const hasPostsOnly = req.query.has_posts === 'true' || req.query.has_posts === '1';
+    const sort = req.query.sort || 'followers';
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
 
     try {
-        let queryStr, params;
+        let conditions = ['creator_type IS NOT NULL'];
+        let params = [];
+        let paramIndex = 1;
+
         if (creatorType && creatorType !== 'all') {
-            queryStr = `
-                SELECT user_id, username, profile_photo_url, bio, creator_type, is_verified,
-                       (SELECT COUNT(*) FROM follows WHERE followee_id = users.user_id) AS follower_count,
-                       (SELECT COUNT(*) FROM post WHERE user_id = users.user_id) AS post_count
-                FROM users
-                WHERE creator_type = $1
-                ORDER BY follower_count DESC, created_at DESC
-                LIMIT $2
-            `;
-            params = [creatorType, limit];
-        } else {
-            queryStr = `
-                SELECT user_id, username, profile_photo_url, bio, creator_type, is_verified,
-                       (SELECT COUNT(*) FROM follows WHERE followee_id = users.user_id) AS follower_count,
-                       (SELECT COUNT(*) FROM post WHERE user_id = users.user_id) AS post_count
-                FROM users
-                WHERE creator_type IS NOT NULL
-                ORDER BY follower_count DESC, created_at DESC
-                LIMIT $1
-            `;
-            params = [limit];
+            conditions.push(`creator_type = $${paramIndex++}`);
+            params.push(creatorType);
         }
 
-        const result = await pool.query(queryStr, params);
+        if (query) {
+            conditions.push(`(username ILIKE $${paramIndex} OR bio ILIKE $${paramIndex} OR interests ILIKE $${paramIndex})`);
+            params.push(`%${query}%`);
+            paramIndex++;
+        }
+
+        if (location) {
+            conditions.push(`(address ILIKE $${paramIndex} OR hometown ILIKE $${paramIndex})`);
+            params.push(`%${location}%`);
+            paramIndex++;
+        }
+
+        if (verifiedOnly) {
+            conditions.push(`is_verified IS TRUE`);
+        }
+
+        if (hasPostsOnly) {
+            conditions.push(`EXISTS (SELECT 1 FROM post WHERE user_id = users.user_id)`);
+        }
+
+        let orderBy = 'follower_count DESC, created_at DESC';
+        if (sort === 'newest') {
+            orderBy = 'created_at DESC';
+        } else if (sort === 'posts') {
+            orderBy = 'post_count DESC, follower_count DESC';
+        } else if (sort === 'name') {
+            orderBy = 'username ASC';
+        }
+
+        const whereClause = `WHERE ${conditions.join(' AND ')}`;
+        const sql = `
+            SELECT user_id, username, profile_photo_url, bio, creator_type, is_verified,
+                   address, hometown, interests, created_at,
+                   (SELECT COUNT(*) FROM follows WHERE followee_id = users.user_id) AS follower_count,
+                   (SELECT COUNT(*) FROM post WHERE user_id = users.user_id) AS post_count
+            FROM users
+            ${whereClause}
+            ORDER BY ${orderBy}
+            LIMIT $${paramIndex}
+        `;
+        params.push(limit);
+
+        const result = await pool.query(sql, params);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ message: 'Không thể lấy danh sách nhà sáng tạo.', error: err.message });

@@ -54,19 +54,19 @@ cloudinary.config({
 });
 
 const createStory = async (req, res) => {
-    const { user_id } = req.body;
     const rawUserId = req.body.user_id;
     const userId = rawUserId ? parseInt(rawUserId, 10) : null;
     const storyMedia = getUploadedFile(req, 'storyMedia');
     const storyMusic = getUploadedFile(req, 'storyMusic');
     const spotifyTrackId = req.body.spotify_track_id || null;
-    const sharedPostId = req.body.shared_post_id || null;
-    if (!user_id || (!storyMedia && !sharedPostId && !req.body.sticker)) {
     const rawSharedPostId = req.body.shared_post_id;
     const sharedPostId = rawSharedPostId ? parseInt(rawSharedPostId, 10) : null;
+
     if (!userId || (!storyMedia && !sharedPostId && !req.body.sticker)) {
+        cleanupUploadedFiles(req);
         return res.status(400).json({ message: 'Cần chọn ảnh/video, bài viết hoặc văn bản để đăng Story.' });
     }
+
     if (storyMusic && !isMp3File(storyMusic)) {
         cleanupUploadedFiles(req);
         return res.status(400).json({ message: 'Nhạc Story phải là tệp MP3.' });
@@ -110,7 +110,6 @@ const createStory = async (req, res) => {
                        spotify_track_id, spotify_track_name, spotify_artist_name, spotify_external_url,
                        shared_post_id, created_at, expires_at`,
             [
-                user_id,
                 userId,
                 mediaUrl,
                 mediaType,
@@ -132,6 +131,7 @@ const createStory = async (req, res) => {
         res.status(500).json({ message: 'Không thể đăng story.', error: err.message });
     }
 };
+
 
 const getStories = async (req, res) => {
     const viewerId = req.query.userId || null;

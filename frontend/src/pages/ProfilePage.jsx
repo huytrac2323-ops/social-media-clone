@@ -33,6 +33,18 @@ import { safeFetch, getApiBaseUrl } from '../utils/api';
 
 const API_URL = getApiBaseUrl();
 
+const CREATOR_LABELS = {
+  illustrator:  { emoji: '🎨', label: 'Họa sĩ / Minh họa' },
+  photographer: { emoji: '📸', label: 'Nhiếp ảnh gia' },
+  musician:     { emoji: '🎵', label: 'Nhạc sĩ / Ca sĩ' },
+  videographer: { emoji: '🎬', label: 'Làm Video' },
+  writer:       { emoji: '✍️',  label: 'Nhà văn / Copywriter' },
+  dancer:       { emoji: '💃', label: 'Vũ công / Biên đạo' },
+  designer:     { emoji: '🖥️', label: 'Thiết kế đồ họa' },
+  gamer:        { emoji: '🎮', label: 'Game Creator' },
+  crafter:      { emoji: '🧶', label: 'Thủ công / DIY' },
+};
+
 function ProfilePage() {
   const { username } = useParams();
   const navigate = useNavigate();
@@ -126,6 +138,7 @@ function ProfilePage() {
                   bio: matchedUser.bio || '',
                   is_private: Boolean(matchedUser.is_private),
                   is_verified: Boolean(matchedUser.is_verified),
+                  creator_type: matchedUser.creator_type || null,
                   posts: [],
                   stats: { post_count: 0, follower_count: 0, following_count: 0 }
                 });
@@ -154,6 +167,7 @@ function ProfilePage() {
               bio: currentUser.bio || '',
               is_private: Boolean(currentUser.is_private),
               is_verified: Boolean(currentUser.is_verified),
+              creator_type: currentUser.creator_type || null,
               posts: [],
               stats: { post_count: 0, follower_count: 0, following_count: 0 }
             });
@@ -217,6 +231,7 @@ function ProfilePage() {
           bio: currentUser.bio || '',
           is_private: Boolean(currentUser.is_private),
           is_verified: Boolean(currentUser.is_verified),
+          creator_type: currentUser.creator_type || null,
           posts: [],
           stats: { post_count: 0, follower_count: 0, following_count: 0 }
         });
@@ -581,6 +596,24 @@ function ProfilePage() {
                   <span className="private-badge-pill" title="Tài khoản riêng tư">
                     <Lock size={12} />
                     Riêng tư
+                  </span>
+                )}
+
+                {userProfile.creator_type && CREATOR_LABELS[userProfile.creator_type] && (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    background: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    color: '#60a5fa',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }} title={`Nhà sáng tạo: ${CREATOR_LABELS[userProfile.creator_type].label}`}>
+                    <span>{CREATOR_LABELS[userProfile.creator_type].emoji}</span>
+                    <span>{CREATOR_LABELS[userProfile.creator_type].label}</span>
                   </span>
                 )}
 

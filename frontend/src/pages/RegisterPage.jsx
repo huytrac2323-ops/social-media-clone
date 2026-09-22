@@ -79,20 +79,14 @@ function RegisterPage({ onRegisterSuccess }) {
 
         {/* Logo */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-          <div style={{
-            width: '48px', height: '48px', borderRadius: '14px',
-            background: 'var(--accent-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-          }}>
-            <Globe size={26} />
-          </div>
+          <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '48px', height: '48px', borderRadius: '14px', objectFit: 'cover' }} />
         </div>
 
         {/* ============ BƯỚC 1: Nhập thông tin ============ */}
         {step === 1 && (
           <>
-            <h1 className="auth-logo">NovaGen</h1>
-            <p className="auth-subtitle">Tạo tài khoản để bắt đầu sáng tạo</p>
+            <h1 className="auth-logo" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NovaGen</h1>
+            <p className="auth-subtitle">Tạo tài khoản để tham gia cộng đồng sáng tạo</p>
 
             <form onSubmit={handleNext}>
               <div style={{ position: 'relative', marginBottom: '12px' }}>

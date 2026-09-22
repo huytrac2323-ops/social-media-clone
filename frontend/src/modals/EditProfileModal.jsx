@@ -44,7 +44,7 @@ function EditProfileModal({ user, onClose, navigate }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: user.user_id,
+          user_id: user.user_id || user.id,
           is_private: newPrivacyStatus
         })
       });
@@ -87,7 +87,7 @@ function EditProfileModal({ user, onClose, navigate }) {
         body: JSON.stringify({
           username,
           bio,
-          user_id: user.user_id,
+          user_id: user.user_id || user.id,
           is_private: isPrivate,
           creator_type: creatorType,
           address,

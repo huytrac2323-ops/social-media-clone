@@ -50,6 +50,8 @@ function SidebarNav({ onCreatePost }) {
         return false;
     };
 
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.user?.role === 'admin';
+
     return (
         <>
             {/* ============================================== */}
@@ -61,7 +63,30 @@ function SidebarNav({ onCreatePost }) {
                     <span className="brand-logo-text" style={{ fontSize: '18px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800' }}>NovaGen</span>
                 </Link>
 
-                <div className="mobile-header-actions">
+                <div className="mobile-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isAdmin && (
+                        <Link
+                            to="/admin"
+                            title="Trang quản trị"
+                            aria-label="Trang quản trị"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '3px 8px',
+                                borderRadius: '12px',
+                                background: 'rgba(236, 72, 153, 0.15)',
+                                border: '1px solid rgba(236, 72, 153, 0.3)',
+                                color: '#f472b6',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                textDecoration: 'none'
+                            }}
+                        >
+                            <ShieldCheck size={12} color="#ec4899" />
+                            <span>Admin</span>
+                        </Link>
+                    )}
                     <button
                         type="button"
                         onClick={() => navigate('/explore')}
@@ -80,11 +105,35 @@ function SidebarNav({ onCreatePost }) {
             {/* ============================================== */}
             <aside className="app-sidebar-col" aria-label="Điều hướng chính">
                 <nav className="modern-sidebar">
-                    {/* Brand Logo */}
-                    <Link to="/" className="brand-logo-container" title="Trang chủ">
-                        <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} />
-                        <span className="brand-logo-text" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', fontSize: '20px' }}>NovaGen</span>
-                    </Link>
+                    {/* Brand Logo & Compact Admin Link */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px' }}>
+                        <Link to="/" className="brand-logo-container" title="Trang chủ" style={{ marginBottom: 0 }}>
+                            <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '34px', height: '34px', borderRadius: '10px', objectFit: 'cover' }} />
+                            <span className="brand-logo-text" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', fontSize: '19px' }}>NovaGen</span>
+                        </Link>
+                        {isAdmin && (
+                            <Link
+                                to="/admin"
+                                title="Trang quản trị"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    padding: '3px 7px',
+                                    borderRadius: '10px',
+                                    background: isActive('/admin') ? 'rgba(236, 72, 153, 0.25)' : 'rgba(236, 72, 153, 0.12)',
+                                    border: '1px solid rgba(236, 72, 153, 0.35)',
+                                    color: '#f472b6',
+                                    fontSize: '11px',
+                                    fontWeight: '700',
+                                    textDecoration: 'none'
+                                }}
+                            >
+                                <ShieldCheck size={12} color="#ec4899" />
+                                <span>Admin</span>
+                            </Link>
+                        )}
+                    </div>
 
                     {/* Quick Search */}
                     <form className="sidebar-search-box" onSubmit={submitSearch}>
@@ -143,24 +192,6 @@ function SidebarNav({ onCreatePost }) {
                                         <span>Trang cá nhân</span>
                                     </Link>
                                 </li>
-
-                                {(currentUser?.role === 'admin' || currentUser?.user?.role === 'admin') && (
-                                    <li>
-                                        <Link
-                                            to="/admin"
-                                            className={`nav-link-item ${isActive('/admin') ? 'active' : ''}`}
-                                            title="Quản trị Admin"
-                                            style={{
-                                                color: '#f472b6',
-                                                fontWeight: '700',
-                                                background: isActive('/admin') ? 'rgba(236, 72, 153, 0.15)' : 'transparent'
-                                            }}
-                                        >
-                                            <ShieldCheck size={20} color="#ec4899" />
-                                            <span>Quản trị Admin</span>
-                                        </Link>
-                                    </li>
-                                )}
 
                                 <li style={{ marginTop: '10px' }}>
                                     <button type="button" className="sidebar-post-btn" onClick={onCreatePost} title="Đăng bài">

@@ -621,28 +621,10 @@ function ProfilePage() {
                 )}
 
                 {isOwnProfile ? (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
-                      <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                      Chỉnh sửa hồ sơ
-                    </button>
-                    {!userProfile.is_verified && (
-                      <button
-                        type="button"
-                        className="btn-profile-secondary"
-                        onClick={() => setIsVerificationModalOpen(true)}
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15))',
-                          borderColor: 'rgba(56, 189, 248, 0.4)',
-                          color: '#38bdf8',
-                          fontWeight: '600'
-                        }}
-                      >
-                        <ShieldCheck size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                        Xin cấp Tích Xanh 🛡️
-                      </button>
-                    )}
-                  </div>
+                  <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
+                    <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
+                    Chỉnh sửa hồ sơ
+                  </button>
                 ) : (
                   currentUser && (
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -1054,6 +1036,7 @@ function ProfilePage() {
       <ProfileMenuModal
         isOpen={isMenuModalOpen}
         onClose={() => setIsMenuModalOpen(false)}
+        onRequestVerification={() => setIsVerificationModalOpen(true)}
       />
 
       {/* MODAL XEM STORY / TIN NỔI BẬT FULLSCREEN */}

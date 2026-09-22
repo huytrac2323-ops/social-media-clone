@@ -11,10 +11,11 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
-  Trash2
+  Trash2,
+  ShieldCheck
 } from 'lucide-react';
 
-function ProfileMenuModal({ isOpen, onClose }) {
+function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
   const {
     currentUser,
     savedAccounts,
@@ -172,6 +173,25 @@ function ProfileMenuModal({ isOpen, onClose }) {
                 <div className="profile-menu-item-content">
                   <div className="profile-menu-item-label">Thêm tài khoản</div>
                   <div className="profile-menu-item-desc">Đăng nhập tài khoản mới trên thiết bị</div>
+                </div>
+                <ChevronRight size={18} className="profile-menu-chevron" />
+              </button>
+
+              {/* Option: Xin cấp Tích Xanh */}
+              <button
+                type="button"
+                className="profile-menu-item"
+                onClick={() => {
+                  onClose();
+                  if (onRequestVerification) onRequestVerification();
+                }}
+              >
+                <div className="profile-menu-item-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+                  <ShieldCheck size={20} />
+                </div>
+                <div className="profile-menu-item-content">
+                  <div className="profile-menu-item-label" style={{ color: '#38bdf8', fontWeight: '600' }}>Xin cấp Tích Xanh 🛡️</div>
+                  <div className="profile-menu-item-desc">Gửi yêu cầu xét duyệt huy hiệu xác minh Nhà sáng tạo</div>
                 </div>
                 <ChevronRight size={18} className="profile-menu-chevron" />
               </button>

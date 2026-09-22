@@ -11,7 +11,6 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    FileText,
     Trash2,
     Lock,
     Unlock,
@@ -42,7 +41,7 @@ export default function AdminPage() {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
-    const [activeTab, setActiveTab] = useState('overview'); // overview, verifications, users, posts
+    const [activeTab, setActiveTab] = useState('overview'); // overview, verifications, users
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -65,10 +64,6 @@ export default function AdminPage() {
     const [userRoleFilter, setUserRoleFilter] = useState('');
     const [userVerifiedFilter, setUserVerifiedFilter] = useState('');
     const [userBannedFilter, setUserBannedFilter] = useState('');
-
-    // Posts
-    const [postsList, setPostsList] = useState([]);
-    const [postSearch, setPostSearch] = useState('');
 
     const token = window.localStorage.getItem('token');
 
@@ -138,34 +133,16 @@ export default function AdminPage() {
         }
     }, [token, userSearch, userRoleFilter, userVerifiedFilter, userBannedFilter]);
 
-    // Fetch bài viết
-    const fetchPosts = useCallback(async () => {
-        try {
-            const params = new URLSearchParams();
-            if (postSearch) params.append('search', postSearch);
-            const res = await safeFetch(`/admin/posts?${params.toString()}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setPostsList(data);
-            }
-        } catch (err) {
-            console.error('Lỗi tải bài viết admin:', err);
-        }
-    }, [token, postSearch]);
-
     // Tải toàn bộ dữ liệu ban đầu
     const loadAllData = useCallback(async () => {
         setLoading(true);
         await Promise.all([
             fetchStats(),
             fetchVerificationRequests(),
-            fetchUsers(),
-            fetchPosts()
+            fetchUsers()
         ]);
         setLoading(false);
-    }, [fetchStats, fetchVerificationRequests, fetchUsers, fetchPosts]);
+    }, [fetchStats, fetchVerificationRequests, fetchUsers]);
 
     useEffect(() => {
         if (currentUser?.role === 'admin') {
@@ -178,7 +155,6 @@ export default function AdminPage() {
         if (activeTab === 'overview') await fetchStats();
         if (activeTab === 'verifications') await fetchVerificationRequests();
         if (activeTab === 'users') await fetchUsers();
-        if (activeTab === 'posts') await fetchPosts();
         setRefreshing(false);
     };
 
@@ -277,26 +253,6 @@ export default function AdminPage() {
         }
     };
 
-    // Xóa bài viết
-    const handleDeletePost = async (postId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa bài viết vi phạm này khỏi hệ thống vĩnh viễn?')) return;
-        try {
-            const res = await safeFetch(`/admin/posts/${postId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setPostsList(prev => prev.filter(p => p.post_id !== postId));
-                fetchStats();
-            } else {
-                alert(data.message);
-            }
-        } catch (err) {
-            alert('Lỗi kết nối máy chủ.');
-        }
-    };
-
     return (
         <div className="app-shell">
             <div className="app-layout">
@@ -331,7 +287,7 @@ export default function AdminPage() {
                                     NovaGen Admin Portal
                                 </h1>
                                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted, #a8a8a8)' }}>
-                                    Hệ thống Quản trị, Xét duyệt Tích Xanh & Điều phối Nội dung
+                                    Hệ thống Quản trị, Xét duyệt Tích Xanh & Quản lý Người dùng
                                 </p>
                             </div>
                         </div>
@@ -387,8 +343,7 @@ export default function AdminPage() {
                                 icon: ShieldCheck,
                                 badge: stats?.pendingRequests > 0 ? stats.pendingRequests : null
                             },
-                            { id: 'users', label: 'Quản lý Người dùng', icon: Users },
-                            { id: 'posts', label: 'Quản lý Bài viết', icon: FileText }
+                            { id: 'users', label: 'Quản lý Người dùng', icon: Users }
                         ].map(tab => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -496,30 +451,6 @@ export default function AdminPage() {
                                                 <div style={{ color: '#eab308', fontSize: '13px', marginBottom: '8px', fontWeight: '600' }}>Đơn chờ duyệt ⏳</div>
                                                 <div style={{ fontSize: '28px', fontWeight: '800', color: '#eab308' }}>
                                                     {stats?.pendingRequests ?? 0}
-                                                </div>
-                                            </div>
-
-                                            <div style={{
-                                                padding: '20px',
-                                                borderRadius: '14px',
-                                                background: 'var(--bg-surface, #1e293b)',
-                                                border: '1px solid var(--border-color, #334155)'
-                                            }}>
-                                                <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '13px', marginBottom: '8px' }}>Tổng Bài viết</div>
-                                                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-main, #ffffff)' }}>
-                                                    {stats?.totalPosts ?? 0}
-                                                </div>
-                                            </div>
-
-                                            <div style={{
-                                                padding: '20px',
-                                                borderRadius: '14px',
-                                                background: 'var(--bg-surface, #1e293b)',
-                                                border: '1px solid var(--border-color, #334155)'
-                                            }}>
-                                                <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '13px', marginBottom: '8px' }}>Tổng Bình luận</div>
-                                                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-main, #ffffff)' }}>
-                                                    {stats?.totalComments ?? 0}
                                                 </div>
                                             </div>
                                         </div>
@@ -1014,115 +945,6 @@ export default function AdminPage() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* TAB 4: QUẢN LÝ BÀI VIẾT */}
-                                {activeTab === 'posts' && (
-                                    <div>
-                                        {/* Search Posts */}
-                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                                            <div style={{ flex: 1, position: 'relative' }}>
-                                                <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted, #94a3b8)' }} />
-                                                <input
-                                                    type="text"
-                                                    value={postSearch}
-                                                    onChange={e => setPostSearch(e.target.value)}
-                                                    onKeyDown={e => e.key === 'Enter' && fetchPosts()}
-                                                    placeholder="Tìm bài viết theo nội dung hoặc tên người đăng..."
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '10px 14px 10px 36px',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid var(--border-color, #334155)',
-                                                        background: 'var(--bg-surface, #1e293b)',
-                                                        color: 'var(--text-main, #ffffff)',
-                                                        fontSize: '13px',
-                                                        boxSizing: 'border-box'
-                                                    }}
-                                                />
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={fetchPosts}
-                                                style={{
-                                                    padding: '10px 18px',
-                                                    borderRadius: '8px',
-                                                    background: '#38bdf8',
-                                                    border: 'none',
-                                                    color: '#0f172a',
-                                                    fontWeight: '700',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                Tìm
-                                            </button>
-                                        </div>
-
-                                        {/* Posts Grid */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                                            {postsList.map(post => (
-                                                <div
-                                                    key={post.post_id}
-                                                    style={{
-                                                        borderRadius: '12px',
-                                                        background: 'var(--bg-surface, #1e293b)',
-                                                        border: '1px solid var(--border-color, #334155)',
-                                                        overflow: 'hidden',
-                                                        display: 'flex',
-                                                        flexDirection: 'column'
-                                                    }}
-                                                >
-                                                    {post.photo_url && (
-                                                        <img
-                                                            src={post.photo_url}
-                                                            alt=""
-                                                            style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-                                                        />
-                                                    )}
-                                                    <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                                            <Avatar user={{ username: post.username, profile_photo_url: post.profile_photo_url }} size={28} />
-                                                            <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main, #ffffff)' }}>
-                                                                {post.username}
-                                                            </span>
-                                                        </div>
-                                                        <p style={{
-                                                            fontSize: '13px',
-                                                            color: 'var(--text-main, #cbd5e1)',
-                                                            margin: '0 0 12px',
-                                                            lineHeight: '1.4',
-                                                            flex: 1
-                                                        }}>
-                                                            {post.caption || 'Không có mô tả'}
-                                                        </p>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted, #94a3b8)', borderTop: '1px solid var(--border-color, #334155)', paddingTop: '10px' }}>
-                                                            <span>❤️ {post.like_count || 0} • 💬 {post.comment_count || 0}</span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleDeletePost(post.post_id)}
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '4px',
-                                                                    background: 'rgba(239, 68, 68, 0.1)',
-                                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                                    color: '#ef4444',
-                                                                    padding: '4px 10px',
-                                                                    borderRadius: '6px',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '12px',
-                                                                    fontWeight: '600'
-                                                                }}
-                                                            >
-                                                                <Trash2 size={13} />
-                                                                Xóa
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
                                         </div>
                                     </div>
                                 )}

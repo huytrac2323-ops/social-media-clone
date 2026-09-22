@@ -56,6 +56,10 @@ const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) return res.status(401).send({ message: '"Sai mật khẩu rồi bạn ơi! Bản cập nhật mới nè.' });
 
+        if (user.is_banned) {
+            return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa do vi phạm tiêu chuẩn cộng đồng. Vui lòng liên hệ Quản trị viên.' });
+        }
+
         const { password_hash, ...userWithoutPassword } = user;
 
         // 1. TẠO TOKEN NGAY TẠI ĐÂY
@@ -127,6 +131,10 @@ const googleLogin = async (req, res) => {
                 );
                 user = updated.rows[0];
             }
+        }
+
+        if (user.is_banned) {
+            return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa do vi phạm tiêu chuẩn cộng đồng. Vui lòng liên hệ Quản trị viên.' });
         }
 
         const { password_hash: ignoredPassword, ...userWithoutPassword } = user;

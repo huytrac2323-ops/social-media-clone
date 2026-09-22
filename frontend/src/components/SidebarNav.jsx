@@ -13,7 +13,8 @@ import {
     LogIn,
     Search,
     Globe,
-    MessageCircle
+    MessageCircle,
+    ShieldCheck
 } from 'lucide-react';
 
 function SidebarNav({ onCreatePost }) {
@@ -142,6 +143,24 @@ function SidebarNav({ onCreatePost }) {
                                         <span>Trang cá nhân</span>
                                     </Link>
                                 </li>
+
+                                {(currentUser?.role === 'admin' || currentUser?.user?.role === 'admin') && (
+                                    <li>
+                                        <Link
+                                            to="/admin"
+                                            className={`nav-link-item ${isActive('/admin') ? 'active' : ''}`}
+                                            title="Quản trị Admin"
+                                            style={{
+                                                color: '#f472b6',
+                                                fontWeight: '700',
+                                                background: isActive('/admin') ? 'rgba(236, 72, 153, 0.15)' : 'transparent'
+                                            }}
+                                        >
+                                            <ShieldCheck size={20} color="#ec4899" />
+                                            <span>Quản trị Admin</span>
+                                        </Link>
+                                    </li>
+                                )}
 
                                 <li style={{ marginTop: '10px' }}>
                                     <button type="button" className="sidebar-post-btn" onClick={onCreatePost} title="Đăng bài">

@@ -31,6 +31,8 @@ const friendRoutes = require('./routes/friendRoutes');
 const storyRoutes = require('./routes/storyRoutes');
 const spotifyRoutes = require('./routes/spotifyRoutes');
 const exploreRoutes = require('./routes/exploreRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const verificationRoutes = require('./routes/verificationRoutes');
 
 
 
@@ -46,9 +48,6 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(express.static('public'));
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
-app.use(express.static('public'));
 
 
 // 3. ĐĂNG KÝ CÁC ROUTES
@@ -59,6 +58,8 @@ app.use('/api', userRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/spotify', spotifyRoutes);
 app.use('/api/explore', exploreRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/verification', verificationRoutes);
 
 
 

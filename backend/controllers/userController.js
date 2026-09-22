@@ -13,7 +13,7 @@ cloudinary.config({
 // Lấy danh sách tất cả người dùng
 const getUsers = async (req, res) => {
     try {
-        const result = await pool.query('SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, profile_photo_url, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests, bio, creator_type FROM users ORDER BY created_at DESC');
+        const result = await pool.query('SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, profile_photo_url, (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, role, address, hometown, age, interests, bio, creator_type FROM users ORDER BY created_at DESC');
         res.json(result.rows); // PostgreSQL trả kết quả về trong mảng .rows
     } catch (err) {
         res.status(500).send({ message: 'Lỗi server khi lấy danh sách người dùng.', error: err.message });
@@ -30,12 +30,12 @@ const getUserByUsername = async (req, res) => {
         let userResult;
         if (isNumeric) {
             userResult = await pool.query(
-                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests, creator_type FROM users WHERE user_id = $1 OR username ILIKE $2',
+                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, role, address, hometown, age, interests, creator_type FROM users WHERE user_id = $1 OR username ILIKE $2',
                 [parseInt(username, 10), username]
             );
         } else {
             userResult = await pool.query(
-                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, address, hometown, age, interests, creator_type FROM users WHERE username ILIKE $1',
+                'SELECT user_id, COALESCE(username, \'user_\' || user_id) AS username, bio, profile_photo_url, (is_private IS TRUE) AS is_private, (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, role, address, hometown, age, interests, creator_type FROM users WHERE username ILIKE $1',
                 [username]
             );
         }
@@ -159,6 +159,8 @@ const updateProfile = async (req, res) => {
             `SELECT user_id, username, bio, profile_photo_url, 
                     (is_private IS TRUE) AS is_private, 
                     (is_verified IS TRUE) AS is_verified, 
+                    (is_banned IS TRUE) AS is_banned,
+                    role,
                     creator_type, address, hometown, age, interests 
              FROM users WHERE user_id = $1`, 
             [user_id]

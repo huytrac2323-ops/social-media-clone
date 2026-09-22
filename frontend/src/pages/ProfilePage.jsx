@@ -7,6 +7,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
 import SidebarNav from '../components/SidebarNav.jsx';
 import Avatar from '../components/Avatar.jsx';
+import ProfileMenuModal from '../components/ProfileMenuModal.jsx';
+import RequestVerificationModal from '../modals/RequestVerificationModal.jsx';
+import { safeFetch, getApiBaseUrl } from '../utils/api';
 import {
   Grid,
   Bookmark,
@@ -27,9 +30,8 @@ import {
   Home,
   Calendar,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
-import ProfileMenuModal from '../components/ProfileMenuModal.jsx';
-import { safeFetch, getApiBaseUrl } from '../utils/api';
 
 const API_URL = getApiBaseUrl();
 
@@ -53,6 +55,7 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('posts');
@@ -618,10 +621,28 @@ function ProfilePage() {
                 )}
 
                 {isOwnProfile ? (
-                  <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
-                    <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                    Chỉnh sửa hồ sơ
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
+                      <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
+                      Chỉnh sửa hồ sơ
+                    </button>
+                    {!userProfile.is_verified && (
+                      <button
+                        type="button"
+                        className="btn-profile-secondary"
+                        onClick={() => setIsVerificationModalOpen(true)}
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15))',
+                          borderColor: 'rgba(56, 189, 248, 0.4)',
+                          color: '#38bdf8',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <ShieldCheck size={14} style={{ display: 'inline', marginRight: '6px' }} />
+                        Xin cấp Tích Xanh 🛡️
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   currentUser && (
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -1001,6 +1022,13 @@ function ProfilePage() {
           navigate={navigate}
         />
       )}
+
+      {/* REQUEST VERIFICATION MODAL */}
+      <RequestVerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        onSubmitted={fetchUserProfile}
+      />
 
       {/* CREATE POST MODAL */}
       {showCreatePost && currentUser && (

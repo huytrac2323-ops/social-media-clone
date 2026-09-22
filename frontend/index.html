@@ -10,6 +10,29 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- Tự động phát hiện và đồng bộ chế độ Sáng / Tối từ cài đặt trình duyệt -->
+    <script>
+      (function() {
+        try {
+          var mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+          function applyTheme(e) {
+            var stored = localStorage.getItem('novagen_theme');
+            if (stored === 'light' || stored === 'dark') {
+              document.documentElement.setAttribute('data-theme', stored);
+            } else {
+              document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+            }
+          }
+          applyTheme(mediaQuery);
+          if (mediaQuery.addEventListener) {
+            mediaQuery.addEventListener('change', applyTheme);
+          } else if (mediaQuery.addListener) {
+            mediaQuery.addListener(applyTheme);
+          }
+        } catch (_) {}
+      })();
+    </script>
+
     <!-- Title & SEO -->
     <title>NovaGen – Mạng xã hội dành cho nhà sáng tạo</title>
     <meta name="description" content="NovaGen là mạng xã hội Việt Nam dành cho các nhà sáng tạo nội dung. Chia sẻ tác phẩm, kết nối cộng đồng, tìm kiếm cơ hội hợp tác." />

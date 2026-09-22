@@ -14,9 +14,10 @@ const uploadStoryAsset = async (file, folder) => {
     if (!hasCloudinaryConfig) return `/uploads/${file.filename}`;
 
     try {
+        const isVideo = file.mimetype?.startsWith('video/');
         const uploadResult = await cloudinary.uploader.upload(file.path, {
             folder,
-            resource_type: 'auto'
+            resource_type: isVideo ? 'video' : 'auto'
         });
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return uploadResult.secure_url;

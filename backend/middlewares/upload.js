@@ -12,6 +12,9 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 100 * 1024 * 1024 } // Hỗ trợ tệp video dung lượng lên tới 100MB
+});
 
 module.exports = upload;    

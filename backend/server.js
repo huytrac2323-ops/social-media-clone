@@ -45,7 +45,8 @@ const corsOptions = {
 
 app.use(cors({ origin: '*' }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(express.static('public'));
 
@@ -447,7 +448,7 @@ const startServer = async () => {
                 media_url VARCHAR(500),
                 media_type VARCHAR(10) CHECK (media_type IN ('image', 'video')),
                 poll JSONB,
-                sticker VARCHAR(100),
+                sticker TEXT,
                 music_url VARCHAR(500),
                 music_name VARCHAR(255),
                 spotify_track_id VARCHAR(100),
@@ -461,7 +462,8 @@ const startServer = async () => {
         `);
         await client.query('CREATE INDEX IF NOT EXISTS stories_expires_at_idx ON stories(expires_at)');
         await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS poll JSONB');
-        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS sticker VARCHAR(100)');
+        await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS sticker TEXT');
+        await client.query('ALTER TABLE stories ALTER COLUMN sticker TYPE TEXT');
         await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS music_url VARCHAR(500)');
         await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS music_name VARCHAR(255)');
         await client.query('ALTER TABLE stories ADD COLUMN IF NOT EXISTS spotify_track_id VARCHAR(100)');

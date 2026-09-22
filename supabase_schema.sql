@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS stories (
     media_url VARCHAR(500),
     media_type VARCHAR(10) CHECK (media_type IN ('image', 'video')),
     poll JSONB,
-    sticker VARCHAR(100),
+    sticker TEXT,
     music_url VARCHAR(500),
     music_name VARCHAR(255),
     spotify_track_id VARCHAR(100),

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
 import SidebarNav from '../components/SidebarNav.jsx';
@@ -33,7 +33,16 @@ import {
     AlignRight,
     Clock,
     MapPin,
-    Sparkles
+    Sparkles,
+    Scissors,
+    Volume2,
+    VolumeX,
+    ZoomIn,
+    ZoomOut,
+    Crop,
+    Maximize2,
+    Minimize2,
+    RotateCcw
 } from 'lucide-react';
 
 const STORY_GRADIENTS = [
@@ -45,6 +54,13 @@ const STORY_GRADIENTS = [
     { name: 'Berry', value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)', colors: ['#831843', '#db2777', '#f472b6'] },
     { name: 'Noir', value: 'linear-gradient(180deg, #18181b 0%, #09090b 100%)', colors: ['#18181b', '#09090b'] }
 ];
+
+const formatSeconds = (sec) => {
+    if (!sec || isNaN(sec) || sec < 0) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
 
 const generateStoryCanvasBlob = async (
     text,
@@ -302,6 +318,56 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const [selectedStoryPost, setSelectedStoryPost] = useState(null);
     const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
     const [showCreatePost, setShowCreatePost] = useState(false);
+
+    // Memoize preview URLs để KHÔNG tạo lại Blob URL mỗi khi re-render (ngăn chặn reset video khi gõ chữ, chọn icon, nhạc)
+    const storyMediaPreviewUrl = useMemo(() => {
+        if (!storyFile) return null;
+        return URL.createObjectURL(storyFile);
+    }, [storyFile]);
+
+    useEffect(() => {
+        return () => {
+            if (storyMediaPreviewUrl) URL.revokeObjectURL(storyMediaPreviewUrl);
+        };
+    }, [storyMediaPreviewUrl]);
+
+    const storyEditMediaPreviewUrl = useMemo(() => {
+        if (!storyEditFile) return null;
+        return URL.createObjectURL(storyEditFile);
+    }, [storyEditFile]);
+
+    useEffect(() => {
+        return () => {
+            if (storyEditMediaPreviewUrl) URL.revokeObjectURL(storyEditMediaPreviewUrl);
+        };
+    }, [storyEditMediaPreviewUrl]);
+
+    // Các state điều chỉnh video (Trimmer & Mute)
+    const [videoDuration, setVideoDuration] = useState(0);
+    const [videoStartTime, setVideoStartTime] = useState(0);
+    const [videoEndTime, setVideoEndTime] = useState(0);
+    const [videoIsMuted, setVideoIsMuted] = useState(false);
+    const videoPreviewRef = useRef(null);
+
+    // Các state điều chỉnh Zoom, Crop, Pan cho ảnh/video
+    const [mediaScale, setMediaScale] = useState(1);
+    const [mediaOffset, setMediaOffset] = useState({ x: 0, y: 0 });
+    const [mediaFit, setMediaFit] = useState('cover'); // 'cover' (tràn khung) | 'contain' (vừa khung)
+    const [isPanningMedia, setIsPanningMedia] = useState(false);
+    const panStartPos = useRef({ x: 0, y: 0, initialOffsetX: 0, initialOffsetY: 0 });
+    const pinchStartDist = useRef(0);
+    const pinchStartScale = useRef(1);
+
+    // Tự động đặt lại các thông số video & zoom khi đổi tệp story
+    useEffect(() => {
+        setMediaScale(1);
+        setMediaOffset({ x: 0, y: 0 });
+        setMediaFit('cover');
+        setVideoDuration(0);
+        setVideoStartTime(0);
+        setVideoEndTime(0);
+        setVideoIsMuted(false);
+    }, [storyFile]);
 
     // Phát/dừng nghe thử bài hát 30s
     const togglePlayPreview = (track, e) => {
@@ -609,6 +675,13 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         setDraggingItem(null);
         setActiveStoryDrawer(null);
         setSelectedStoryPost(null);
+        setMediaScale(1);
+        setMediaOffset({ x: 0, y: 0 });
+        setMediaFit('cover');
+        setVideoDuration(0);
+        setVideoStartTime(0);
+        setVideoEndTime(0);
+        setVideoIsMuted(false);
     };
 
     const handleDragStart = (item, e) => {
@@ -634,6 +707,119 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
     const handleDragEnd = () => {
         setDraggingItem(null);
+    };
+
+    // Xử lý nạp metadata video: đọc thời lượng và thiết lập điểm kết thúc mặc định (tối đa 30s)
+    const handleVideoLoadedMetadata = (e) => {
+        const video = e.target;
+        const dur = Math.round(video.duration || 0);
+        setVideoDuration(dur);
+        setVideoStartTime(0);
+        setVideoEndTime(dur > 0 ? Math.min(dur, 30) : 15);
+    };
+
+    // Vòng lặp phát video trong khoảng thời lượng đã cắt [videoStartTime -> videoEndTime]
+    const handleVideoTimeUpdate = (e) => {
+        const video = e.target;
+        if (videoEndTime > 0 && video.currentTime >= videoEndTime) {
+            video.currentTime = videoStartTime;
+            video.play().catch(() => {});
+        }
+        if (video.currentTime < videoStartTime) {
+            video.currentTime = videoStartTime;
+        }
+    };
+
+    const handleStartTimeChange = (val) => {
+        const newStart = Math.max(0, Math.min(Number(val), (videoEndTime || videoDuration) - 1));
+        setVideoStartTime(newStart);
+        if (videoPreviewRef.current) {
+            videoPreviewRef.current.currentTime = newStart;
+        }
+    };
+
+    const handleEndTimeChange = (val) => {
+        const newEnd = Math.max(videoStartTime + 1, Math.min(Number(val), videoDuration || 60));
+        setVideoEndTime(newEnd);
+        if (videoPreviewRef.current) {
+            videoPreviewRef.current.currentTime = videoStartTime;
+        }
+    };
+
+    // Xử lý cử chỉ chạm cảm ứng trên ảnh/video: 2 ngón để Pinch Zoom, 1 ngón để Pan (dịch chuyển góc)
+    const handleMediaTouchStart = (e) => {
+        if (e.touches.length === 2) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            pinchStartDist.current = dist;
+            pinchStartScale.current = mediaScale;
+            setIsPanningMedia(true);
+        } else if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            panStartPos.current = {
+                x: touch.clientX,
+                y: touch.clientY,
+                initialOffsetX: mediaOffset.x,
+                initialOffsetY: mediaOffset.y
+            };
+            setIsPanningMedia(true);
+        }
+    };
+
+    const handleMediaTouchMove = (e) => {
+        if (!isPanningMedia) return;
+        if (e.touches.length === 2 && pinchStartDist.current > 0) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const ratio = dist / pinchStartDist.current;
+            const newScale = Math.min(3.0, Math.max(0.8, pinchStartScale.current * ratio));
+            setMediaScale(Number(newScale.toFixed(2)));
+        } else if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const dx = touch.clientX - panStartPos.current.x;
+            const dy = touch.clientY - panStartPos.current.y;
+            setMediaOffset({
+                x: Math.round(panStartPos.current.initialOffsetX + dx),
+                y: Math.round(panStartPos.current.initialOffsetY + dy)
+            });
+        }
+    };
+
+    const handleMediaTouchEnd = () => {
+        setIsPanningMedia(false);
+        pinchStartDist.current = 0;
+    };
+
+    const handleMediaMouseDown = (e) => {
+        panStartPos.current = {
+            x: e.clientX,
+            y: e.clientY,
+            initialOffsetX: mediaOffset.x,
+            initialOffsetY: mediaOffset.y
+        };
+        setIsPanningMedia(true);
+
+        const onMouseMove = (moveEvent) => {
+            const dx = moveEvent.clientX - panStartPos.current.x;
+            const dy = moveEvent.clientY - panStartPos.current.y;
+            setMediaOffset({
+                x: Math.round(panStartPos.current.initialOffsetX + dx),
+                y: Math.round(panStartPos.current.initialOffsetY + dy)
+            });
+        };
+
+        const onMouseUp = () => {
+            setIsPanningMedia(false);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
     };
 
     // Bộ lắng nghe kéo thả cảm ứng & chuột mượt mà trên toàn màn hình (kể cả khi ngón tay lướt ra ngoài canvas)
@@ -744,7 +930,18 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 textFont: storyTextFont,
                 textAlign: storyTextAlign,
                 gradientIndex: storyBgIndex,
-                isCanvasBake
+                isCanvasBake,
+                mediaTransform: {
+                    scale: mediaScale,
+                    offset: mediaOffset,
+                    fit: mediaFit
+                },
+                videoTrim: storyFile?.type.startsWith('video/') ? {
+                    startTime: videoStartTime,
+                    endTime: videoEndTime || videoDuration,
+                    duration: videoDuration,
+                    isMuted: videoIsMuted
+                } : null
             };
             formData.append('sticker', JSON.stringify(stickerPayload));
 
@@ -1020,6 +1217,50 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     </button>
 
                                     <div className="ig-story-tool-group">
+                                        {/* Crop & Zoom Tool */}
+                                        {storyFile && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'crop' || mediaScale !== 1 || mediaOffset.x !== 0 || mediaOffset.y !== 0 ? 'active' : ''}`}
+                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'crop' ? null : 'crop')}
+                                                    title="Thu phóng & Căn góc ảnh/video"
+                                                >
+                                                    <Crop size={20} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-tool-btn ${mediaFit === 'contain' ? 'active' : ''}`}
+                                                    onClick={() => setMediaFit(prev => prev === 'cover' ? 'contain' : 'cover')}
+                                                    title={mediaFit === 'cover' ? "Vừa màn hình (Fit)" : "Tràn khung 9:16 (Fill)"}
+                                                >
+                                                    {mediaFit === 'cover' ? <Minimize2 size={19} /> : <Maximize2 size={19} />}
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {/* Video Trimmer & Mute Tool */}
+                                        {storyFile?.type.startsWith('video/') && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-tool-btn ${activeStoryDrawer === 'trim' || (videoDuration > 0 && (videoStartTime > 0 || (videoEndTime > 0 && videoEndTime < videoDuration))) ? 'active' : ''}`}
+                                                    onClick={() => setActiveStoryDrawer(activeStoryDrawer === 'trim' ? null : 'trim')}
+                                                    title="Cắt độ dài video"
+                                                >
+                                                    <Scissors size={20} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-tool-btn ${videoIsMuted ? 'active' : ''}`}
+                                                    onClick={() => setVideoIsMuted(prev => !prev)}
+                                                    title={videoIsMuted ? "Bật âm thanh video" : "Tắt âm thanh video"}
+                                                >
+                                                    {videoIsMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                                                </button>
+                                            </>
+                                        )}
+
                                         {/* Text Tool Aa */}
                                         <button
                                             type="button"
@@ -1077,22 +1318,63 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     onTouchEnd={handleDragEnd}
                                     onMouseLeave={handleDragEnd}
                                 >
-                                    {/* Media File (Photo/Video) Preview */}
+                                    {/* Media File (Photo/Video) Preview with Zoom/Pan & Memoized URL */}
                                     {storyFile && (
-                                        <div className="ig-story-media-layer">
+                                        <div
+                                            className="ig-story-media-layer"
+                                            onTouchStart={handleMediaTouchStart}
+                                            onTouchMove={handleMediaTouchMove}
+                                            onTouchEnd={handleMediaTouchEnd}
+                                            onMouseDown={handleMediaMouseDown}
+                                        >
                                             {storyFile.type.startsWith('video/') ? (
-                                                <video src={URL.createObjectURL(storyFile)} controls autoPlay loop />
+                                                <video
+                                                    ref={videoPreviewRef}
+                                                    src={storyMediaPreviewUrl}
+                                                    playsInline
+                                                    autoPlay
+                                                    loop
+                                                    muted={videoIsMuted}
+                                                    onLoadedMetadata={handleVideoLoadedMetadata}
+                                                    onTimeUpdate={handleVideoTimeUpdate}
+                                                    style={{
+                                                        transform: `scale(${mediaScale}) translate(${mediaOffset.x}px, ${mediaOffset.y}px)`,
+                                                        objectFit: mediaFit,
+                                                        transition: isPanningMedia ? 'none' : 'transform 0.15s ease'
+                                                    }}
+                                                />
                                             ) : (
-                                                <img src={URL.createObjectURL(storyFile)} alt="Story Media" />
+                                                <img
+                                                    src={storyMediaPreviewUrl}
+                                                    alt="Story Media"
+                                                    draggable={false}
+                                                    style={{
+                                                        transform: `scale(${mediaScale}) translate(${mediaOffset.x}px, ${mediaOffset.y}px)`,
+                                                        objectFit: mediaFit,
+                                                        transition: isPanningMedia ? 'none' : 'transform 0.15s ease'
+                                                    }}
+                                                />
                                             )}
-                                            <button
-                                                type="button"
-                                                className="ig-story-remove-media-pill"
-                                                onClick={() => setStoryFile(null)}
-                                                title="Xóa tệp ảnh/video"
-                                            >
-                                                <Trash2 size={13} /> Xóa tệp
-                                            </button>
+                                            <div className="ig-story-media-quick-actions">
+                                                {storyFile.type.startsWith('video/') && videoDuration > 0 && (
+                                                    <span className="ig-story-media-badge-pill">
+                                                        ⏱ {formatSeconds(videoStartTime)} - {formatSeconds(videoEndTime)}
+                                                    </span>
+                                                )}
+                                                {mediaScale !== 1 && (
+                                                    <span className="ig-story-media-badge-pill">
+                                                        🔍 {Math.round(mediaScale * 100)}%
+                                                    </span>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="ig-story-remove-media-pill"
+                                                    onClick={() => setStoryFile(null)}
+                                                    title="Xóa tệp ảnh/video"
+                                                >
+                                                    <Trash2 size={13} /> Xóa tệp
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
@@ -1484,6 +1766,169 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     </div>
                                 )}
 
+                                {/* Drawer 4: Crop, Zoom & Pan Framing */}
+                                {activeStoryDrawer === 'crop' && storyFile && (
+                                    <div className="ig-story-drawer ig-story-crop-drawer">
+                                        <div className="ig-story-drawer-header">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <Crop size={18} />
+                                                <span>Cắt & Thu phóng khung hình</span>
+                                            </div>
+                                            <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                Xong
+                                            </button>
+                                        </div>
+
+                                        <div className="ig-crop-controls-row">
+                                            <span className="ig-crop-label">Thu phóng (Zoom): <strong>{Math.round(mediaScale * 100)}%</strong></span>
+                                            <div className="ig-crop-zoom-actions">
+                                                <button
+                                                    type="button"
+                                                    className="ig-crop-action-btn"
+                                                    onClick={() => setMediaScale(prev => Math.max(0.8, Number((prev - 0.1).toFixed(2))))}
+                                                    title="Thu nhỏ"
+                                                >
+                                                    <ZoomOut size={16} />
+                                                </button>
+                                                <input
+                                                    type="range"
+                                                    min={0.8}
+                                                    max={3.0}
+                                                    step={0.05}
+                                                    value={mediaScale}
+                                                    onChange={e => setMediaScale(Number(e.target.value))}
+                                                    className="ig-crop-zoom-slider"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="ig-crop-action-btn"
+                                                    onClick={() => setMediaScale(prev => Math.min(3.0, Number((prev + 0.1).toFixed(2))))}
+                                                    title="Phóng to"
+                                                >
+                                                    <ZoomIn size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="ig-crop-quick-toggles">
+                                            <button
+                                                type="button"
+                                                className={`ig-crop-mode-btn ${mediaFit === 'cover' ? 'active' : ''}`}
+                                                onClick={() => setMediaFit('cover')}
+                                            >
+                                                <Maximize2 size={14} /> Tràn khung 9:16 (Fill)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`ig-crop-mode-btn ${mediaFit === 'contain' ? 'active' : ''}`}
+                                                onClick={() => setMediaFit('contain')}
+                                            >
+                                                <Minimize2 size={14} /> Vừa màn hình (Fit)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="ig-crop-reset-btn"
+                                                onClick={() => {
+                                                    setMediaScale(1);
+                                                    setMediaOffset({ x: 0, y: 0 });
+                                                    setMediaFit('cover');
+                                                }}
+                                                title="Đặt lại mặc định"
+                                            >
+                                                <RotateCcw size={14} /> Đặt lại
+                                            </button>
+                                        </div>
+
+                                        <p className="ig-crop-hint">
+                                            💡 Mẹo: Chạm 2 ngón tay để zoom, hoặc giữ và kéo ảnh/video trên khung để dịch chuyển góc nhìn.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Drawer 5: Video Trimming */}
+                                {activeStoryDrawer === 'trim' && storyFile?.type.startsWith('video/') && (
+                                    <div className="ig-story-drawer ig-story-trim-drawer">
+                                        <div className="ig-story-drawer-header">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <Scissors size={18} />
+                                                <span>Cắt độ dài video ({Math.max(1, Math.round(videoEndTime - videoStartTime))}s)</span>
+                                            </div>
+                                            <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                Xong
+                                            </button>
+                                        </div>
+
+                                        <div className="ig-trim-time-indicators">
+                                            <span>Bắt đầu: <strong>{formatSeconds(videoStartTime)}</strong></span>
+                                            <span>Kết thúc: <strong>{formatSeconds(videoEndTime)}</strong></span>
+                                            <span>Tổng: <strong>{formatSeconds(videoDuration)}</strong></span>
+                                        </div>
+
+                                        <div className="ig-trim-sliders-wrap">
+                                            <div className="ig-trim-slider-row">
+                                                <label>Điểm bắt đầu:</label>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={Math.max(0, (videoDuration || 60) - 1)}
+                                                    step={0.5}
+                                                    value={videoStartTime}
+                                                    onChange={e => handleStartTimeChange(e.target.value)}
+                                                />
+                                                <span>{formatSeconds(videoStartTime)}</span>
+                                            </div>
+                                            <div className="ig-trim-slider-row">
+                                                <label>Điểm kết thúc:</label>
+                                                <input
+                                                    type="range"
+                                                    min={1}
+                                                    max={Math.max(1, videoDuration || 60)}
+                                                    step={0.5}
+                                                    value={videoEndTime}
+                                                    onChange={e => handleEndTimeChange(e.target.value)}
+                                                />
+                                                <span>{formatSeconds(videoEndTime)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="ig-trim-presets">
+                                            <button
+                                                type="button"
+                                                className={`ig-trim-preset-pill ${videoEndTime - videoStartTime <= 15.5 && videoEndTime - videoStartTime >= 14 ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setVideoStartTime(0);
+                                                    setVideoEndTime(Math.min(15, videoDuration || 15));
+                                                    if (videoPreviewRef.current) videoPreviewRef.current.currentTime = 0;
+                                                }}
+                                            >
+                                                15 giây
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`ig-trim-preset-pill ${videoEndTime - videoStartTime <= 30.5 && videoEndTime - videoStartTime >= 29 ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setVideoStartTime(0);
+                                                    setVideoEndTime(Math.min(30, videoDuration || 30));
+                                                    if (videoPreviewRef.current) videoPreviewRef.current.currentTime = 0;
+                                                }}
+                                            >
+                                                30 giây
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="ig-trim-preset-pill"
+                                                onClick={() => {
+                                                    setVideoStartTime(0);
+                                                    setVideoEndTime(videoDuration);
+                                                    if (videoPreviewRef.current) videoPreviewRef.current.currentTime = 0;
+                                                }}
+                                            >
+                                                Toàn bộ video
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Bottom Bar: Media Picker & Share Pill */}
                                 <div className="ig-story-bottombar">
                                     <label className="ig-story-media-btn" title="Chọn ảnh hoặc video từ máy">
@@ -1599,9 +2044,61 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                             </div>
                                         </button>
                                     ) : activeStory.media_type === 'video' ? (
-                                        <video src={mediaUrl(activeStory.media_url)} controls autoPlay loop />
+                                        (() => {
+                                            let videoTrim = null;
+                                            let mediaTransform = null;
+                                            try {
+                                                const p = JSON.parse(activeStory.sticker || '{}');
+                                                videoTrim = p.videoTrim || null;
+                                                mediaTransform = p.mediaTransform || null;
+                                            } catch {}
+                                            return (
+                                                <video
+                                                    src={mediaUrl(activeStory.media_url)}
+                                                    controls
+                                                    autoPlay
+                                                    loop
+                                                    playsInline
+                                                    muted={videoTrim?.isMuted || false}
+                                                    style={{
+                                                        objectFit: mediaTransform?.fit || 'contain',
+                                                        transform: `scale(${mediaTransform?.scale || 1}) translate(${mediaTransform?.offset?.x || 0}px, ${mediaTransform?.offset?.y || 0}px)`
+                                                    }}
+                                                    onLoadedMetadata={e => {
+                                                        if (videoTrim?.startTime) {
+                                                            e.target.currentTime = videoTrim.startTime;
+                                                        }
+                                                    }}
+                                                    onTimeUpdate={e => {
+                                                        const v = e.target;
+                                                        if (videoTrim?.endTime && videoTrim.endTime > 0) {
+                                                            if (v.currentTime >= videoTrim.endTime || v.currentTime < (videoTrim.startTime || 0)) {
+                                                                v.currentTime = videoTrim.startTime || 0;
+                                                                v.play().catch(() => {});
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                            );
+                                        })()
                                     ) : activeStory.media_url ? (
-                                        <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />
+                                        (() => {
+                                            let mediaTransform = null;
+                                            try {
+                                                const p = JSON.parse(activeStory.sticker || '{}');
+                                                mediaTransform = p.mediaTransform || null;
+                                            } catch {}
+                                            return (
+                                                <img
+                                                    src={mediaUrl(activeStory.media_url)}
+                                                    alt={`Story của ${activeStory.username}`}
+                                                    style={{
+                                                        objectFit: mediaTransform?.fit || 'contain',
+                                                        transform: `scale(${mediaTransform?.scale || 1}) translate(${mediaTransform?.offset?.x || 0}px, ${mediaTransform?.offset?.y || 0}px)`
+                                                    }}
+                                                />
+                                            );
+                                        })()
                                     ) : (
                                         <div
                                             className="story-no-media-bg"

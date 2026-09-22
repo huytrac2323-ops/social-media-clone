@@ -27,18 +27,36 @@ import {
     FileText,
     Smile,
     Palette,
-    Send
+    Send,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    Clock,
+    MapPin,
+    Sparkles
 } from 'lucide-react';
 
 const STORY_GRADIENTS = [
     { name: 'Sunset', value: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', colors: ['#f09433', '#dc2743', '#bc1888'] },
+    { name: 'Ocean', value: 'linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%)', colors: ['#0284c7', '#2563eb', '#4f46e5'] },
     { name: 'Purple', value: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #7c3aed 100%)', colors: ['#1e1b4b', '#4338ca', '#7c3aed'] },
     { name: 'Cyber', value: 'linear-gradient(135deg, #091e3a 0%, #2563eb 60%, #38bdf8 100%)', colors: ['#091e3a', '#2563eb', '#38bdf8'] },
     { name: 'Emerald', value: 'linear-gradient(135deg, #064e3b 0%, #059669 60%, #34d399 100%)', colors: ['#064e3b', '#059669', '#34d399'] },
+    { name: 'Berry', value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)', colors: ['#831843', '#db2777', '#f472b6'] },
     { name: 'Noir', value: 'linear-gradient(180deg, #18181b 0%, #09090b 100%)', colors: ['#18181b', '#09090b'] }
 ];
 
-const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, sticker, textPos = { x: 50, y: 55 }, stickerPos = { x: 50, y: 35 }) => {
+const generateStoryCanvasBlob = async (
+    text,
+    textColor,
+    textBgMode = 'semi',
+    gradientColors,
+    sticker,
+    textPos = { x: 50, y: 55 },
+    stickerPos = { x: 50, y: 35 },
+    textFont = 'modern',
+    textAlign = 'center'
+) => {
     return new Promise(resolve => {
         try {
             const canvas = document.createElement('canvas');
@@ -47,6 +65,7 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
             const ctx = canvas.getContext('2d');
             if (!ctx) return resolve(null);
 
+            // Nền Gradient
             const grad = ctx.createLinearGradient(0, 0, 1080, 1920);
             if (gradientColors && gradientColors.length >= 2) {
                 gradientColors.forEach((col, idx) => {
@@ -59,18 +78,98 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 1080, 1920);
 
+            // Vẽ Sticker / Icon Instagram
             if (sticker) {
-                ctx.font = '130px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
-                ctx.textAlign = 'center';
                 const stX = 1080 * ((stickerPos?.x ?? 50) / 100);
                 const stY = 1920 * ((stickerPos?.y ?? 35) / 100);
-                ctx.fillText(sticker, stX, stY);
+
+                if (sticker.startsWith('⏰')) {
+                    const timeText = sticker.replace(/^⏰\s*/, '');
+                    ctx.save();
+                    ctx.font = '900 80px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    const textMetrics = ctx.measureText(timeText);
+                    const padX = 48;
+                    const boxW = textMetrics.width + padX * 2;
+                    const boxH = 114;
+                    const bX = stX - boxW / 2;
+                    const bY = stY - boxH / 2;
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    const r = 28;
+                    ctx.moveTo(bX + r, bY);
+                    ctx.arcTo(bX + boxW, bY, bX + boxW, bY + boxH, r);
+                    ctx.arcTo(bX + boxW, bY + boxH, bX, bY + boxH, r);
+                    ctx.arcTo(bX, bY + boxH, bX, bY, r);
+                    ctx.arcTo(bX, bY, bX + boxW, bY, r);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillText(timeText, stX, stY + 28);
+                    ctx.restore();
+                } else if (sticker.startsWith('📍')) {
+                    const locText = sticker;
+                    ctx.save();
+                    ctx.font = 'bold 52px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ctx.textAlign = 'center';
+                    const textMetrics = ctx.measureText(locText);
+                    const padX = 42;
+                    const boxW = textMetrics.width + padX * 2;
+                    const boxH = 96;
+                    const bX = stX - boxW / 2;
+                    const bY = stY - boxH / 2;
+
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                    ctx.beginPath();
+                    const r = 48;
+                    ctx.moveTo(bX + r, bY);
+                    ctx.arcTo(bX + boxW, bY, bX + boxW, bY + boxH, r);
+                    ctx.arcTo(bX + boxW, bY + boxH, bX, bY + boxH, r);
+                    ctx.arcTo(bX, bY + boxH, bX, bY, r);
+                    ctx.arcTo(bX, bY, bX + boxW, bY, r);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(locText, stX, stY + 18);
+                    ctx.restore();
+                } else {
+                    ctx.font = '130px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(sticker, stX, stY);
+                }
             }
 
+            // Vẽ Văn bản đa phong cách chuẩn Instagram
             if (text && text.trim()) {
-                const fontSize = 64;
-                ctx.font = `bold ${fontSize}px "Segoe UI", -apple-system, Roboto, sans-serif`;
-                ctx.textAlign = 'center';
+                let fontSpec = 'bold 64px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                let fontSize = 64;
+                let lineHeight = 86;
+
+                if (textFont === 'classic') {
+                    fontSpec = 'italic bold 64px Georgia, "Times New Roman", serif';
+                } else if (textFont === 'neon') {
+                    fontSpec = 'bold 68px "Brush Script MT", "Dancing Script", cursive, sans-serif';
+                    fontSize = 68;
+                    lineHeight = 90;
+                } else if (textFont === 'typewriter') {
+                    fontSpec = 'bold 60px "Courier New", Courier, monospace';
+                    fontSize = 60;
+                    lineHeight = 82;
+                } else if (textFont === 'strong') {
+                    fontSpec = '900 68px "Arial Black", Impact, sans-serif';
+                    fontSize = 68;
+                    lineHeight = 92;
+                }
+
+                ctx.font = fontSpec;
+                ctx.textAlign = textAlign || 'center';
 
                 const words = text.split(/\s+/);
                 const lines = [];
@@ -87,19 +186,23 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
                 }
                 if (currentLine) lines.push(currentLine);
 
-                const lineHeight = 86;
                 const targetX = 1080 * ((textPos?.x ?? 50) / 100);
                 const targetY = 1920 * ((textPos?.y ?? 55) / 100);
                 const startY = targetY - ((lines.length - 1) * lineHeight) / 2;
 
                 lines.forEach((line, i) => {
                     const lineY = startY + i * lineHeight;
-                    if (textBg) {
-                        const lineWidth = ctx.measureText(line).width;
+                    const lineWidth = ctx.measureText(line).width;
+
+                    let bgX = targetX - lineWidth / 2;
+                    if (textAlign === 'left') bgX = targetX;
+                    else if (textAlign === 'right') bgX = targetX - lineWidth;
+
+                    if (textBgMode === 'semi' || textBgMode === true) {
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
                         const padX = 32;
                         const padY = 16;
-                        const x = targetX - lineWidth / 2 - padX;
+                        const x = bgX - padX;
                         const y = lineY - fontSize + 6;
                         const w = lineWidth + padX * 2;
                         const h = fontSize + padY;
@@ -112,9 +215,37 @@ const generateStoryCanvasBlob = async (text, textColor, textBg, gradientColors, 
                         ctx.arcTo(x, y, x + w, y, r);
                         ctx.closePath();
                         ctx.fill();
+                    } else if (textBgMode === 'solid') {
+                        ctx.fillStyle = (textColor === '#000000' || textColor === '#09090b') ? '#ffffff' : '#000000';
+                        const padX = 32;
+                        const padY = 16;
+                        const x = bgX - padX;
+                        const y = lineY - fontSize + 6;
+                        const w = lineWidth + padX * 2;
+                        const h = fontSize + padY;
+                        const r = 20;
+                        ctx.beginPath();
+                        ctx.moveTo(x + r, y);
+                        ctx.arcTo(x + w, y, x + w, y + h, r);
+                        ctx.arcTo(x + w, y + h, x, y + h, r);
+                        ctx.arcTo(x, y + h, x, y, r);
+                        ctx.arcTo(x, y, x + w, y, r);
+                        ctx.closePath();
+                        ctx.fill();
                     }
-                    ctx.fillStyle = textColor || '#ffffff';
+
+                    if (textFont === 'neon') {
+                        ctx.shadowColor = textColor || '#ffffff';
+                        ctx.shadowBlur = 18;
+                    } else {
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.fillStyle = textBgMode === 'solid'
+                        ? ((textColor === '#000000' || textColor === '#09090b') ? '#000000' : '#ffffff')
+                        : (textColor || '#ffffff');
                     ctx.fillText(line, targetX, lineY);
+                    ctx.shadowBlur = 0;
                 });
             }
 
@@ -147,6 +278,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const [storyText, setStoryText] = useState('');
     const [storyTextColor, setStoryTextColor] = useState('#ffffff');
     const [storyTextBg, setStoryTextBg] = useState(true);
+    const [storyTextFont, setStoryTextFont] = useState('modern');
+    const [storyTextAlign, setStoryTextAlign] = useState('center');
+    const [storyTextBgMode, setStoryTextBgMode] = useState('semi');
     const [storyBgIndex, setStoryBgIndex] = useState(0);
     const [stickerPos, setStickerPos] = useState({ x: 50, y: 35 });
     const [textPos, setTextPos] = useState({ x: 50, y: 55 });
@@ -475,6 +609,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         setStoryText('');
         setStoryTextColor('#ffffff');
         setStoryTextBg(true);
+        setStoryTextFont('modern');
+        setStoryTextAlign('center');
+        setStoryTextBgMode('semi');
         setStickerPos({ x: 50, y: 35 });
         setTextPos({ x: 50, y: 55 });
         setDraggingItem(null);
@@ -487,25 +624,42 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         setDraggingItem(item);
     };
 
-    const handleCanvasMove = (e) => {
-        if (!draggingItem || !canvasRef.current) return;
-        const rect = canvasRef.current.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    // Bộ lắng nghe kéo thả cảm ứng & chuột mượt mà trên toàn màn hình (kể cả khi ngón tay lướt ra ngoài canvas)
+    useEffect(() => {
+        if (!draggingItem) return;
 
-        const xPercent = Math.max(10, Math.min(90, ((clientX - rect.left) / rect.width) * 100));
-        const yPercent = Math.max(15, Math.min(85, ((clientY - rect.top) / rect.height) * 100));
+        const onMove = (e) => {
+            if (!canvasRef.current) return;
+            const rect = canvasRef.current.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        if (draggingItem === 'sticker') {
-            setStickerPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
-        } else if (draggingItem === 'text') {
-            setTextPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
-        }
-    };
+            const xPercent = Math.max(8, Math.min(92, ((clientX - rect.left) / rect.width) * 100));
+            const yPercent = Math.max(10, Math.min(90, ((clientY - rect.top) / rect.height) * 100));
 
-    const handleDragEnd = () => {
-        setDraggingItem(null);
-    };
+            if (draggingItem === 'sticker') {
+                setStickerPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
+            } else if (draggingItem === 'text') {
+                setTextPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
+            }
+        };
+
+        const onEnd = () => setDraggingItem(null);
+
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onMove, { passive: true });
+        window.addEventListener('touchend', onEnd);
+        window.addEventListener('touchcancel', onEnd);
+
+        return () => {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onEnd);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('touchend', onEnd);
+            window.removeEventListener('touchcancel', onEnd);
+        };
+    }, [draggingItem]);
 
     const handleCreateStory = async (event) => {
         if (event) event.preventDefault();
@@ -515,7 +669,14 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
             alert('Vui lòng đăng nhập để đăng Story.');
             return;
         }
-        if (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim() && !storyMusic && !selectedSpotifyTrack) {
+
+        const hasMedia = !!storyFile;
+        const hasPost = !!selectedStoryPost;
+        const hasText = !!storyText.trim();
+        const hasSticker = !!storySticker.trim();
+        const hasMusic = !!storyMusic || !!selectedSpotifyTrack;
+
+        if (!hasMedia && !hasPost && !hasText && !hasSticker && !hasMusic) {
             alert('Vui lòng thêm ảnh/video, văn bản, biểu tượng hoặc âm nhạc để chia sẻ.');
             return;
         }
@@ -526,24 +687,28 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
             formData.append('user_id', currentUserId);
 
             let isCanvasBake = false;
-            let fileToUpload = storyFile;
-            if (!fileToUpload && !selectedStoryPost) {
+            if (!hasMedia && !hasPost) {
+                // Tạo ảnh nung từ canvas gradient + chữ + sticker
                 const blob = await generateStoryCanvasBlob(
                     storyText,
                     storyTextColor,
-                    storyTextBg,
+                    storyTextBgMode,
                     STORY_GRADIENTS[storyBgIndex].colors,
                     storySticker,
                     textPos,
-                    stickerPos
+                    stickerPos,
+                    storyTextFont,
+                    storyTextAlign
                 );
                 if (blob) {
-                    fileToUpload = new File([blob], 'story.png', { type: 'image/png' });
+                    // Đính kèm trực tiếp Blob vào FormData (tương thích 100% với iOS Safari & Android WebViews không hỗ trợ new File)
+                    formData.append('storyMedia', blob, 'story.png');
                     isCanvasBake = true;
                 }
+            } else if (hasMedia) {
+                formData.append('storyMedia', storyFile);
             }
 
-            if (fileToUpload) formData.append('storyMedia', fileToUpload);
             if (selectedStoryPost) formData.append('shared_post_id', selectedStoryPost.id || selectedStoryPost.post_id);
             if (storyMusic) formData.append('storyMusic', storyMusic);
             if (selectedSpotifyTrack) {
@@ -563,7 +728,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 text: storyText || '',
                 textPos,
                 textColor: storyTextColor,
-                textBg: storyTextBg,
+                textBg: storyTextBgMode,
+                textFont: storyTextFont,
+                textAlign: storyTextAlign,
                 gradientIndex: storyBgIndex,
                 isCanvasBake
             };
@@ -957,7 +1124,17 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                             onTouchStart={e => handleDragStart('sticker', e)}
                                         >
                                             <div className={`ig-story-draggable-wrapper ${draggingItem === 'sticker' ? 'ig-story-drag-halo' : ''}`}>
-                                                <span className="ig-story-sticker-display">{storySticker}</span>
+                                                {storySticker.startsWith('⏰') ? (
+                                                    <div className="ig-time-sticker">
+                                                        {storySticker.replace(/^⏰\s*/, '')}
+                                                    </div>
+                                                ) : storySticker.startsWith('📍') ? (
+                                                    <div className="ig-location-sticker">
+                                                        {storySticker}
+                                                    </div>
+                                                ) : (
+                                                    <span className="ig-story-sticker-display">{storySticker}</span>
+                                                )}
                                                 <button
                                                     type="button"
                                                     className="ig-story-sticker-remove"
@@ -1002,8 +1179,8 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                             left: `${textPos.x}%`,
                                             top: `${textPos.y}%`,
                                             transform: 'translate(-50%, -50%)',
-                                            width: '85%',
-                                            maxWidth: '320px'
+                                            width: '88%',
+                                            maxWidth: '340px'
                                         }}
                                     >
                                         <div className={`ig-story-draggable-wrapper ${draggingItem === 'text' ? 'ig-story-drag-halo' : ''}`} style={{ width: '100%', flexDirection: 'column' }}>
@@ -1012,7 +1189,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                 onMouseDown={e => handleDragStart('text', e)}
                                                 onTouchStart={e => handleDragStart('text', e)}
                                                 style={{ cursor: 'grab', display: 'flex', justifyContent: 'center', padding: '3px 0', opacity: 0.8 }}
-                                                title="Giữ chuột hoặc ngón tay để kéo di chuyển"
+                                                title="Chạm và giữ để kéo di chuyển"
                                             >
                                                 <span className="ig-story-drag-badge" style={{ position: 'static', transform: 'none', opacity: 1 }}>⠿ Kéo để di chuyển</span>
                                             </div>
@@ -1020,8 +1197,16 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                 value={storyText}
                                                 onChange={e => setStoryText(e.target.value)}
                                                 placeholder="Chạm để nhập văn bản..."
-                                                className={`ig-story-textarea ${storyTextBg ? 'has-bg' : ''}`}
-                                                style={{ color: storyTextColor }}
+                                                className={`ig-story-textarea ig-font-${storyTextFont} ${storyTextBgMode === 'semi' ? 'has-bg' : storyTextBgMode === 'solid' ? 'has-solid-bg' : ''}`}
+                                                style={{
+                                                    color: storyTextBgMode === 'solid'
+                                                        ? ((storyTextColor === '#000000' || storyTextColor === '#09090b') ? '#000000' : '#ffffff')
+                                                        : storyTextColor,
+                                                    background: storyTextBgMode === 'solid'
+                                                        ? ((storyTextColor === '#000000' || storyTextColor === '#09090b') ? '#ffffff' : '#000000')
+                                                        : (storyTextBgMode === 'semi' ? 'rgba(0, 0, 0, 0.65)' : 'transparent'),
+                                                    textAlign: storyTextAlign
+                                                }}
                                                 rows={Math.max(1, (storyText.match(/\n/g) || []).length + 1)}
                                             />
                                         </div>
@@ -1043,21 +1228,82 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     )}
                                 </div>
 
-                                {/* Drawer 1: Text Options (Color Palette + Badge Toggle) */}
+                                {/* Drawer 1: Text Options (Font, Alignment, Background, Color) */}
                                 {activeStoryDrawer === 'text' && (
                                     <div className="ig-story-drawer">
                                         <div className="ig-story-drawer-header">
                                             <span>Định dạng chữ</span>
-                                            <button
-                                                type="button"
-                                                className={`ig-story-text-bg-toggle ${storyTextBg ? 'active' : ''}`}
-                                                onClick={() => setStoryTextBg(!storyTextBg)}
-                                            >
-                                                Nền chữ: {storyTextBg ? 'Bật' : 'Tắt'}
-                                            </button>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {/* Text Alignment */}
+                                                <div className="ig-story-align-group">
+                                                    <button
+                                                        type="button"
+                                                        className={`ig-story-align-btn ${storyTextAlign === 'left' ? 'active' : ''}`}
+                                                        onClick={() => setStoryTextAlign('left')}
+                                                        title="Căn trái"
+                                                    >
+                                                        <AlignLeft size={13} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={`ig-story-align-btn ${storyTextAlign === 'center' ? 'active' : ''}`}
+                                                        onClick={() => setStoryTextAlign('center')}
+                                                        title="Căn giữa"
+                                                    >
+                                                        <AlignCenter size={13} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={`ig-story-align-btn ${storyTextAlign === 'right' ? 'active' : ''}`}
+                                                        onClick={() => setStoryTextAlign('right')}
+                                                        title="Căn phải"
+                                                    >
+                                                        <AlignRight size={13} />
+                                                    </button>
+                                                </div>
+
+                                                {/* Text Background Mode (Cycle None / Semi / Solid) */}
+                                                <button
+                                                    type="button"
+                                                    className={`ig-story-text-bg-toggle ${storyTextBgMode !== 'none' ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        const nextMode = storyTextBgMode === 'none' ? 'semi' : storyTextBgMode === 'semi' ? 'solid' : 'none';
+                                                        setStoryTextBgMode(nextMode);
+                                                        setStoryTextBg(nextMode !== 'none');
+                                                    }}
+                                                >
+                                                    Nền: {storyTextBgMode === 'none' ? 'Tắt' : storyTextBgMode === 'semi' ? 'Mờ' : 'Đặc'}
+                                                </button>
+
+                                                <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
+                                                    Xong
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        {/* Font Style Switcher */}
+                                        <div className="ig-story-font-switcher">
+                                            {[
+                                                { id: 'modern', label: 'Hiện đại' },
+                                                { id: 'classic', label: 'Cổ điển' },
+                                                { id: 'neon', label: 'Neon' },
+                                                { id: 'typewriter', label: 'Đánh máy' },
+                                                { id: 'strong', label: 'Mạnh mẽ' }
+                                            ].map(f => (
+                                                <button
+                                                    key={f.id}
+                                                    type="button"
+                                                    className={`ig-story-font-chip ${storyTextFont === f.id ? 'active' : ''} ig-font-${f.id}`}
+                                                    onClick={() => setStoryTextFont(f.id)}
+                                                >
+                                                    {f.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Color Palette */}
                                         <div className="ig-story-color-palette">
-                                            {['#ffffff', '#000000', '#facc15', '#f43f5e', '#22c55e', '#06b6d4', '#a855f7', '#fb923c'].map(col => (
+                                            {['#ffffff', '#000000', '#facc15', '#fb923c', '#f43f5e', '#ec4899', '#a855f7', '#3b82f6', '#06b6d4', '#22c55e'].map(col => (
                                                 <button
                                                     type="button"
                                                     key={col}
@@ -1071,17 +1317,52 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     </div>
                                 )}
 
-                                {/* Drawer 2: Stickers / Emojis */}
+                                {/* Drawer 2: Stickers & Interactive Emojis */}
                                 {activeStoryDrawer === 'sticker' && (
                                     <div className="ig-story-drawer">
                                         <div className="ig-story-drawer-header">
-                                            <span>Biểu tượng & Sticker</span>
+                                            <span>Biểu tượng & Nhãn dán IG</span>
                                             <button type="button" onClick={() => setActiveStoryDrawer(null)} className="ig-story-drawer-close">
                                                 Xong
                                             </button>
                                         </div>
+
+                                        {/* Quick Interactive Stickers */}
+                                        <div className="ig-sticker-quick-row">
+                                            <button
+                                                type="button"
+                                                className="ig-sticker-quick-pill"
+                                                onClick={() => {
+                                                    const now = new Date();
+                                                    const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                                    setStorySticker(`⏰ ${timeStr}`);
+                                                    setActiveStoryDrawer(null);
+                                                }}
+                                            >
+                                                <Clock size={14} /> Giờ hiện tại
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="ig-sticker-quick-pill"
+                                                onClick={() => {
+                                                    setStorySticker('📍 Việt Nam');
+                                                    setActiveStoryDrawer(null);
+                                                }}
+                                            >
+                                                <MapPin size={14} /> Vị trí
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="ig-sticker-quick-pill"
+                                                onClick={() => setActiveStoryDrawer('music')}
+                                            >
+                                                <Music2 size={14} /> Thêm bài hát
+                                            </button>
+                                        </div>
+
+                                        {/* 32 Top Instagram Emojis */}
                                         <div className="ig-story-emoji-grid">
-                                            {['🔥', '❤️', '✨', '🎉', '😂', '😍', '👏', '💯', '⚡', '☕', '🥳', '🍕', '🎶', '🌈', '🚀', '💫'].map(em => (
+                                            {['🔥', '❤️', '✨', '😂', '😍', '👏', '💯', '⚡', '🎉', '🥳', '🍕', '🚀', '☕', '🌈', '💫', '👑', '💎', '🌸', '🦋', '🍻', '📸', '🌴', '🥑', '🌟', '💖', '🤩', '🤙', '🏖️', '🤍', '🖤', '🎯', '🥂'].map(em => (
                                                 <button
                                                     type="button"
                                                     key={em}
@@ -1099,7 +1380,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                             <input
                                                 value={storySticker}
                                                 onChange={e => setStorySticker(e.target.value)}
-                                                placeholder="Hoặc nhập sticker / emoji khác..."
+                                                placeholder="Hoặc nhập sticker, emoji, địa điểm tùy ý..."
                                             />
                                         </div>
                                     </div>
@@ -1207,7 +1488,6 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         type="button"
                                         className="ig-story-share-pill"
                                         onClick={handleCreateStory}
-                                        disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim())}
                                         disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim() && !storyMusic && !selectedSpotifyTrack)}
                                     >
                                         <div className="ig-story-share-avatar">
@@ -1319,6 +1599,13 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                             if (parsed.isCanvasBake && activeStory.media_url) {
                                                 return null;
                                             }
+                                            const isTimeSticker = parsed.sticker?.startsWith('⏰');
+                                            const isLocSticker = parsed.sticker?.startsWith('📍');
+                                            const fontClass = parsed.textFont ? `ig-font-${parsed.textFont}` : 'ig-font-modern';
+                                            const bgClass = parsed.textBg === 'solid'
+                                                ? 'has-solid-bg'
+                                                : (parsed.textBg === true || parsed.textBg === 'semi') ? 'has-bg' : '';
+
                                             return (
                                                 <>
                                                     {parsed.sticker && (
@@ -1332,19 +1619,32 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                                 zIndex: 12
                                                             }}
                                                         >
-                                                            {parsed.sticker}
+                                                            {isTimeSticker ? (
+                                                                <span className="ig-time-sticker">{parsed.sticker.replace(/^⏰\s*/, '')}</span>
+                                                            ) : isLocSticker ? (
+                                                                <span className="ig-location-sticker">{parsed.sticker}</span>
+                                                            ) : (
+                                                                <span>{parsed.sticker}</span>
+                                                            )}
                                                         </div>
                                                     )}
                                                     {parsed.text && (
                                                         <div
-                                                            className={`story-text-overlay ${parsed.textBg ? 'has-bg' : ''}`}
+                                                            className={`story-text-overlay ${fontClass} ${bgClass}`}
                                                             style={{
                                                                 left: `${parsed.textPos?.x ?? 50}%`,
                                                                 top: `${parsed.textPos?.y ?? 55}%`,
                                                                 position: 'absolute',
                                                                 transform: 'translate(-50%, -50%)',
-                                                                color: parsed.textColor || '#ffffff',
-                                                                background: parsed.textBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
+                                                                color: parsed.textBg === 'solid'
+                                                                    ? ((parsed.textColor === '#000000' || parsed.textColor === '#09090b') ? '#000000' : '#ffffff')
+                                                                    : (parsed.textColor || '#ffffff'),
+                                                                background: parsed.textBg === 'solid'
+                                                                    ? ((parsed.textColor === '#000000' || parsed.textColor === '#09090b') ? '#ffffff' : '#000000')
+                                                                    : (parsed.textBg === true || parsed.textBg === 'semi')
+                                                                        ? 'rgba(0, 0, 0, 0.65)'
+                                                                        : 'transparent',
+                                                                textAlign: parsed.textAlign || 'center',
                                                                 zIndex: 12
                                                             }}
                                                         >

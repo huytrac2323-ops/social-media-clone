@@ -13,12 +13,6 @@ const uploadStoryAsset = async (file, folder) => {
         && process.env.CLOUDINARY_API_SECRET;
     if (!hasCloudinaryConfig) return `/uploads/${file.filename}`;
 
-    const uploadResult = await cloudinary.uploader.upload(file.path, {
-        folder,
-        resource_type: 'auto'
-    });
-    fs.unlinkSync(file.path);
-    return uploadResult.secure_url;
     try {
         const uploadResult = await cloudinary.uploader.upload(file.path, {
             folder,
@@ -62,7 +56,7 @@ const createStory = async (req, res) => {
     const rawSharedPostId = req.body.shared_post_id;
     const sharedPostId = rawSharedPostId ? parseInt(rawSharedPostId, 10) : null;
 
-    if (!userId || (!storyMedia && !sharedPostId && !req.body.sticker)) {
+    if (!userId || (!storyMedia && !sharedPostId && !req.body.sticker && !req.body.music_url && !spotifyTrackId)) {
         cleanupUploadedFiles(req);
         return res.status(400).json({ message: 'Cần chọn ảnh/video, bài viết hoặc văn bản để đăng Story.' });
     }

@@ -491,19 +491,22 @@ input, textarea {
 .story-avatar-inner {
   border-radius: 50%;
   overflow: hidden;
-  width: 54px;
-  height: 54px;
-  background: #000;
+  width: 58px;
+  height: 58px;
+  background: #111;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--bg-card);
+  position: relative;
 }
 
-.story-avatar-inner img {
+.story-avatar-inner img,
+.story-avatar-inner video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .story-add-badge {
@@ -1146,13 +1149,53 @@ input, textarea {
   display: none;
 }
 
-.story-edit-body input:not([type="file"]) {
+.story-edit-body input:not([type="file"]),
+.story-edit-body textarea {
   width: 100%;
   padding: 11px 13px;
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   outline: none;
   background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.story-edit-body textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.story-edit-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  margin-bottom: -6px;
+}
+
+.story-edit-emoji-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.story-edit-emoji-chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.story-edit-emoji-chip:hover,
+.story-edit-emoji-chip.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-primary);
+  transform: scale(1.1);
 }
 
 .story-edit-submit {
@@ -5009,20 +5052,213 @@ input, textarea {
   opacity: 1;
 }
 
-/* Rotating gradient story ring */
-@keyframes storyRingSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Clean Instagram Story Ring */
+.story-avatar-wrapper.has-story-ring {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
 }
 
-.story-avatar-wrapper.active-spinning-ring::before {
-  content: '';
+.story-thumb-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.story-thumb-play-badge {
   position: absolute;
-  inset: -3px;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+}
+
+.story-thumb-play-badge svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
+}
+
+.story-thumb-gradient {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.5px;
+}
+
+.story-author-mini-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: conic-gradient(#f09433, #dc2743, #bc1888, #3b82f6, #06b6d4, #f09433);
-  animation: storyRingSpin 4s linear infinite;
-  z-index: 0;
+  border: 2px solid var(--bg-card);
+  background: var(--bg-card);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Story Viewer - Hold to Pause Clean Mode */
+.story-viewer.is-holding-pause .story-viewer-user,
+.story-viewer.is-holding-pause .story-close-button,
+.story-viewer.is-holding-pause .story-owner-actions,
+.story-viewer.is-holding-pause .story-reactions,
+.story-viewer.is-holding-pause .story-scrubber-bar,
+.story-viewer.is-holding-pause .story-progress-container,
+.story-viewer.is-holding-pause .story-music-player,
+.story-viewer.is-holding-pause .spotify-embed-player,
+.story-viewer.is-holding-pause .story-view-count {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease-out;
+}
+
+.story-hold-pause-badge {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Story Top Progress Bar */
+.story-progress-container {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  right: 10px;
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+  height: 3px;
+  transition: opacity 0.15s ease;
+}
+
+.story-progress-bar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.story-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  width: 0%;
+  transition: width 0.08s linear;
+}
+
+/* Story Video Timeline Scrubber Bar */
+.story-scrubber-bar {
+  position: absolute;
+  bottom: 82px;
+  left: 14px;
+  right: 14px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: rgba(18, 18, 18, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.story-seek-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.story-seek-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.story-seek-btn:active {
+  transform: scale(0.95);
+}
+
+.story-scrubber-track-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.story-scrubber-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.28);
+  outline: none;
+  cursor: pointer;
+}
+
+.story-scrubber-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.story-scrubber-slider::-webkit-slider-thumb:hover,
+.story-scrubber-slider:active::-webkit-slider-thumb {
+  transform: scale(1.35);
+  background: #f09433;
+}
+
+.story-time-display {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  min-width: 72px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Like Heart Pop Animation */

@@ -229,9 +229,11 @@ const reactToStory = async (req, res) => {
 };
 
 const updateStory = async (req, res) => {
-    const { storyId } = req.params;
-    const { user_id: userId } = req.body;
-    if (!userId) return res.status(400).json({ message: 'Thiếu chủ story.' });
+    const rawStoryId = req.params.storyId;
+    const rawUserId = req.body.user_id;
+    const storyId = rawStoryId ? parseInt(rawStoryId, 10) : null;
+    const userId = rawUserId ? parseInt(rawUserId, 10) : null;
+    if (!userId || !storyId) return res.status(400).json({ message: 'Thiếu chủ story hoặc ID story.' });
 
     try {
         const current = await pool.query(
@@ -325,7 +327,17 @@ const updateStory = async (req, res) => {
         } else if (req.body.removeMusic === 'true') {
             removeLocalUpload(current.rows[0].music_url);
         }
-        res.json(result.rows[0]);
+
+        const updated = result.rows[0];
+        const userRes = await pool.query(
+            'SELECT username, profile_photo_url, (is_verified IS TRUE) AS is_verified FROM users WHERE user_id = $1',
+            [userId]
+        );
+        const userInfo = userRes.rows[0] || {};
+        res.json({
+            ...updated,
+            ...userInfo
+        });
     } catch (err) {
         cleanupUploadedFiles(req);
         res.status(500).json({ message: 'Không thể sửa story.', error: err.message });
@@ -333,9 +345,11 @@ const updateStory = async (req, res) => {
 };
 
 const deleteStory = async (req, res) => {
-    const { storyId } = req.params;
-    const userId = req.body?.user_id || req.query.userId;
-    if (!userId) return res.status(400).json({ message: 'Thiếu chủ story.' });
+    const rawStoryId = req.params.storyId;
+    const rawUserId = req.body?.user_id || req.query.userId;
+    const storyId = rawStoryId ? parseInt(rawStoryId, 10) : null;
+    const userId = rawUserId ? parseInt(rawUserId, 10) : null;
+    if (!userId || !storyId) return res.status(400).json({ message: 'Thiếu chủ story hoặc ID story.' });
 
     try {
         const result = await pool.query(

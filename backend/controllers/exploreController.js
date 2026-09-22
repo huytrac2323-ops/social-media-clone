@@ -14,7 +14,7 @@ const search = async (req, res) => {
     const pattern = `%${query}%`;
     try {
         const users = await pool.query(
-            `SELECT user_id, username, profile_photo_url, is_private
+            `SELECT user_id, username, profile_photo_url, is_private, creator_type, bio
              FROM users
              WHERE username ILIKE $1
              ORDER BY username
@@ -55,4 +55,58 @@ const search = async (req, res) => {
     }
 };
 
-module.exports = { search };
+// Lấy danh sách nhà sáng tạo theo loại ngành
+const getCreators = async (req, res) => {
+    const creatorType = req.query.type || null;
+    const limit = parseInt(req.query.limit) || 20;
+
+    try {
+        let queryStr, params;
+        if (creatorType && creatorType !== 'all') {
+            queryStr = `
+                SELECT user_id, username, profile_photo_url, bio, creator_type, is_verified,
+                       (SELECT COUNT(*) FROM follows WHERE followee_id = users.user_id) AS follower_count,
+                       (SELECT COUNT(*) FROM post WHERE user_id = users.user_id) AS post_count
+                FROM users
+                WHERE creator_type = $1
+                ORDER BY follower_count DESC, created_at DESC
+                LIMIT $2
+            `;
+            params = [creatorType, limit];
+        } else {
+            queryStr = `
+                SELECT user_id, username, profile_photo_url, bio, creator_type, is_verified,
+                       (SELECT COUNT(*) FROM follows WHERE followee_id = users.user_id) AS follower_count,
+                       (SELECT COUNT(*) FROM post WHERE user_id = users.user_id) AS post_count
+                FROM users
+                WHERE creator_type IS NOT NULL
+                ORDER BY follower_count DESC, created_at DESC
+                LIMIT $1
+            `;
+            params = [limit];
+        }
+
+        const result = await pool.query(queryStr, params);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ message: 'Không thể lấy danh sách nhà sáng tạo.', error: err.message });
+    }
+};
+
+// Cập nhật creator_type cho người dùng
+const updateCreatorType = async (req, res) => {
+    const { user_id, creator_type } = req.body;
+    if (!user_id) return res.status(400).json({ message: 'Thiếu user_id.' });
+
+    try {
+        await pool.query(
+            'UPDATE users SET creator_type = $1 WHERE user_id = $2',
+            [creator_type || null, user_id]
+        );
+        res.json({ message: 'Cập nhật thành công!', creator_type });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi server.', error: err.message });
+    }
+};
+
+module.exports = { search, getCreators, updateCreatorType };

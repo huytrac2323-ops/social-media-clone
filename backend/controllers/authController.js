@@ -20,7 +20,7 @@ const issueUserToken = user => {
 };
 
 const register = async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, creator_type } = req.body;
     if (!username || !email || !password) return res.status(400).send({ message: 'Vui lòng điền đầy đủ thông tin.' });
 
     try {
@@ -28,8 +28,8 @@ const register = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         const result = await pool.query(
-            'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING user_id, username, email',
-            [username, email, passwordHash]
+            'INSERT INTO users (username, email, password_hash, creator_type) VALUES ($1, $2, $3, $4) RETURNING user_id, username, email, creator_type',
+            [username, email, passwordHash, creator_type || null]
         );
 
         res.status(201).json(result.rows[0]);

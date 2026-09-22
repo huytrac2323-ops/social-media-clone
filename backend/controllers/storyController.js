@@ -13,6 +13,12 @@ const uploadStoryAsset = async (file, folder) => {
         && process.env.CLOUDINARY_API_SECRET;
     if (!hasCloudinaryConfig) return `/uploads/${file.filename}`;
 
+    const uploadResult = await cloudinary.uploader.upload(file.path, {
+        folder,
+        resource_type: 'auto'
+    });
+    fs.unlinkSync(file.path);
+    return uploadResult.secure_url;
     try {
         const uploadResult = await cloudinary.uploader.upload(file.path, {
             folder,
@@ -48,11 +54,14 @@ cloudinary.config({
 });
 
 const createStory = async (req, res) => {
+    const { user_id } = req.body;
     const rawUserId = req.body.user_id;
     const userId = rawUserId ? parseInt(rawUserId, 10) : null;
     const storyMedia = getUploadedFile(req, 'storyMedia');
     const storyMusic = getUploadedFile(req, 'storyMusic');
     const spotifyTrackId = req.body.spotify_track_id || null;
+    const sharedPostId = req.body.shared_post_id || null;
+    if (!user_id || (!storyMedia && !sharedPostId && !req.body.sticker)) {
     const rawSharedPostId = req.body.shared_post_id;
     const sharedPostId = rawSharedPostId ? parseInt(rawSharedPostId, 10) : null;
     if (!userId || (!storyMedia && !sharedPostId && !req.body.sticker)) {
@@ -101,6 +110,7 @@ const createStory = async (req, res) => {
                        spotify_track_id, spotify_track_name, spotify_artist_name, spotify_external_url,
                        shared_post_id, created_at, expires_at`,
             [
+                user_id,
                 userId,
                 mediaUrl,
                 mediaType,

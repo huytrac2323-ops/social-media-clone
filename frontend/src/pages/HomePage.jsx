@@ -503,6 +503,10 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         }
     };
 
+    const handleDragEnd = () => {
+        setDraggingItem(null);
+    };
+
     const handleCreateStory = async (event) => {
         if (event) event.preventDefault();
         if (!currentUser) return;
@@ -1203,6 +1207,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         type="button"
                                         className="ig-story-share-pill"
                                         onClick={handleCreateStory}
+                                        disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim())}
                                         disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim() && !storyMusic && !selectedSpotifyTrack)}
                                     >
                                         <div className="ig-story-share-avatar">

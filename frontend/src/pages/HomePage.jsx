@@ -338,11 +338,20 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
     const currentUserId = currentUser?.user_id || currentUser?.id;
     const myStories = useMemo(() => {
-        return stories.filter(s => Number(s.user_id) === Number(currentUserId));
-    }, [stories, currentUserId]);
+        if (!currentUserId && !currentUser?.username) return [];
+        return stories.filter(s =>
+            (currentUserId && Number(s.user_id) === Number(currentUserId)) ||
+            (currentUser?.username && s.username === currentUser?.username)
+        );
+    }, [stories, currentUserId, currentUser?.username]);
+
     const friendStories = useMemo(() => {
-        return stories.filter(s => Number(s.user_id) !== Number(currentUserId));
-    }, [stories, currentUserId]);
+        if (!currentUserId && !currentUser?.username) return stories;
+        return stories.filter(s =>
+            (!currentUserId || Number(s.user_id) !== Number(currentUserId)) &&
+            (!currentUser?.username || s.username !== currentUser?.username)
+        );
+    }, [stories, currentUserId, currentUser?.username]);
 
     const [selectedStoryPost, setSelectedStoryPost] = useState(null);
     const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
@@ -677,7 +686,10 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
     useEffect(() => {
         fetchStories();
-    }, [currentUser]);
+        const handleFocus = () => fetchStories();
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, [currentUser?.user_id, currentUser?.id, currentUser?.username]);
 
     const handleCloseStoryModal = () => {
         if (previewAudio) {
@@ -979,6 +991,16 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 const data = await response.json().catch(() => ({}));
                 alert(data.message || 'Không thể đăng story.');
                 return;
+            }
+            const createdStory = await response.json().catch(() => null);
+            if (createdStory) {
+                const formattedStory = {
+                    ...createdStory,
+                    username: currentUser?.username,
+                    profile_photo_url: currentUser?.profile_photo_url,
+                    poll: null
+                };
+                setStories(prev => [formattedStory, ...prev.filter(s => s.story_id !== createdStory.story_id)]);
             }
             handleCloseStoryModal();
             fetchStories();
@@ -1430,7 +1452,33 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         style={myStories.length === 0 ? { background: 'var(--border-hover)' } : undefined}
                                     >
                                         <div className="story-avatar-inner">
-                                            <Avatar user={currentUser} size={54} />
+                                            {myStories.length > 0 ? (
+                                                myStories[0].media_type === 'video' ? (
+                                                    <>
+                                                        <video
+                                                            src={mediaUrl(myStories[0].media_url)}
+                                                            muted
+                                                            playsInline
+                                                            preload="metadata"
+                                                            className="story-thumb-media"
+                                                        />
+                                                        <div className="story-thumb-play-badge">
+                                                            <Play size={11} fill="#ffffff" stroke="#ffffff" />
+                                                        </div>
+                                                    </>
+                                                ) : myStories[0].media_url ? (
+                                                    <img
+                                                        src={mediaUrl(myStories[0].media_url)}
+                                                        alt={currentUser?.username || 'Tin của bạn'}
+                                                        className="story-thumb-media"
+                                                        loading="lazy"
+                                                    />
+                                                ) : (
+                                                    <Avatar user={currentUser} size={54} />
+                                                )
+                                            ) : (
+                                                <Avatar user={currentUser} size={54} />
+                                            )}
                                         </div>
                                         <span
                                             className="story-add-badge"

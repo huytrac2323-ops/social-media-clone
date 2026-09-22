@@ -129,14 +129,14 @@ const createStory = async (req, res) => {
 
 
 const getStories = async (req, res) => {
-    const viewerId = req.query.userId || null;
-    if (!viewerId) {
-        // Khách chưa đăng nhập không thể xem story cá nhân
-        return res.json([]);
-    }
+    const rawViewerId = req.query.userId || null;
+    const viewerId = rawViewerId && !isNaN(Number(rawViewerId)) ? parseInt(rawViewerId, 10) : null;
     try {
-        const result = await pool.query(
-            `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
+        let query;
+        let params = [];
+
+        if (viewerId) {
+            query = `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
                     s.music_url, s.music_name, s.spotify_track_id, s.spotify_track_name,
                     s.spotify_artist_name, s.spotify_external_url, s.shared_post_id,
                     CASE WHEN sp.post_id IS NULL THEN NULL ELSE json_build_object(
@@ -177,9 +177,42 @@ const getStories = async (req, res) => {
                    WHERE fl.follower_id = $1 AND fl.followee_id = s.user_id
                  )
                )
-             ORDER BY s.created_at DESC`,
-            [viewerId]
-        );
+             ORDER BY s.created_at DESC`;
+            params = [viewerId];
+        } else {
+            query = `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
+                    s.music_url, s.music_name, s.spotify_track_id, s.spotify_track_name,
+                    s.spotify_artist_name, s.spotify_external_url, s.shared_post_id,
+                    CASE WHEN sp.post_id IS NULL THEN NULL ELSE json_build_object(
+                        'post_id', sp.post_id,
+                        'caption', sp.caption,
+                        'photo_url', sp.photo_url,
+                        'created_at', sp.created_at,
+                        'username', spu.username,
+                        'profile_photo_url', spu.profile_photo_url
+                    ) END AS shared_post,
+                    s.created_at, s.expires_at,
+                    (SELECT COUNT(*) FROM story_views sv WHERE sv.story_id = s.story_id) AS view_count,
+                    COALESCE((
+                        SELECT jsonb_object_agg(v.option_value, v.vote_count)
+                        FROM (
+                            SELECT option_value, COUNT(*)::int AS vote_count
+                            FROM story_poll_votes
+                            WHERE story_id = s.story_id
+                            GROUP BY option_value
+                        ) v
+                    ), '{}'::jsonb) AS poll_votes,
+                    u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified
+             FROM stories s
+             JOIN users u ON u.user_id = s.user_id
+             LEFT JOIN post sp ON sp.post_id = s.shared_post_id
+             LEFT JOIN users spu ON spu.user_id = sp.user_id
+             WHERE s.expires_at > NOW()
+             ORDER BY s.created_at DESC`;
+            params = [];
+        }
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ message: 'Không thể tải story.', error: err.message });

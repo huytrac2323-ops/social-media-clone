@@ -1,10 +1,9 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "NovaGen Backend API",
+  "main": "server.js",
   "scripts": {
-    "postinstall": "npm rebuild bcrypt --build-from-source",
     "start": "node server.js"
   },
   "keywords": [],
@@ -13,13 +12,13 @@
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.5.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "cloudinary": "^2.5.1",
+    "express": "^4.19.2",
     "google-auth-library": "^11.0.2",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.1.1",
+    "multer": "^1.4.5-lts.1",
     "pg": "^8.13.3",
     "socket.io": "^4.8.3"
   }

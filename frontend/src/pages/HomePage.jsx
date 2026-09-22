@@ -334,10 +334,6 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     // Lắng nghe sự kiện chia sẻ bài viết lên Story từ PostCard
     useEffect(() => {
         const handleOpenStoryWithPost = (e) => {
-            if (typeof window !== 'undefined' && window.innerWidth > 768) {
-                alert('Tính năng chia sẻ và đăng Story chỉ hỗ trợ trên thiết bị di động.');
-                return;
-            }
             const postToShare = e.detail;
             if (postToShare) {
                 setSelectedStoryPost(postToShare);
@@ -350,10 +346,6 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     }, []);
 
     const handleOpenCreateStory = () => {
-        if (typeof window !== 'undefined' && window.innerWidth > 768) {
-            alert('Tính năng đăng Story chỉ khả dụng trên thiết bị di động.');
-            return;
-        }
         setIsCreateStoryOpen(true);
     };
 
@@ -622,6 +614,26 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const handleDragStart = (item, e) => {
         e.stopPropagation();
         setDraggingItem(item);
+    };
+
+    const handleCanvasMove = (e) => {
+        if (!draggingItem || !canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const xPercent = Math.max(8, Math.min(92, ((clientX - rect.left) / rect.width) * 100));
+        const yPercent = Math.max(10, Math.min(90, ((clientY - rect.top) / rect.height) * 100));
+
+        if (draggingItem === 'sticker') {
+            setStickerPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
+        } else if (draggingItem === 'text') {
+            setTextPos({ x: Math.round(xPercent), y: Math.round(yPercent) });
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDraggingItem(null);
     };
 
     // Bộ lắng nghe kéo thả cảm ứng & chuột mượt mà trên toàn màn hình (kể cả khi ngón tay lướt ra ngoài canvas)
@@ -1588,8 +1600,25 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         </button>
                                     ) : activeStory.media_type === 'video' ? (
                                         <video src={mediaUrl(activeStory.media_url)} controls autoPlay loop />
-                                    ) : (
+                                    ) : activeStory.media_url ? (
                                         <img src={mediaUrl(activeStory.media_url)} alt={`Story của ${activeStory.username}`} />
+                                    ) : (
+                                        <div
+                                            className="story-no-media-bg"
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                background: (() => {
+                                                    try {
+                                                        const parsed = JSON.parse(activeStory.sticker);
+                                                        if (parsed.gradientIndex !== undefined && STORY_GRADIENTS[parsed.gradientIndex]) {
+                                                            return STORY_GRADIENTS[parsed.gradientIndex].value;
+                                                        }
+                                                    } catch {}
+                                                    return '#000000';
+                                                })()
+                                            }}
+                                        />
                                     )}
 
                                     {/* Text & Sticker with Dragged Position Parity */}

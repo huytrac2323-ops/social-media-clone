@@ -4227,6 +4227,7 @@ input, textarea {
   .ig-story-backdrop {
     padding: 0 !important;
     touch-action: none;
+    background: #000000 !important;
   }
 
   .ig-story-frame {
@@ -4238,6 +4239,7 @@ input, textarea {
     max-height: 100dvh !important;
     border-radius: 0 !important;
     border: none !important;
+    background: #000000 !important;
   }
 
   .ig-story-canvas {

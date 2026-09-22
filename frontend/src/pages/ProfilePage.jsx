@@ -31,6 +31,8 @@ import {
   Calendar,
   Sparkles,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 const API_URL = getApiBaseUrl();
@@ -51,6 +53,8 @@ function ProfilePage() {
   const { username } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const API_URL = getApiBaseUrl();
+  const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -314,6 +318,31 @@ function ProfilePage() {
       setShowCreatePost(true);
     }
   };
+
+  useEffect(() => {
+    if (!activeStoryViewer) return;
+    const handleKeyDown = (e) => {
+      if (e.target.closest('input, textarea')) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (activeStoryIndex < activeStoryViewer.length - 1) {
+          setActiveStoryIndex(prev => prev + 1);
+        } else {
+          setActiveStoryViewer(null);
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (activeStoryIndex > 0) {
+          setActiveStoryIndex(prev => prev - 1);
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setActiveStoryViewer(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeStoryViewer, activeStoryIndex]);
 
   const handleCreateHighlight = async (e) => {
     e.preventDefault();
@@ -1045,10 +1074,40 @@ function ProfilePage() {
           {activeStoryViewer[activeStoryIndex]?.media_url && (
             <div
               className="story-ambient-blur"
-              style={{ backgroundImage: `url(${activeStoryViewer[activeStoryIndex].media_url})` }}
+              style={{ backgroundImage: `url(${mediaUrl(activeStoryViewer[activeStoryIndex].media_url)})` }}
             />
           )}
           <div className="story-viewer" onClick={e => e.stopPropagation()}>
+            {/* Nút điều hướng desktop Chevron Trái / Phải */}
+            {activeStoryIndex > 0 && (
+              <button
+                type="button"
+                className="story-nav-btn story-nav-btn-prev"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveStoryIndex(activeStoryIndex - 1);
+                }}
+                aria-label="Tin trước"
+                title="Tin trước"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+            {activeStoryIndex < activeStoryViewer.length - 1 && (
+              <button
+                type="button"
+                className="story-nav-btn story-nav-btn-next"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveStoryIndex(activeStoryIndex + 1);
+                }}
+                aria-label="Tin tiếp theo"
+                title="Tin tiếp theo"
+              >
+                <ChevronRight size={24} />
+              </button>
+            )}
+
             <button
               type="button"
               className="story-close-button"
@@ -1093,14 +1152,22 @@ function ProfilePage() {
             <div className="story-viewer-body" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               {activeStoryViewer[activeStoryIndex]?.media_type === 'video' ? (
                 <video
-                  src={activeStoryViewer[activeStoryIndex].media_url}
+                  src={mediaUrl(activeStoryViewer[activeStoryIndex].media_url)}
                   autoPlay
                   controls
+                  playsInline
+                  onEnded={() => {
+                    if (activeStoryIndex < activeStoryViewer.length - 1) {
+                      setActiveStoryIndex(activeStoryIndex + 1);
+                    } else {
+                      setActiveStoryViewer(null);
+                    }
+                  }}
                   style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                 />
               ) : activeStoryViewer[activeStoryIndex]?.media_url ? (
                 <img
-                  src={activeStoryViewer[activeStoryIndex].media_url}
+                  src={mediaUrl(activeStoryViewer[activeStoryIndex].media_url)}
                   alt="Story"
                   style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                 />

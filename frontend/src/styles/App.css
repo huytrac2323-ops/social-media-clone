@@ -5338,3 +5338,78 @@ button:active:not(:disabled),
 .story-viewer {
   animation: modalZoomEntrance 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Story Navigation Chevrons & Zones */
+.story-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(30, 30, 30, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.story-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+  color: #ffffff;
+}
+
+.story-nav-btn-prev {
+  left: -58px;
+}
+
+.story-nav-btn-next {
+  right: -58px;
+}
+
+@media (max-width: 768px) {
+  .story-nav-btn {
+    display: none !important;
+  }
+}
+
+.story-nav-tap-zone {
+  position: absolute;
+  top: 60px;
+  bottom: 80px;
+  width: 35%;
+  z-index: 25;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.story-nav-tap-zone.story-nav-left {
+  left: 0;
+}
+
+.story-nav-tap-zone.story-nav-right {
+  right: 0;
+  width: 45%;
+}
+
+.story-card-item.has-active-stories .story-avatar-wrapper {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+}
+
+.story-card-item .story-add-badge {
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.15s ease;
+}
+
+.story-card-item .story-add-badge:hover {
+  transform: scale(1.2);
+}

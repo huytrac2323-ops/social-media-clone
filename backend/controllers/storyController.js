@@ -373,19 +373,29 @@ const deleteStory = async (req, res) => {
 
 const getUserActiveStories = async (req, res) => {
     const { userId } = req.params;
+    const parsedId = parseInt(userId, 10);
+    const isNumeric = !isNaN(parsedId);
     try {
-        const result = await pool.query(
-            `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
-                    s.music_url, s.music_name, s.spotify_track_id, s.spotify_track_name,
-                    s.spotify_artist_name, s.spotify_external_url, s.shared_post_id,
-                    s.created_at, s.expires_at,
-                    u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified
-             FROM stories s
-             JOIN users u ON u.user_id = s.user_id
-             WHERE s.user_id = $1 AND s.expires_at > NOW()
-             ORDER BY s.created_at ASC`,
-            [userId]
-        );
+        const query = isNumeric
+            ? `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
+                      s.music_url, s.music_name, s.spotify_track_id, s.spotify_track_name,
+                      s.spotify_artist_name, s.spotify_external_url, s.shared_post_id,
+                      s.created_at, s.expires_at,
+                      u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified
+               FROM stories s
+               JOIN users u ON u.user_id = s.user_id
+               WHERE s.user_id = $1 AND s.expires_at > NOW()
+               ORDER BY s.created_at ASC`
+            : `SELECT s.story_id, s.user_id, s.media_url, s.media_type, s.poll, s.sticker,
+                      s.music_url, s.music_name, s.spotify_track_id, s.spotify_track_name,
+                      s.spotify_artist_name, s.spotify_external_url, s.shared_post_id,
+                      s.created_at, s.expires_at,
+                      u.username, u.profile_photo_url, (u.is_verified IS TRUE) AS is_verified
+               FROM stories s
+               JOIN users u ON u.user_id = s.user_id
+               WHERE u.username = $1 AND s.expires_at > NOW()
+               ORDER BY s.created_at ASC`;
+        const result = await pool.query(query, [isNumeric ? parsedId : userId]);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ message: 'Không thể tải story của người dùng.', error: err.message });
@@ -394,14 +404,20 @@ const getUserActiveStories = async (req, res) => {
 
 const getHighlights = async (req, res) => {
     const { userId } = req.params;
+    const parsedId = parseInt(userId, 10);
+    const isNumeric = !isNaN(parsedId);
     try {
-        const result = await pool.query(
-            `SELECT highlight_id, user_id, title, cover_url, stories, created_at
-             FROM story_highlights
-             WHERE user_id = $1
-             ORDER BY created_at DESC`,
-            [userId]
-        );
+        const query = isNumeric
+            ? `SELECT highlight_id, user_id, title, cover_url, stories, created_at
+               FROM story_highlights
+               WHERE user_id = $1
+               ORDER BY created_at DESC`
+            : `SELECT sh.highlight_id, sh.user_id, sh.title, sh.cover_url, sh.stories, sh.created_at
+               FROM story_highlights sh
+               JOIN users u ON u.user_id = sh.user_id
+               WHERE u.username = $1
+               ORDER BY sh.created_at DESC`;
+        const result = await pool.query(query, [isNumeric ? parsedId : userId]);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ message: 'Không thể tải tin nổi bật.', error: err.message });

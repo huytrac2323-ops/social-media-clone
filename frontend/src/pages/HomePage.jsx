@@ -22,6 +22,8 @@ import {
     Search,
     ChevronDown,
     ChevronUp,
+    ChevronLeft,
+    ChevronRight,
     Play,
     Pause,
     FileText,
@@ -321,13 +323,26 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const [storyEditTextBgMode, setStoryEditTextBgMode] = useState('semi');
     const [isUpdatingStory, setIsUpdatingStory] = useState(false);
 
-    // States và Refs cho Story Viewer: Scrubber tua video & Nhấn giữ tạm dừng
+    // States và Refs cho Story Viewer: Scrubber tua video & Nhấn giữ tạm dừng & Chuyển Story Trái / Phải
     const viewerVideoRef = useRef(null);
     const viewerAudioRef = useRef(null);
     const [viewerCurrentTime, setViewerCurrentTime] = useState(0);
     const [viewerDuration, setViewerDuration] = useState(15);
     const [isScrubbing, setIsScrubbing] = useState(false);
     const [isHoldingPause, setIsHoldingPause] = useState(false);
+    const [activeStoryList, setActiveStoryList] = useState([]);
+    const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+    const holdStartTimeRef = useRef(0);
+    const isHoldingRef = useRef(false);
+    const holdTimerRef = useRef(null);
+
+    const currentUserId = currentUser?.user_id || currentUser?.id;
+    const myStories = useMemo(() => {
+        return stories.filter(s => Number(s.user_id) === Number(currentUserId));
+    }, [stories, currentUserId]);
+    const friendStories = useMemo(() => {
+        return stories.filter(s => Number(s.user_id) !== Number(currentUserId));
+    }, [stories, currentUserId]);
 
     const [selectedStoryPost, setSelectedStoryPost] = useState(null);
     const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
@@ -975,20 +990,38 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         }
     };
 
-    const handleOpenStory = async (story) => {
+    const handleCloseStoryViewer = () => {
+        setActiveStory(null);
+        setActiveStoryList([]);
+        setActiveStoryIndex(0);
+        setIsHoldingPause(false);
+        isHoldingRef.current = false;
+        clearTimeout(holdTimerRef.current);
+    };
+
+    const handleSelectStoryByIndex = (index, list = activeStoryList) => {
+        if (!list || index < 0 || index >= list.length) {
+            handleCloseStoryViewer();
+            return;
+        }
+        const targetStory = list[index];
+        setActiveStoryIndex(index);
         setActiveStory({
-            ...story,
+            ...targetStory,
             poll: null
         });
         setSelectedReaction(null);
         setStoryMenuOpen(false);
         setIsHoldingPause(false);
+        isHoldingRef.current = false;
+        clearTimeout(holdTimerRef.current);
         setIsScrubbing(false);
         setViewerCurrentTime(0);
-        setViewerDuration(15);
+        setViewerDuration(targetStory.media_type === 'video' ? 15 : 5);
+
         const currentUserId = currentUser?.user_id || currentUser?.id;
-        if (currentUserId && Number(currentUserId) !== Number(story.user_id)) {
-            safeFetch(`/stories/${story.story_id}/view`, {
+        if (currentUserId && Number(currentUserId) !== Number(targetStory.user_id)) {
+            safeFetch(`/stories/${targetStory.story_id}/view`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: currentUserId })
@@ -996,31 +1029,145 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         }
     };
 
+    const handleOpenStory = (story, customList = null) => {
+        const listToUse = (customList && customList.length > 0) ? customList : stories;
+        setActiveStoryList(listToUse);
+        const targetIndex = listToUse.findIndex(s => s.story_id === story.story_id);
+        const validIndex = targetIndex >= 0 ? targetIndex : 0;
+        handleSelectStoryByIndex(validIndex, listToUse);
+    };
+
+    const handleNextStory = () => {
+        if (activeStoryList && activeStoryIndex < activeStoryList.length - 1) {
+            handleSelectStoryByIndex(activeStoryIndex + 1, activeStoryList);
+        } else {
+            handleCloseStoryViewer();
+        }
+    };
+
+    const handlePrevStory = () => {
+        if (activeStoryList && activeStoryIndex > 0) {
+            handleSelectStoryByIndex(activeStoryIndex - 1, activeStoryList);
+        }
+    };
+
     // Nhấn giữ để tạm dừng Story & Video (chuẩn Instagram)
     const handleHoldStart = (e) => {
-        if (e.target.closest('button, input, textarea, a, .story-reactions, .story-action-menu, .story-scrubber-bar, .story-close-button, .story-more-button')) {
+        if (e.target.closest('button, input, textarea, a, .story-reactions, .story-action-menu, .story-scrubber-bar, .story-close-button, .story-more-button, .story-nav-btn, .story-music-player, .spotify-embed-player')) {
             return;
         }
-        setIsHoldingPause(true);
+        holdStartTimeRef.current = Date.now();
+        isHoldingRef.current = true;
         if (viewerVideoRef.current) {
             viewerVideoRef.current.pause();
         }
         if (viewerAudioRef.current) {
             viewerAudioRef.current.pause();
         }
+        clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = setTimeout(() => {
+            if (isHoldingRef.current) {
+                setIsHoldingPause(true);
+            }
+        }, 150);
     };
 
-    const handleHoldEnd = () => {
-        if (isHoldingPause) {
-            setIsHoldingPause(false);
-            if (viewerVideoRef.current) {
-                viewerVideoRef.current.play().catch(() => {});
+    const handleHoldEnd = (e) => {
+        if (!isHoldingRef.current) return;
+        isHoldingRef.current = false;
+        clearTimeout(holdTimerRef.current);
+        const duration = Date.now() - holdStartTimeRef.current;
+
+        // Luôn tiếp tục phát khi thả tay ra
+        setIsHoldingPause(false);
+        if (viewerVideoRef.current) {
+            viewerVideoRef.current.play().catch(() => {});
+        }
+        if (viewerAudioRef.current) {
+            viewerAudioRef.current.play().catch(() => {});
+        }
+
+        // Nếu chạm nhanh (< 250ms), đây là thao tác chạm trái / phải để chuyển tin
+        if (duration < 250 && e) {
+            const rect = e.currentTarget?.getBoundingClientRect();
+            let clientX = e.clientX;
+            if (clientX === undefined && e.changedTouches && e.changedTouches[0]) {
+                clientX = e.changedTouches[0].clientX;
             }
-            if (viewerAudioRef.current) {
-                viewerAudioRef.current.play().catch(() => {});
+            if (rect && clientX !== undefined) {
+                const relativeX = clientX - rect.left;
+                if (relativeX < rect.width * 0.35) {
+                    handlePrevStory();
+                } else {
+                    handleNextStory();
+                }
             }
         }
     };
+
+    // Lắng nghe sự kiện thả tay toàn cục (ngăn chặn tình trạng thả tay ra ngoài màn hình bị kẹt dừng)
+    useEffect(() => {
+        const handleGlobalRelease = () => {
+            if (isHoldingRef.current) {
+                isHoldingRef.current = false;
+                clearTimeout(holdTimerRef.current);
+                setIsHoldingPause(false);
+                if (viewerVideoRef.current) {
+                    viewerVideoRef.current.play().catch(() => {});
+                }
+                if (viewerAudioRef.current) {
+                    viewerAudioRef.current.play().catch(() => {});
+                }
+            }
+        };
+        window.addEventListener('pointerup', handleGlobalRelease);
+        window.addEventListener('touchend', handleGlobalRelease);
+        window.addEventListener('mouseup', handleGlobalRelease);
+        return () => {
+            window.removeEventListener('pointerup', handleGlobalRelease);
+            window.removeEventListener('touchend', handleGlobalRelease);
+            window.removeEventListener('mouseup', handleGlobalRelease);
+        };
+    }, []);
+
+    // Điều khiển chuyển Story bằng phím mũi tên bàn phím (ArrowLeft, ArrowRight, Escape)
+    useEffect(() => {
+        if (!activeStory) return;
+        const handleKeyDown = (e) => {
+            if (e.target.closest('input, textarea')) return;
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                handleNextStory();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                handlePrevStory();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                handleCloseStoryViewer();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeStory, activeStoryIndex, activeStoryList]);
+
+    // Tự động chuyển Story dạng ảnh hoặc chữ sau 5 giây (chuẩn Instagram)
+    useEffect(() => {
+        if (!activeStory || activeStory.media_type === 'video') return;
+        if (isHoldingPause) return;
+
+        const timer = setInterval(() => {
+            setViewerCurrentTime(prev => {
+                const next = prev + 0.1;
+                if (next >= (viewerDuration || 5)) {
+                    handleNextStory();
+                    return 0;
+                }
+                return next;
+            });
+        }, 100);
+
+        return () => clearInterval(timer);
+    }, [activeStory, isHoldingPause, viewerDuration, activeStoryIndex, activeStoryList]);
 
     // Điều khiển tua tiến trình video
     const handleSeekChange = (e) => {
@@ -1264,28 +1411,46 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                     {/* BĂNG CHUYỀN STORIES */}
                     <section className="story-bar-container">
                         <div className="story-scroll-track no-scrollbar">
-                            {/* Nút đăng story của người dùng (chỉ hiển thị trên mobile) */}
+                            {/* Nút đăng story hoặc xem story của người dùng hiện tại */}
                             {currentUser && (
                                 <div
-                                    className="story-card-item story-create-item"
-                                    onClick={handleOpenCreateStory}
+                                    className={`story-card-item story-create-item ${myStories.length > 0 ? 'has-active-stories' : ''}`}
+                                    onClick={() => {
+                                        if (myStories.length > 0) {
+                                            handleOpenStory(myStories[0], myStories);
+                                        } else {
+                                            handleOpenCreateStory();
+                                        }
+                                    }}
                                     style={{ cursor: 'pointer' }}
-                                    title="Tạo Story mới"
+                                    title={myStories.length > 0 ? 'Xem tin của bạn' : 'Tạo Story mới'}
                                 >
-                                    <div className="story-avatar-wrapper" style={{ background: 'var(--border-hover)' }}>
+                                    <div
+                                        className={`story-avatar-wrapper ${myStories.length > 0 ? 'has-story-ring' : ''}`}
+                                        style={myStories.length === 0 ? { background: 'var(--border-hover)' } : undefined}
+                                    >
                                         <div className="story-avatar-inner">
                                             <Avatar user={currentUser} size={54} />
                                         </div>
-                                        <span className="story-add-badge">
+                                        <span
+                                            className="story-add-badge"
+                                            title="Tạo Story mới"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleOpenCreateStory();
+                                            }}
+                                        >
                                             <Plus size={12} strokeWidth={3} />
                                         </span>
                                     </div>
-                                    <span className="story-username-label">Tạo Story</span>
+                                    <span className="story-username-label">
+                                        {myStories.length > 0 ? 'Tin của bạn' : 'Tạo Story'}
+                                    </span>
                                 </div>
                             )}
 
                             {/* Danh sách story của bạn bè */}
-                            {stories.map(story => {
+                            {friendStories.map(story => {
                                 let storyGradientVal = 'linear-gradient(135deg, #18181b, #09090b)';
                                 let hasStickerText = '';
                                 try {
@@ -1300,7 +1465,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     <button
                                         key={story.story_id}
                                         type="button"
-                                        onClick={() => handleOpenStory(story)}
+                                        onClick={() => handleOpenStory(story, friendStories)}
                                         className="story-card-item"
                                         title={`Story của ${story.username}`}
                                     >
@@ -2117,7 +2282,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
                     {/* STORY VIEWER FULLSCREEN */}
                     {activeStory && (
-                        <div className="story-viewer-backdrop" onClick={() => setActiveStory(null)}>
+                        <div className="story-viewer-backdrop" onClick={handleCloseStoryViewer}>
                             {/* Ambient Blur Background Layer */}
                             {activeStory.media_url && (
                                 <div
@@ -2155,16 +2320,63 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                 onTouchEnd={handleHoldEnd}
                                 onTouchCancel={handleHoldEnd}
                             >
-                                {/* Thanh tiến trình Instagram trên đầu */}
+                                {/* Nút điều hướng desktop Chevron Trái / Phải */}
+                                {activeStoryIndex > 0 && (
+                                    <button
+                                        type="button"
+                                        className="story-nav-btn story-nav-btn-prev"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handlePrevStory();
+                                        }}
+                                        aria-label="Tin trước"
+                                        title="Tin trước"
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
+                                )}
+                                {activeStoryList && activeStoryIndex < activeStoryList.length - 1 && (
+                                    <button
+                                        type="button"
+                                        className="story-nav-btn story-nav-btn-next"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleNextStory();
+                                        }}
+                                        aria-label="Tin tiếp theo"
+                                        title="Tin tiếp theo"
+                                    >
+                                        <ChevronRight size={24} />
+                                    </button>
+                                )}
+
+                                {/* Thanh tiến trình Instagram đa phân đoạn trên đầu */}
                                 <div className="story-progress-container">
-                                    <div className="story-progress-bar">
-                                        <div
-                                            className="story-progress-fill"
-                                            style={{
-                                                width: `${viewerDuration > 0 ? Math.min(100, Math.max(0, (viewerCurrentTime / viewerDuration) * 100)) : 0}%`
-                                            }}
-                                        />
-                                    </div>
+                                    {activeStoryList && activeStoryList.length > 1 ? (
+                                        activeStoryList.map((storyItem, idx) => (
+                                            <div key={storyItem.story_id || idx} className="story-progress-bar">
+                                                <div
+                                                    className={`story-progress-fill ${idx < activeStoryIndex ? 'completed' : ''}`}
+                                                    style={{
+                                                        width: idx < activeStoryIndex
+                                                            ? '100%'
+                                                            : idx === activeStoryIndex
+                                                            ? `${viewerDuration > 0 ? Math.min(100, Math.max(0, (viewerCurrentTime / viewerDuration) * 100)) : 0}%`
+                                                            : '0%'
+                                                    }}
+                                                />
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="story-progress-bar">
+                                            <div
+                                                className="story-progress-fill"
+                                                style={{
+                                                    width: `${viewerDuration > 0 ? Math.min(100, Math.max(0, (viewerCurrentTime / viewerDuration) * 100)) : 0}%`
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Huy hiệu hiển thị khi nhấn giữ tạm dừng */}
@@ -2178,7 +2390,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                 <button
                                     type="button"
                                     className="story-close-button"
-                                    onClick={() => setActiveStory(null)}
+                                    onClick={handleCloseStoryViewer}
                                     aria-label="Đóng Story"
                                 >
                                     <X size={20} />
@@ -2243,9 +2455,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                     ref={viewerVideoRef}
                                                     src={mediaUrl(activeStory.media_url)}
                                                     autoPlay
-                                                    loop
                                                     playsInline
                                                     muted={videoTrim?.isMuted || false}
+                                                    onEnded={handleNextStory}
                                                     style={{
                                                         objectFit: mediaTransform?.fit || 'contain',
                                                         transform: `scale(${mediaTransform?.scale || 1}) translate(${mediaTransform?.offset?.x || 0}px, ${mediaTransform?.offset?.y || 0}px)`
@@ -2266,9 +2478,8 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                             setViewerCurrentTime(v.currentTime);
                                                         }
                                                         if (videoTrim?.endTime && videoTrim.endTime > 0) {
-                                                            if (v.currentTime >= videoTrim.endTime || v.currentTime < (videoTrim.startTime || 0)) {
-                                                                v.currentTime = videoTrim.startTime || 0;
-                                                                v.play().catch(() => {});
+                                                            if (v.currentTime >= videoTrim.endTime) {
+                                                                handleNextStory();
                                                             }
                                                         }
                                                     }}

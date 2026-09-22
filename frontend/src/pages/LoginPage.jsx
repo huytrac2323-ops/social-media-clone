@@ -143,8 +143,8 @@ function LoginPage() {
           </div>
         </div>
 
-        <h1 className="auth-logo">SocialHub</h1>
-        <p className="auth-subtitle">Kết nối và chia sẻ những khoảnh khắc tuyệt vời cùng bạn bè</p>
+        <h1 className="auth-logo" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NovaGen</h1>
+        <p className="auth-subtitle">Kết nối và chia sẻ với cộng đồng sáng tạo Việt Nam</p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ position: 'relative' }}>

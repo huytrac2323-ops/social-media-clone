@@ -1651,7 +1651,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     <Users size={32} color="#0095f6" />
                                 </div>
                                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
-                                    Chào mừng bạn đến với SocialHub
+                                    Chào mừng bạn đến với NovaGen 🎨
                                 </h3>
                                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 20px', lineHeight: 1.5 }}>
                                     Hãy theo dõi hoặc kết bạn với các tài khoản dưới đây để khám phá bài viết thú vị trên bảng tin của bạn:

@@ -76,8 +76,8 @@ export default function ShareModal({ post, currentUser, onClose, onPostUpdated }
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Bài viết của @' + (post?.author || post?.username || 'SocialHub'),
-          text: post?.content ? (post.content.slice(0, 100) + '...') : 'Xem bài viết này trên SocialHub!',
+          title: 'Bài viết của @' + (post?.author || post?.username || 'NovaGen'),
+          text: post?.content ? (post.content.slice(0, 100) + '...') : 'Xem bài viết này trên NovaGen!',
           url: postUrl
         });
       } catch (err) {
@@ -397,7 +397,7 @@ export default function ShareModal({ post, currentUser, onClose, onPostUpdated }
 
             {/* X / Twitter */}
             <a
-              href={'https://twitter.com/intent/tweet?url=' + encodeURIComponent(postUrl) + '&text=' + encodeURIComponent(post?.content ? post.content.slice(0, 100) : 'Khám phá bài viết trên SocialHub!')}
+              href={'https://twitter.com/intent/tweet?url=' + encodeURIComponent(postUrl) + '&text=' + encodeURIComponent(post?.content ? post.content.slice(0, 100) : 'Khám phá bài viết trên NovaGen!')}
               target="_blank"
               rel="noopener noreferrer"
               className="share-social-btn twitter"

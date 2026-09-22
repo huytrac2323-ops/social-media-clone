@@ -56,10 +56,8 @@ function SidebarNav({ onCreatePost }) {
             {/* ============================================== */}
             <header className="mobile-top-header">
                 <Link to="/" className="mobile-header-logo" title="Trang chủ">
-                    <div className="brand-logo-icon" style={{ width: '32px', height: '32px' }}>
-                        <Globe size={18} />
-                    </div>
-                    <span className="brand-logo-text" style={{ fontSize: '18px' }}>SocialHub</span>
+                    <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+                    <span className="brand-logo-text" style={{ fontSize: '18px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800' }}>NovaGen</span>
                 </Link>
 
                 <div className="mobile-header-actions">
@@ -83,10 +81,8 @@ function SidebarNav({ onCreatePost }) {
                 <nav className="modern-sidebar">
                     {/* Brand Logo */}
                     <Link to="/" className="brand-logo-container" title="Trang chủ">
-                        <div className="brand-logo-icon">
-                            <Globe size={20} />
-                        </div>
-                        <span className="brand-logo-text">SocialHub</span>
+                        <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} />
+                        <span className="brand-logo-text" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', fontSize: '20px' }}>NovaGen</span>
                     </Link>
 
                     {/* Quick Search */}

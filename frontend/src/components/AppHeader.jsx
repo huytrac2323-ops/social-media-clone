@@ -38,7 +38,9 @@ export default function AppHeader({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [theme, setTheme] = useState(() => {
     try {
-      return localStorage.getItem('theme') || 'dark';
+      const stored = localStorage.getItem('theme') || localStorage.getItem('novagen_theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     } catch {
       return 'dark';
     }
@@ -57,12 +59,35 @@ export default function AppHeader({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Đồng bộ theme với documentElement
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Lắng nghe thay đổi theme từ trình duyệt hệ thống nếu người dùng chưa đặt thủ công
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+    const handleSystemThemeChange = (e) => {
+      const stored = localStorage.getItem('theme') || localStorage.getItem('novagen_theme');
+      if (!stored) {
+        const sysTheme = e.matches ? 'light' : 'dark';
+        setTheme(sysTheme);
+        document.documentElement.setAttribute('data-theme', sysTheme);
+      }
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+      return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
+    }
+  }, []);
+
   // Theme toggle
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     try {
       localStorage.setItem('theme', nextTheme);
+      localStorage.setItem('novagen_theme', nextTheme);
       document.documentElement.setAttribute('data-theme', nextTheme);
     } catch {}
   };
@@ -99,7 +124,7 @@ export default function AppHeader({
           <nav className="behance-nav-links">
             <Link
               to="/"
-              className={`behance-nav-item ${location.pathname === '/' || location.pathname === '/explore' ? 'active' : ''}`}
+              className={`behance-nav-item ${(location.pathname === '/' || location.pathname === '/explore') && new URLSearchParams(location.search).get('tab') !== 'collaborations' ? 'active' : ''}`}
             >
               <Sparkles size={16} />
               <span>Explore</span>
@@ -113,15 +138,14 @@ export default function AppHeader({
               <span>Bảng tin Bài viết</span>
             </Link>
 
-            <button
-              type="button"
-              className="behance-nav-item"
-              onClick={() => setShowJobsModal(true)}
+            <Link
+              to="/?tab=collaborations"
+              className={`behance-nav-item ${(location.pathname === '/' || location.pathname === '/explore') && new URLSearchParams(location.search).get('tab') === 'collaborations' ? 'active' : ''}`}
             >
               <Briefcase size={16} />
               <span>Tìm & Hợp tác NST</span>
               <span className="jobs-pill-hot">HOT</span>
-            </button>
+            </Link>
           </nav>
         </div>
 

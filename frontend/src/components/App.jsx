@@ -87,6 +87,18 @@ function AppContent() {
         return () => window.removeEventListener('open-chat', handleOpenChat);
     }, []);
 
+    // Ẩn floating ChatWidget khi đang mở khung chat riêng để tránh đè giao diện
+    useEffect(() => {
+        if (activeChat) {
+            document.body.classList.add('has-active-chat');
+        } else {
+            document.body.classList.remove('has-active-chat');
+        }
+        return () => {
+            document.body.classList.remove('has-active-chat');
+        };
+    }, [activeChat]);
+
 
     useEffect(() => {
         // 1. Yêu cầu người dùng cấp quyền hiển thị thông báo khi vừa mở app
@@ -220,7 +232,7 @@ function AppContent() {
                         friendRequestSent: Boolean(post.friend_request_sent),
                         comments: post.comments || [],
                         authorAvatar: post.profile_photo_url,
-                        postType: post.post_type || 'social',
+                        postType: (post.post_type === 'project' || post.post_type === 'portfolio' || Boolean(post.title && post.title.trim())) ? 'project' : 'social',
                         title: post.title || '',
                         projectImages: parsedProjectImages,
                         toolsUsed: parsedToolsUsed,
@@ -403,16 +415,16 @@ function AppContent() {
                         type="button"
                         onClick={closeChat}
                         style={{
-                            background: 'rgba(30, 38, 52, 0.9)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#e2e8f0',
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-primary)',
                             cursor: 'pointer',
                             fontSize: '12px',
-                            padding: '5px 12px',
+                            padding: '6px 14px',
                             borderRadius: '999px',
                             fontWeight: '600',
                             backdropFilter: 'blur(8px)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                            boxShadow: 'var(--shadow-card)',
                             transition: 'all 0.15s ease'
                         }}
                     >

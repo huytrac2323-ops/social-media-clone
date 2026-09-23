@@ -122,7 +122,7 @@ export default function BehanceProjectsPage({
 
   // 1. TÁCH RIÊNG DỰ ÁN BEHANCE: Chỉ lấy các bài viết kiểu dự án (project) hoặc bài có title/category
   const displayedProjects = useMemo(() => {
-    let result = (posts || []).filter(p => p.postType === 'project' || (p.title && p.category));
+    let result = (posts || []).filter(p => p.postType === 'project' || Boolean(p.title && p.title.trim()));
 
     // Lọc theo từ khóa tìm kiếm
     if (searchKeyword.trim()) {

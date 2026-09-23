@@ -6340,6 +6340,180 @@ button:active:not(:disabled),
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+/* Social Composer Form */
+.social-composer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.composer-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.composer-username {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--text-primary);
+}
+
+.composer-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.composer-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-primary);
+  opacity: 1;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.18s ease, background 0.18s ease;
+  box-sizing: border-box;
+}
+
+.composer-textarea:focus {
+  border-color: var(--accent-primary);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.composer-location-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.composer-sub-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.composer-preview-box {
+  position: relative;
+  width: 100%;
+  max-height: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+}
+
+.composer-preview-box img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+}
+
+.composer-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all 0.15s ease;
+}
+
+.composer-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.85);
+  transform: scale(1.08);
+}
+
+.composer-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.composer-left-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.composer-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.composer-action-pill:hover,
+.composer-action-pill.active {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent-primary);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.composer-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.composer-submit-btn:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.composer-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* Portfolio Composer Form */
 .portfolio-composer-form {
   display: flex;
@@ -8230,20 +8404,21 @@ button:active:not(:disabled),
 }
 
 /* =================================================== */
-/* SOCIAL FEED TIMELINE LAYOUT (LEFT-ALIGNED)          */
+/* SOCIAL FEED TIMELINE LAYOUT (CENTERED)              */
 /* =================================================== */
 .social-feed-layout-container {
   display: flex;
-  justify-content: flex-start;
-  max-width: 1400px;
-  margin: 0;
-  padding: 24px 32px 80px;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
   gap: 28px;
 }
 
 .social-feed-center-col {
   width: 100%;
   max-width: 680px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -8253,4 +8428,176 @@ button:active:not(:disabled),
   .social-feed-layout-container {
     padding: 16px 12px 70px;
   }
+}
+
+/* =================================================== */
+/* COMPREHENSIVE LIGHT MODE THEME ADAPTATION           */
+/* =================================================== */
+[data-theme="light"] body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* 1. Header */
+[data-theme="light"] .behance-global-header,
+[data-theme="light"] .mobile-top-header {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .behance-search-bar {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .behance-search-bar:focus-within {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+[data-theme="light"] .behance-search-input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .behance-search-input::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .behance-nav-item {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .behance-nav-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .behance-nav-item.active {
+  background: #e0e7ff !important;
+  color: #2563eb !important;
+}
+
+/* 2. Left Sidebar */
+[data-theme="light"] .app-sidebar-col {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .modern-sidebar {
+  background-color: transparent !important;
+}
+
+[data-theme="light"] .nav-link-item {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .nav-link-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .nav-link-item.active {
+  background: #e0e7ff !important;
+  color: #2563eb !important;
+}
+
+[data-theme="light"] .sidebar-search-box input {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .sidebar-search-box input:focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+[data-theme="light"] .sidebar-search-box .search-icon {
+  color: #64748b !important;
+}
+
+/* 3. Footer / Mobile Bottom Nav */
+[data-theme="light"] .mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-top-color: #e2e8f0 !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .mobile-nav-item {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .mobile-nav-item:hover {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .mobile-nav-item.active {
+  color: #2563eb !important;
+}
+
+/* 4. Form inputs, Textareas & Post Composer */
+[data-theme="light"] .composer-textarea,
+[data-theme="light"] .composer-sub-input,
+[data-theme="light"] .portfolio-input,
+[data-theme="light"] .portfolio-select,
+[data-theme="light"] .portfolio-textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #cbd5e1 !important;
+  opacity: 1 !important;
+}
+
+[data-theme="light"] .composer-textarea:focus,
+[data-theme="light"] .portfolio-input:focus,
+[data-theme="light"] .portfolio-select:focus,
+[data-theme="light"] .portfolio-textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #2563eb !important;
+  color: #0f172a !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+[data-theme="light"] .composer-location-row {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .composer-action-pill {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+[data-theme="light"] .composer-action-pill:hover,
+[data-theme="light"] .composer-action-pill.active {
+  background-color: #e0e7ff !important;
+  color: #2563eb !important;
+  border-color: #93c5fd !important;
+}
+
+/* 5. Stories Bar */
+[data-theme="light"] .story-bar-container {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .story-avatar-inner {
+  border-color: #ffffff !important;
+}
+
+[data-theme="light"] .story-username-label {
+  color: #334155 !important;
+}
+
+/* 6. Cards & Elements */
+[data-theme="light"] .post-card,
+[data-theme="light"] .behance-project-card,
+[data-theme="light"] .creator-card,
+[data-theme="light"] .composer-dual-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }

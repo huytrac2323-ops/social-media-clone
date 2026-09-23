@@ -370,7 +370,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     // Chỉ lấy bài viết status xã hội thông thường (kiểu Instagram), loại trừ tác phẩm Behance project
     const socialPosts = useMemo(() => {
         if (!posts || posts.length === 0) return [];
-        return posts.filter(p => p.postType !== 'project');
+        return posts.filter(p => p.postType === 'social' && !p.title);
     }, [posts]);
 
     // Memoize preview URLs để KHÔNG tạo lại Blob URL mỗi khi re-render (ngăn chặn reset video khi gõ chữ, chọn icon, nhạc)
@@ -919,7 +919,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const handleCreateStory = async (event) => {
         if (event) event.preventDefault();
         if (!currentUser) return;
-        const currentUserId = currentUser.user_id || currentUser.id;
+        const currentUserId = currentUser.user_id || currentUser.id || currentUser.user?.user_id;
         if (!currentUserId) {
             alert('Vui lòng đăng nhập để đăng Story.');
             return;
@@ -930,11 +930,6 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
         const hasText = !!storyText.trim();
         const hasSticker = !!storySticker.trim();
         const hasMusic = !!storyMusic || !!selectedSpotifyTrack;
-
-        if (!hasMedia && !hasPost && !hasText && !hasSticker && !hasMusic) {
-            alert('Vui lòng thêm ảnh/video, văn bản, biểu tượng hoặc âm nhạc để chia sẻ.');
-            return;
-        }
 
         setIsSubmittingStory(true);
         try {
@@ -1450,29 +1445,54 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                 {/* BẢNG TIN TRUNG TÂM */}
                 <main className="social-feed-center-col">
                     {/* BĂNG CHUYỀN STORIES */}
-                    <section className="story-bar-container">
-                        <div className="story-scroll-track no-scrollbar">
-                            {/* Nút đăng story hoặc xem story của người dùng hiện tại */}
-                            {currentUser && (
-                                <div
-                                    className={`story-card-item story-create-item ${myStories.length > 0 ? 'has-active-stories' : ''}`}
-                                    onClick={() => {
-                                        if (myStories.length > 0) {
-                                            handleOpenStory(myStories[0], myStories);
-                                        } else {
-                                            handleOpenCreateStory();
-                                        }
-                                    }}
-                                    style={{ cursor: 'pointer' }}
-                                    title={myStories.length > 0 ? 'Xem tin của bạn' : 'Tạo Story mới'}
-                                >
+                    {(currentUser || friendStories.length > 0) && (
+                        <section className="story-bar-container">
+                            <div className="story-scroll-track no-scrollbar">
+                                {/* Nút Tạo Story mới (Luôn hiển thị khi đã đăng nhập) */}
+                                {currentUser && (
                                     <div
-                                        className={`story-avatar-wrapper ${myStories.length > 0 ? 'has-story-ring' : ''}`}
-                                        style={myStories.length === 0 ? { background: 'var(--border-hover)' } : undefined}
+                                        className="story-card-item story-create-item"
+                                        onClick={handleOpenCreateStory}
+                                        style={{ cursor: 'pointer' }}
+                                        title="Tạo Story mới"
                                     >
-                                        <div className="story-avatar-inner">
-                                            {myStories.length > 0 ? (
-                                                myStories[0].media_type === 'video' ? (
+                                        <div className="story-avatar-wrapper" style={{ background: 'var(--border-subtle)' }}>
+                                            <div className="story-avatar-inner">
+                                                <Avatar user={currentUser} size={54} />
+                                            </div>
+                                            <span
+                                                className="story-add-badge"
+                                                title="Tạo Story mới"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                                                    color: '#fff',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    borderRadius: '50%',
+                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.35)'
+                                                }}
+                                            >
+                                                <Plus size={13} strokeWidth={3} />
+                                            </span>
+                                        </div>
+                                        <span className="story-username-label" style={{ fontWeight: '600' }}>
+                                            Tạo Story
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Xem story đang hoạt động của người dùng hiện tại */}
+                                {currentUser && myStories.length > 0 && (
+                                    <div
+                                        className="story-card-item has-active-stories"
+                                        onClick={() => handleOpenStory(myStories[0], myStories)}
+                                        style={{ cursor: 'pointer' }}
+                                        title="Xem story của bạn"
+                                    >
+                                        <div className="story-avatar-wrapper has-story-ring">
+                                            <div className="story-avatar-inner">
+                                                {myStories[0].media_type === 'video' ? (
                                                     <>
                                                         <video
                                                             src={mediaUrl(myStories[0].media_url)}
@@ -1494,27 +1514,14 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                     />
                                                 ) : (
                                                     <Avatar user={currentUser} size={54} />
-                                                )
-                                            ) : (
-                                                <Avatar user={currentUser} size={54} />
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                        <span
-                                            className="story-add-badge"
-                                            title="Tạo Story mới"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleOpenCreateStory();
-                                            }}
-                                        >
-                                            <Plus size={12} strokeWidth={3} />
+                                        <span className="story-username-label" style={{ color: 'var(--accent-primary)', fontWeight: '700' }}>
+                                            Tin của bạn
                                         </span>
                                     </div>
-                                    <span className="story-username-label">
-                                        {myStories.length > 0 ? 'Tin của bạn' : 'Tạo Story'}
-                                    </span>
-                                </div>
-                            )}
+                                )}
 
                             {/* Danh sách story của bạn bè */}
                             {friendStories.map(story => {
@@ -1588,6 +1595,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                             })}
                         </div>
                     </section>
+                )}
 
                     {/* MODAL TẠO STORY KIỂU INSTAGRAM CHUYÊN NGHIỆP - TÁCH KHỎI THANH CUỘN */}
                     {isCreateStoryOpen && currentUser && (
@@ -2334,7 +2342,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                         type="button"
                                         className="ig-story-share-pill"
                                         onClick={handleCreateStory}
-                                        disabled={isSubmittingStory || (!storyFile && !selectedStoryPost && !storyText.trim() && !storySticker.trim() && !storyMusic && !selectedSpotifyTrack)}
+                                        disabled={isSubmittingStory}
                                     >
                                         <div className="ig-story-share-avatar">
                                             <Avatar user={currentUser} size={28} />

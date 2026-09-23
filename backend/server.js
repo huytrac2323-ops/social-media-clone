@@ -562,6 +562,7 @@ const startServer = async () => {
         await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS tools_used JSONB DEFAULT '[]'::jsonb").catch(e => console.warn('Lưu ý migration tools_used:', e.message));
         await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS category VARCHAR(100)").catch(e => console.warn('Lưu ý migration category:', e.message));
         await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS views_count INTEGER DEFAULT 0").catch(e => console.warn('Lưu ý migration views_count:', e.message));
+        await client.query("UPDATE post SET post_type = 'project' WHERE post_type = 'portfolio' OR (title IS NOT NULL AND TRIM(title) != '')").catch(() => {});
 
         // Migration cho Tin Tìm Kiếm & Hợp Tác Nhà Sáng Tạo (Creator Collaborations)
         await client.query(`

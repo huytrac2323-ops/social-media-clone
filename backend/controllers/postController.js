@@ -209,6 +209,9 @@ const createPost = async (req, res) => {
             finalPhotoUrl = req.body.photo_url;
         }
 
+        // Chuẩn hóa post_type: Nếu là portfolio hoặc project hoặc có tiêu đề dự án thì luôn là 'project'
+        const normalizedPostType = (post_type === 'portfolio' || post_type === 'project' || (title && title.trim())) ? 'project' : 'social';
+
         // Lưu dữ liệu vào database với các cột của Portfolio
         const result = await pool.query(
             `INSERT INTO post (
@@ -220,7 +223,7 @@ const createPost = async (req, res) => {
                 caption || '',
                 finalPhotoUrl,
                 location || null,
-                post_type || 'social',
+                normalizedPostType,
                 title || null,
                 category || null,
                 JSON.stringify(resolvedToolsUsed),

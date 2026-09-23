@@ -101,25 +101,25 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
         <div style={{
             width: '340px',
             maxWidth: 'calc(100vw - 24px)',
-            background: 'rgba(21, 26, 35, 0.95)',
+            background: 'var(--bg-card)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: '16px',
-            color: 'white',
+            color: 'var(--text-primary)',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
+            boxShadow: 'var(--shadow-hover)',
             overflow: 'hidden'
         }}>
             {/* Online Status Header */}
             <div style={{
                 padding: '10px 14px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                borderBottom: '1px solid var(--border-subtle)',
                 fontSize: '12.5px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: 'rgba(30, 38, 52, 0.6)'
+                background: 'var(--bg-elevated)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Circle
@@ -127,12 +127,12 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                         fill={online ? '#10b981' : '#64748b'}
                         color={online ? '#10b981' : '#64748b'}
                     />
-                    <span style={{ color: online ? '#34d399' : '#94a3b8', fontWeight: '500' }}>
+                    <span style={{ color: online ? '#10b981' : 'var(--text-muted)', fontWeight: '600' }}>
                         {online ? 'Đang hoạt động' : 'Ngoại tuyến'}
                     </span>
                 </div>
                 {otherIsTyping && (
-                    <span style={{ color: '#60a5fa', fontSize: '11.5px', fontStyle: 'italic' }}>
+                    <span style={{ color: 'var(--accent-primary)', fontSize: '11.5px', fontStyle: 'italic' }}>
                         đang soạn tin...
                     </span>
                 )}
@@ -147,11 +147,12 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                     padding: '12px 14px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px'
+                    gap: '8px',
+                    background: 'var(--bg-main)'
                 }}
             >
                 {messages.length === 0 ? (
-                    <div style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', marginTop: '70px' }}>
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', marginTop: '70px' }}>
                         Hãy gửi lời chào đầu tiên! 👋
                     </div>
                 ) : (
@@ -162,21 +163,21 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                                 key={msg.id || msg.message_id || index}
                                 style={{
                                     alignSelf: isMe ? 'flex-end' : 'flex-start',
-                                    background: isMe ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' : '#1e2634',
-                                    background: isMe ? '#3797f0' : '#262626',
+                                    background: isMe ? 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)' : 'var(--bg-card)',
+                                    border: isMe ? 'none' : '1px solid var(--border-subtle)',
                                     padding: '8px 14px',
                                     borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                                     maxWidth: '82%',
                                     fontSize: '13.5px',
-                                    color: 'white',
+                                    color: isMe ? '#ffffff' : 'var(--text-primary)',
                                     wordBreak: 'break-word',
                                     whiteSpace: 'pre-wrap',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                                 }}
                             >
                                 {msg.message_text}
                                 {isMe && (
-                                    <small style={{ display: 'block', opacity: 0.65, fontSize: '9.5px', textAlign: 'right', marginTop: '2px' }}>
+                                    <small style={{ display: 'block', opacity: 0.75, fontSize: '9.5px', textAlign: 'right', marginTop: '2px' }}>
                                         {readMessageIds.has(msg.id || msg.message_id) ? 'Đã xem' : 'Đã gửi'}
                                     </small>
                                 )}
@@ -188,7 +189,7 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
             </div>
 
             {/* Message Input Form */}
-            <form onSubmit={handleSend} style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <form onSubmit={handleSend} style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-card)' }}>
                 <input
                     type="text"
                     value={text}
@@ -206,12 +207,10 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                     placeholder="Nhập tin nhắn..."
                     style={{
                         flex: 1,
-                        background: '#1b2230',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: '#1a1a1a',
-                        border: '1px solid #262626',
+                        background: 'var(--bg-input)',
+                        border: '1px solid var(--border-subtle)',
                         outline: 'none',
-                        color: 'white',
+                        color: 'var(--text-primary)',
                         padding: '9px 14px',
                         borderRadius: '999px',
                         fontSize: '13px'
@@ -221,10 +220,9 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                     type="submit"
                     disabled={!text.trim()}
                     style={{
-                        background: text.trim() ? 'linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%)' : '#1e2634',
-                        background: text.trim() ? '#0095f6' : '#262626',
+                        background: text.trim() ? 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)' : 'var(--bg-elevated)',
                         border: 'none',
-                        color: text.trim() ? 'white' : '#64748b',
+                        color: text.trim() ? 'white' : 'var(--text-muted)',
                         width: '36px',
                         height: '36px',
                         borderRadius: '50%',

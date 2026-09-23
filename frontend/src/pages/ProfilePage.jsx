@@ -715,7 +715,7 @@ function ProfilePage() {
       likes: parseInt(p.like_count, 10) || 0,
       isLiked: false,
       comments: p.comments || [],
-      postType: p.post_type || 'social',
+      postType: (p.post_type === 'project' || p.post_type === 'portfolio' || Boolean(p.title && p.title.trim())) ? 'project' : 'social',
       title: p.title || '',
       projectImages: parsedProjectImages,
       toolsUsed: parsedToolsUsed,

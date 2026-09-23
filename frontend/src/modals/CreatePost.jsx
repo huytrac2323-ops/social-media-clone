@@ -181,7 +181,7 @@ function CreatePost({ onPostCreated, defaultMode = 'social' }) {
         return;
       }
 
-      formData.append('post_type', 'portfolio');
+      formData.append('post_type', 'project');
       formData.append('title', projectTitle.trim());
       formData.append('category', projectCategory);
       formData.append('caption', portfolioDescription.trim());

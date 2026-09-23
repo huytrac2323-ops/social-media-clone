@@ -1,3 +1,9 @@
+/* Hide ChatWidget bubble/window when an active chat modal is open */
+body.has-active-chat .chat-bubble,
+body.has-active-chat .chat-window {
+  display: none !important;
+}
+
 /* Modern Chat Bubble & Widget */
 .chat-bubble {
   position: fixed;

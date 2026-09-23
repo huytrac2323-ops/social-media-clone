@@ -8,7 +8,7 @@ const setNotificationEmitter = emitter => {
 
 const createNotification = async ({ receiverId, senderId, type, content, postId = null }) => {
     try {
-        if (!receiverId || !senderId || String(receiverId) === String(senderId)) return;
+        if (!receiverId || !senderId || (String(receiverId) === String(senderId) && type !== 'system')) return;
         const result = await pool.query(
             `INSERT INTO notifications (receiver_id, sender_id, type, content, post_id)
              VALUES ($1, $2, $3, $4, $5)

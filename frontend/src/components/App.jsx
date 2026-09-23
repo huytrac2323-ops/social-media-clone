@@ -13,6 +13,7 @@ import ExplorePage from '../pages/ExplorePage.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
 import NotificationsPage from '../pages/NotificationsPage.jsx';
 import AdminPage from '../pages/AdminPage.jsx';
+import AntigravitySimPage from '../pages/AntigravitySimPage.jsx';
 import ChatBox from '../components/ChatBox.jsx';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -336,6 +337,7 @@ function AppContent() {
                 <Route path="/messages/:userId" element={<MessagesPage/>}/>
                 <Route path="/notifications" element={<NotificationsPage/>}/>
                 <Route path="/admin" element={<AdminPage/>}/>
+                <Route path="/antigravity-sim" element={<AntigravitySimPage/>}/>
             </Routes>
 
             {currentUser && activeChat && (

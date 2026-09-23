@@ -441,6 +441,13 @@ const startServer = async () => {
         // Kiểm tra kết nối database trước khi mở cổng server
         const client = await pool.connect();
         console.log("✅ Kết nối Database PostgreSQL thành công!");
+        
+        // Migration đảm bảo người dùng có thể đăng ký không cần email, và hỗ trợ thêm/xác minh SĐT & Email
+        await client.query('ALTER TABLE users ALTER COLUMN email DROP NOT NULL').catch(e => console.warn('Lưu ý migration email:', e.message));
+        await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)').catch(e => console.warn('Lưu ý migration phone:', e.message));
+        await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE').catch(e => console.warn('Lưu ý migration email_verified:', e.message));
+        await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE').catch(e => console.warn('Lưu ý migration phone_verified:', e.message));
+
         await client.query(`
             CREATE TABLE IF NOT EXISTS stories (
                 story_id SERIAL PRIMARY KEY,

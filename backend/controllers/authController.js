@@ -21,20 +21,28 @@ const issueUserToken = user => {
 
 const register = async (req, res) => {
     const { username, email, password, creator_type } = req.body;
-    if (!username || !email || !password) return res.status(400).send({ message: 'Vui lòng điền đầy đủ thông tin.' });
+    if (!username || !password) return res.status(400).send({ message: 'Vui lòng điền tên người dùng và mật khẩu.' });
+
+    const cleanUsername = String(username).trim();
+    const cleanEmail = (email && String(email).trim()) ? String(email).trim().toLowerCase() : null;
 
     try {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
         const result = await pool.query(
-            'INSERT INTO users (username, email, password_hash, creator_type) VALUES ($1, $2, $3, $4) RETURNING user_id, username, email, creator_type',
-            [username, email, passwordHash, creator_type || null]
+            'INSERT INTO users (username, email, password_hash, creator_type) VALUES ($1, $2, $3, $4) RETURNING user_id, username, email, phone, (email_verified IS TRUE) AS email_verified, (phone_verified IS TRUE) AS phone_verified, creator_type, (is_verified IS TRUE) AS is_verified, role',
+            [cleanUsername, cleanEmail, passwordHash, creator_type || null]
         );
 
         res.status(201).json(result.rows[0]);
     } catch (err) {
-        if (err.code === '23505') return res.status(409).send({ message: 'Username hoặc Email đã tồn tại.' });
+        if (err.code === '23505') {
+            if (err.detail && err.detail.toLowerCase().includes('email')) {
+                return res.status(409).send({ message: 'Email đã tồn tại trong hệ thống.' });
+            }
+            return res.status(409).send({ message: 'Tên người dùng (Username) đã tồn tại.' });
+        }
         res.status(500).send({ message: err.message });
     }
 };
@@ -42,12 +50,12 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).send({ message: 'Vui lòng điền email và mật khẩu.' });
+    if (!username || !password) return res.status(400).send({ message: 'Vui lòng điền tài khoản và mật khẩu.' });
 
     try {
         const result = await pool.query(
-            'SELECT * FROM users WHERE username ILIKE $1 OR email ILIKE $1 LIMIT 1',
-            [username]
+            'SELECT * FROM users WHERE username ILIKE $1 OR email ILIKE $1 OR phone = $1 LIMIT 1',
+            [String(username).trim()]
         );
 
         if (result.rows.length === 0) return res.status(401).send({ message: '"Sai mật khẩu rồi bạn ơi! Bản cập nhật mới nè' });

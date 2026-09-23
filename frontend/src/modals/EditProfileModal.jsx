@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/Modal.css';
 import { useAuth } from '../context/AuthContext.jsx';
-import { X, Camera, Lock, Globe, MapPin, Home, Calendar, Sparkles, Palette } from 'lucide-react';
+import { X, Camera, Lock, Globe, MapPin, Home, Calendar, Sparkles, Palette, Mail, Phone, CheckCircle2, AlertCircle, RefreshCw, KeyRound, ShieldCheck } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -32,6 +32,99 @@ function EditProfileModal({ user, onClose, navigate }) {
   const [error, setError] = useState('');
   const [isPrivate, setIsPrivate] = useState(Boolean(user?.is_private));
   const [isSaving, setIsSaving] = useState(false);
+
+  // Email & Số điện thoại (SĐT)
+  const [email, setEmail] = useState(user.email || '');
+  const [phone, setPhone] = useState(user.phone || '');
+  const [emailVerified, setEmailVerified] = useState(Boolean(user.email_verified));
+  const [phoneVerified, setPhoneVerified] = useState(Boolean(user.phone_verified));
+
+  // Trạng thái modal con / box xác thực OTP
+  const [otpTarget, setOtpTarget] = useState(null); // 'email' | 'phone' | null
+  const [otpValue, setOtpValue] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpMsg, setOtpMsg] = useState('');
+  const [otpErr, setOtpErr] = useState('');
+
+  const openContactOtpFlow = (type) => {
+    setOtpTarget(type);
+    setOtpValue(type === 'email' ? email : phone);
+    setOtpCode('');
+    setOtpSent(false);
+    setOtpMsg('');
+    setOtpErr('');
+  };
+
+  const handleSendOtp = async () => {
+    if (!otpValue || !otpValue.trim()) {
+      setOtpErr(`Vui lòng nhập ${otpTarget === 'email' ? 'địa chỉ Email' : 'Số điện thoại'}!`);
+      return;
+    }
+    setOtpLoading(true);
+    setOtpErr('');
+    setOtpMsg('');
+    try {
+      const res = await fetch(`${API_URL}/profile/contact/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.user_id || user.id,
+          type: otpTarget,
+          value: otpValue.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Không thể gửi mã xác thực.');
+      setOtpSent(true);
+      setOtpMsg(data.message + (data.devOtp ? ` (Mã gợi ý: ${data.devOtp})` : ''));
+    } catch (err) {
+      setOtpErr(err.message);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.trim().length !== 6) {
+      setOtpErr('Vui lòng nhập đủ 6 chữ số mã OTP.');
+      return;
+    }
+    setOtpLoading(true);
+    setOtpErr('');
+    try {
+      const res = await fetch(`${API_URL}/profile/contact/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.user_id || user.id,
+          type: otpTarget,
+          otpCode: otpCode.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Mã xác thực không hợp lệ.');
+
+      if (otpTarget === 'email') {
+        setEmail(otpValue.trim());
+        setEmailVerified(true);
+      } else {
+        setPhone(otpValue.trim());
+        setPhoneVerified(true);
+      }
+
+      if (data.user) {
+        updateUser(data.user);
+      }
+      setOtpTarget(null);
+      alert(`🎉 Đã xác minh ${otpTarget === 'email' ? 'Email' : 'Số điện thoại'} thành công!`);
+    } catch (err) {
+      setOtpErr(err.message);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   const handleTogglePrivacy = async () => {
     const newPrivacyStatus = !isPrivate;
@@ -93,7 +186,9 @@ function EditProfileModal({ user, onClose, navigate }) {
           address,
           hometown,
           age,
-          interests
+          interests,
+          email: email.trim() || null,
+          phone: phone.trim() || null
         }),
       });
       const textData = await textResponse.json();
@@ -343,6 +438,203 @@ function EditProfileModal({ user, onClose, navigate }) {
             </span>
           </div>
 
+          {/* THÔNG TIN LIÊN HỆ & XÁC MINH BẢO MẬT (EMAIL & SỐ ĐIỆN THOẠI) */}
+          <div style={{
+            background: 'var(--bg-elevated, rgba(255, 255, 255, 0.03))',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '20px',
+            border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <ShieldCheck size={18} color="#38bdf8" />
+              <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-main, #ffffff)' }}>
+                Thông tin liên hệ & Xác thực bảo mật
+              </span>
+            </div>
+
+            {/* Mục Email */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px',
+              borderRadius: '10px',
+              background: 'var(--bg-card, rgba(0,0,0,0.2))',
+              marginBottom: '10px',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#38bdf8'
+                }}>
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', fontWeight: '700' }}>
+                    Địa chỉ Email
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-main, #ffffff)' }}>
+                    {email ? email : <span style={{ color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>Chưa cập nhật</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {email ? (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '3px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    background: emailVerified ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                    color: emailVerified ? '#22c55e' : '#eab308'
+                  }}>
+                    {emailVerified ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                    {emailVerified ? 'Đã xác minh' : 'Chưa xác minh'}
+                  </span>
+                ) : null}
+
+                {email && !emailVerified && (
+                  <button
+                    type="button"
+                    onClick={() => openContactOtpFlow('email')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #eab308',
+                      background: 'rgba(234, 179, 8, 0.2)',
+                      color: '#facc15',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Xác minh ngay
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => openContactOtpFlow('email')}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color, #334155)',
+                    background: 'transparent',
+                    color: '#38bdf8',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {email ? 'Đổi Email' : '+ Thêm Email'}
+                </button>
+              </div>
+            </div>
+
+            {/* Mục Số điện thoại */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px',
+              borderRadius: '10px',
+              background: 'var(--bg-card, rgba(0,0,0,0.2))',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'rgba(52, 211, 153, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#34d399'
+                }}>
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', fontWeight: '700' }}>
+                    Số điện thoại
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-main, #ffffff)' }}>
+                    {phone ? phone : <span style={{ color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>Chưa cập nhật</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {phone ? (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '3px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    background: phoneVerified ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                    color: phoneVerified ? '#22c55e' : '#eab308'
+                  }}>
+                    {phoneVerified ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                    {phoneVerified ? 'Đã xác minh' : 'Chưa xác minh'}
+                  </span>
+                ) : null}
+
+                {phone && !phoneVerified && (
+                  <button
+                    type="button"
+                    onClick={() => openContactOtpFlow('phone')}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #eab308',
+                      background: 'rgba(234, 179, 8, 0.2)',
+                      color: '#facc15',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Xác minh ngay
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => openContactOtpFlow('phone')}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color, #334155)',
+                    background: 'transparent',
+                    color: '#34d399',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {phone ? 'Đổi Số ĐT' : '+ Thêm SĐT'}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* CÀI ĐẶT RIÊNG TƯ */}
           <div className="privacy-setting">
             <div className="privacy-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -401,6 +693,169 @@ function EditProfileModal({ user, onClose, navigate }) {
             </button>
           </div>
         </form>
+
+        {/* MODAL XÁC MINH OTP CHO EMAIL / SĐT */}
+        {otpTarget && (
+          <div className="modal-overlay" style={{ zIndex: 100000 }} onClick={() => setOtpTarget(null)}>
+            <div className="modal-content" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h3 style={{ margin: 0, fontSize: '17px', color: 'var(--text-main, #ffffff)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <KeyRound size={18} color="#38bdf8" />
+                  <span>Xác thực {otpTarget === 'email' ? 'Địa chỉ Email' : 'Số điện thoại'}</span>
+                </h3>
+                <button type="button" onClick={() => setOtpTarget(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #94a3b8)', cursor: 'pointer' }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: '13px', color: 'var(--text-muted, #94a3b8)', margin: '0 0 14px', lineHeight: '1.4' }}>
+                {otpSent 
+                  ? `Mã OTP đã được gửi. Vui lòng nhập mã gồm 6 chữ số để xác thực ${otpTarget === 'email' ? 'Email' : 'Số điện thoại'}.`
+                  : `Nhập hoặc kiểm tra ${otpTarget === 'email' ? 'Email' : 'Số điện thoại'} bạn muốn xác minh/đổi.`}
+              </p>
+
+              {/* Ô nhập thông tin (Email hoặc Số điện thoại) */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: 'var(--text-muted, #94a3b8)' }}>
+                  {otpTarget === 'email' ? 'Địa chỉ Email:' : 'Số điện thoại:'}
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type={otpTarget === 'email' ? 'email' : 'tel'}
+                    value={otpValue}
+                    disabled={otpLoading || otpSent}
+                    onChange={e => setOtpValue(e.target.value)}
+                    placeholder={otpTarget === 'email' ? 'example@gmail.com' : '0912345678'}
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color, #334155)',
+                      background: 'var(--bg-surface, #1e293b)',
+                      color: 'var(--text-main, #ffffff)',
+                      fontSize: '13px'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={otpLoading}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      background: otpSent ? 'rgba(56, 189, 248, 0.15)' : '#38bdf8',
+                      color: otpSent ? '#38bdf8' : '#0f172a',
+                      fontWeight: '700',
+                      border: 'none',
+                      cursor: otpLoading ? 'not-allowed' : 'pointer',
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {otpLoading ? 'Đang gửi...' : (otpSent ? 'Gửi lại' : 'Gửi mã OTP')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Thông báo kết quả gửi mã */}
+              {otpMsg && (
+                <div style={{
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#4ade80',
+                  fontSize: '12.5px',
+                  marginBottom: '14px'
+                }}>
+                  {otpMsg}
+                </div>
+              )}
+
+              {/* Ô nhập mã OTP */}
+              {otpSent && (
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: 'var(--text-muted, #94a3b8)' }}>
+                    Nhập mã xác thực 6 chữ số:
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="VD: 123456"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #38bdf8',
+                      background: 'rgba(56, 189, 248, 0.05)',
+                      color: '#ffffff',
+                      fontSize: '18px',
+                      fontWeight: '800',
+                      letterSpacing: '4px',
+                      textAlign: 'center',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              )}
+
+              {otpErr && (
+                <div style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171',
+                  fontSize: '12.5px',
+                  marginBottom: '14px'
+                }}>
+                  {otpErr}
+                </div>
+              )}
+
+              {/* Nút hành động */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setOtpTarget(null)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color, #334155)',
+                    background: 'transparent',
+                    color: 'var(--text-muted, #94a3b8)',
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
+                  Đóng
+                </button>
+                {otpSent && (
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={otpLoading || otpCode.length !== 6}
+                    style={{
+                      padding: '8px 20px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: '#22c55e',
+                      color: '#ffffff',
+                      fontWeight: '700',
+                      cursor: (otpLoading || otpCode.length !== 6) ? 'not-allowed' : 'pointer',
+                      fontSize: '13px',
+                      opacity: (otpLoading || otpCode.length !== 6) ? 0.6 : 1
+                    }}
+                  >
+                    {otpLoading ? 'Đang xác thực...' : 'Xác nhận & Cập nhật'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

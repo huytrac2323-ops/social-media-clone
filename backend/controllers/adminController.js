@@ -126,12 +126,6 @@ const toggleVerifyUser = async (req, res) => {
         const { userId } = req.params;
         const adminId = req.user.id;
 
-        // Kiểm tra admin thực hiện có tích xanh hay không
-        const adminCheck = await pool.query('SELECT is_verified, role FROM users WHERE user_id = $1', [adminId]);
-        if (!adminCheck.rows[0]?.is_verified) {
-            return res.status(403).json({ message: 'Bạn chưa có tích xanh! Chỉ Quản trị viên đã sở hữu tích xanh mới có quyền cấp tích xanh cho người khác.' });
-        }
-
         const result = await pool.query(
             `UPDATE users 
              SET is_verified = NOT COALESCE(is_verified, FALSE) 
@@ -321,12 +315,6 @@ const approveVerificationRequest = async (req, res) => {
         const { requestId } = req.params;
         const { admin_note } = req.body;
         const adminId = req.user.id;
-
-        // Kiểm tra admin thực hiện có tích xanh hay không
-        const adminCheck = await pool.query('SELECT is_verified, role FROM users WHERE user_id = $1', [adminId]);
-        if (!adminCheck.rows[0]?.is_verified) {
-            return res.status(403).json({ message: 'Bạn chưa có tích xanh! Chỉ Quản trị viên đã sở hữu tích xanh mới có quyền phê duyệt cấp tích xanh.' });
-        }
 
         // Cập nhật trạng thái đơn
         const updateReq = await pool.query(

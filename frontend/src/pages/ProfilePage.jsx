@@ -34,6 +34,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Pause,
+  Mail,
+  Phone,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 
 const API_URL = getApiBaseUrl();
@@ -926,6 +930,81 @@ function ProfilePage() {
                       <span>Thêm quê quán, địa chỉ, sở thích để kết nối bạn bè ở gần</span>
                     </button>
                   )
+                )}
+
+                {/* THÔNG TIN LIÊN HỆ & BẢO MẬT (CHỈ HIỂN THỊ VỚI CHỦ TÀI KHOẢN) */}
+                {isOwnProfile && (
+                  <div style={{
+                    marginTop: '14px',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'var(--bg-surface-secondary, rgba(255, 255, 255, 0.04))',
+                    border: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px', fontSize: '13px' }}>
+                      {/* Email */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Mail size={14} color="#38bdf8" />
+                        <span style={{ color: 'var(--text-main, #ffffff)', fontWeight: '600' }}>
+                          {userProfile.email || <span style={{ color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic', fontWeight: '400' }}>Chưa thêm Email</span>}
+                        </span>
+                        {userProfile.email ? (
+                          <span style={{
+                            fontSize: '11px',
+                            padding: '2px 7px',
+                            borderRadius: '10px',
+                            background: userProfile.email_verified ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                            color: userProfile.email_verified ? '#22c55e' : '#eab308',
+                            fontWeight: '700'
+                          }}>
+                            {userProfile.email_verified ? 'Đã xác minh' : 'Chưa xác minh'}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* Phone */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Phone size={14} color="#34d399" />
+                        <span style={{ color: 'var(--text-main, #ffffff)', fontWeight: '600' }}>
+                          {userProfile.phone || <span style={{ color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic', fontWeight: '400' }}>Chưa thêm SĐT</span>}
+                        </span>
+                        {userProfile.phone ? (
+                          <span style={{
+                            fontSize: '11px',
+                            padding: '2px 7px',
+                            borderRadius: '10px',
+                            background: userProfile.phone_verified ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                            color: userProfile.phone_verified ? '#22c55e' : '#eab308',
+                            fontWeight: '700'
+                          }}>
+                            {userProfile.phone_verified ? 'Đã xác minh' : 'Chưa xác minh'}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(true)}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        background: 'rgba(56, 189, 248, 0.12)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: '#38bdf8',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Xác minh / Đổi
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

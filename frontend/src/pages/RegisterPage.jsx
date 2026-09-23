@@ -33,7 +33,7 @@ function RegisterPage({ onRegisterSuccess }) {
 
   const handleNext = (e) => {
     e.preventDefault();
-    if (!username || !email || !password) { setError('Vui lòng điền đầy đủ thông tin.'); return; }
+    if (!username.trim() || !password) { setError('Vui lòng điền tên người dùng và mật khẩu.'); return; }
     if (password.length < 6) { setError('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
     setError('');
     setStep(2);
@@ -46,7 +46,7 @@ function RegisterPage({ onRegisterSuccess }) {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, creator_type: creatorType }),
+        body: JSON.stringify({ username: username.trim(), email: email.trim() || null, password, creator_type: creatorType }),
       });
       const newUser = await response.json();
       if (!response.ok) throw new Error(newUser.message || 'Đăng ký thất bại.');
@@ -56,7 +56,7 @@ function RegisterPage({ onRegisterSuccess }) {
       const loginResponse = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
       const loginData = await loginResponse.json();
       if (!loginResponse.ok) throw new Error(loginData.message || 'Lỗi đăng nhập.');
@@ -86,18 +86,10 @@ function RegisterPage({ onRegisterSuccess }) {
         {step === 1 && (
           <>
             <h1 className="auth-logo" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>NovaGen</h1>
-            <p className="auth-subtitle">Tạo tài khoản để tham gia cộng đồng sáng tạo</p>
+            <p className="auth-subtitle">Tạo tài khoản chỉ với tên người dùng và mật khẩu</p>
 
             <form onSubmit={handleNext}>
-              <div style={{ position: 'relative', marginBottom: '12px' }}>
-                <Mail size={17} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-                <input
-                  type="email" placeholder="Địa chỉ email"
-                  value={email} onChange={(e) => setEmail(e.target.value)}
-                  style={{ paddingLeft: '42px', width: '100%' }} required
-                />
-              </div>
-              <div style={{ position: 'relative', marginBottom: '12px' }}>
+              <div style={{ position: 'relative', marginBottom: '14px' }}>
                 <User size={17} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
                 <input
                   type="text" placeholder="Tên người dùng (username)"

@@ -14,7 +14,8 @@ import {
     Search,
     Globe,
     MessageCircle,
-    ShieldCheck
+    ShieldCheck,
+    Zap
 } from 'lucide-react';
 
 function SidebarNav({ onCreatePost }) {
@@ -198,6 +199,27 @@ function SidebarNav({ onCreatePost }) {
                                         <PlusCircle size={18} />
                                         <span>Tạo bài viết</span>
                                     </button>
+                                </li>
+
+                                <li style={{ marginTop: '8px' }}>
+                                    <Link
+                                        to="/antigravity-sim"
+                                        className="sidebar-post-btn"
+                                        title="Khởi động Antigravity Sim"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #0284c7, #38bdf8)',
+                                            color: '#ffffff',
+                                            textDecoration: 'none',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '8px',
+                                            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)'
+                                        }}
+                                    >
+                                        <Zap size={18} />
+                                        <span>Antigravity Sim</span>
+                                    </Link>
                                 </li>
                             </>
                         ) : (

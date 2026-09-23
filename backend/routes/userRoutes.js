@@ -12,5 +12,7 @@ router.get('/users/:username', userController.getUserByUsername);
 // Các API cho Profile
 router.patch('/profile', userController.updateProfile);
 router.post('/profile/avatar', upload.single('avatar'), userController.updateAvatar);
+router.post('/profile/contact/send-otp', userController.sendContactOtp);
+router.post('/profile/contact/verify-otp', userController.verifyContactOtp);
 
 module.exports = router;

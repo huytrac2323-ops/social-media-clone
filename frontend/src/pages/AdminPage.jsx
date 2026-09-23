@@ -611,23 +611,6 @@ export default function AdminPage() {
                                 {/* TAB 2: XÉT DUYỆT TÍCH XANH */}
                                 {activeTab === 'verifications' && (
                                     <div>
-                                        {!currentUser?.is_verified && (
-                                            <div style={{
-                                                padding: '12px 16px',
-                                                marginBottom: '16px',
-                                                borderRadius: '10px',
-                                                background: 'rgba(234, 179, 8, 0.12)',
-                                                border: '1px solid rgba(234, 179, 8, 0.3)',
-                                                color: '#fbbf24',
-                                                fontSize: '13px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px'
-                                            }}>
-                                                <AlertTriangle size={18} />
-                                                <span>Tài khoản Quản trị viên của bạn chưa có <strong>Tích Xanh</strong>. Bạn có thể xem danh sách đơn, nhưng chỉ Admin đã sở hữu Tích Xanh mới có quyền cấp tích xanh cho người khác.</span>
-                                            </div>
-                                        )}
 
                                         {/* Status Filter */}
                                         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -790,22 +773,20 @@ export default function AdminPage() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => openActionModal(req, 'approve')}
-                                                                    disabled={!currentUser?.is_verified}
-                                                                    title={!currentUser?.is_verified ? 'Bạn chưa có tích xanh nên không thể phê duyệt cấp tích xanh' : 'Phê duyệt & Cấp Tích Xanh'}
+                                                                    title="Phê duyệt & Cấp Tích Xanh"
                                                                     style={{
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '6px',
                                                                         padding: '8px 18px',
                                                                         borderRadius: '8px',
-                                                                        background: currentUser?.is_verified ? '#22c55e' : 'rgba(255, 255, 255, 0.08)',
-                                                                        border: currentUser?.is_verified ? 'none' : '1px solid rgba(255, 255, 255, 0.15)',
-                                                                        color: currentUser?.is_verified ? '#ffffff' : 'var(--text-muted, #94a3b8)',
+                                                                        background: '#22c55e',
+                                                                        border: 'none',
+                                                                        color: '#ffffff',
                                                                         fontWeight: '700',
-                                                                        cursor: currentUser?.is_verified ? 'pointer' : 'not-allowed',
+                                                                        cursor: 'pointer',
                                                                         fontSize: '13px',
-                                                                        boxShadow: currentUser?.is_verified ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
-                                                                        opacity: currentUser?.is_verified ? 1 : 0.6
+                                                                        boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
                                                                     }}
                                                                 >
                                                                     <CheckCircle size={15} />
@@ -967,8 +948,7 @@ export default function AdminPage() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleToggleVerify(u.user_id)}
-                                                                    disabled={!currentUser?.is_verified}
-                                                                    title={!currentUser?.is_verified ? 'Bạn cần có tích xanh để cấp tích xanh cho người khác' : 'Bấm để bật/tắt tích xanh'}
+                                                                    title="Bấm để bật/tắt tích xanh cho người dùng này"
                                                                     style={{
                                                                         display: 'inline-flex',
                                                                         alignItems: 'center',
@@ -978,10 +958,9 @@ export default function AdminPage() {
                                                                         border: 'none',
                                                                         background: u.is_verified ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)',
                                                                         color: u.is_verified ? '#22c55e' : 'var(--text-muted, #94a3b8)',
-                                                                        cursor: currentUser?.is_verified ? 'pointer' : 'not-allowed',
+                                                                        cursor: 'pointer',
                                                                         fontSize: '12px',
-                                                                        fontWeight: '700',
-                                                                        opacity: currentUser?.is_verified ? 1 : 0.6
+                                                                        fontWeight: '700'
                                                                     }}
                                                                 >
                                                                     {u.is_verified ? '🛡️ Có tích' : 'Chưa có'}

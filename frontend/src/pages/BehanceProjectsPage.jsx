@@ -751,7 +751,7 @@ export default function BehanceProjectsPage({
       {/* MODAL ĐĂNG TÁC PHẨM / PORTFOLIO CASE STUDY */}
       {showCreateModal && currentUser && (
         <div className="modal-backdrop" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content modal-content-create-project" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Tạo tác phẩm & Dự án Portfolio</h2>
               <button type="button" className="close-btn" onClick={() => setShowCreateModal(false)}>

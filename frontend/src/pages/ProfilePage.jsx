@@ -1341,7 +1341,7 @@ function ProfilePage() {
       {/* CREATE POST MODAL */}
       {showCreatePost && currentUser && (
         <div className="modal-backdrop" onClick={() => setShowCreatePost(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content modal-content-create-project" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Tạo bài viết mới</h2>
               <button type="button" className="close-btn" onClick={() => setShowCreatePost(false)}>

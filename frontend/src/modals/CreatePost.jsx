@@ -540,6 +540,12 @@ function CreatePost({ onPostCreated, defaultMode = 'social' }) {
 
           {/* Nút Xuất bản Portfolio */}
           <div className="portfolio-submit-bar">
+            {(!projectTitle.trim() || !coverFile) && (
+              <span className="portfolio-missing-hint" style={{ fontSize: '12.5px', color: '#f59e0b', marginRight: 'auto', alignSelf: 'center', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>⚠️</span>
+                <span>{!projectTitle.trim() ? 'Vui lòng nhập Tiêu đề dự án' : 'Vui lòng tải lên Ảnh Bìa dự án'}</span>
+              </span>
+            )}
             <button
               type="submit"
               disabled={isSubmitting || !projectTitle.trim() || !coverFile}

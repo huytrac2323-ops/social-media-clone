@@ -6,22 +6,65 @@
   -webkit-backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 100000;
-  padding: 16px;
+  padding: 24px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: modalFadeIn 0.2s ease-out;
 }
 
 .modal-content {
   background-color: var(--bg-card, #151a23);
   color: var(--text-primary, #f8fafc);
-  padding: 24px;
+  padding: 20px 24px 24px;
   border-radius: 18px;
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto 0;
+  position: relative;
+}
+
+/* Modifier dành riêng cho Modal Đăng Tác Phẩm / Dự Án hoặc Modal Form Dài */
+.modal-content-create-project,
+.modal-content:has(.portfolio-composer-form),
+.modal-content:has(.composer-dual-card) {
+  max-width: 720px;
+}
+
+/* Loại bỏ padding và viền kép khi CreatePost nằm trong Modal */
+.modal-content .composer-dual-card {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Tùy chỉnh thanh cuộn đẹp mắt cho modal */
+.modal-content::-webkit-scrollbar,
+.modal-backdrop::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-content::-webkit-scrollbar-track,
+.modal-backdrop::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-content::-webkit-scrollbar-thumb,
+.modal-backdrop::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+.modal-content::-webkit-scrollbar-thumb:hover,
+.modal-backdrop::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .modal-header {
@@ -29,8 +72,16 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 16px;
-  margin-bottom: 20px;
+  padding: 18px 24px 14px;
+  position: sticky;
+  top: -20px;
+  background-color: var(--bg-card, #151a23);
+  z-index: 30;
+  margin: -20px -24px 18px -24px;
+}
+
+[data-theme="light"] .modal-header {
+  background-color: var(--bg-card, #ffffff);
 }
 
 .modal-header h2 {

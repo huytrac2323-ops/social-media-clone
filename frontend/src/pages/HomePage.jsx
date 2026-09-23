@@ -2972,7 +2972,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                     {/* MODAL ĐĂNG BÀI ĐẦY ĐỦ */}
                     {showCreatePost && currentUser && (
                         <div className="modal-backdrop" onClick={() => setShowCreatePost(false)}>
-                            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <div className="modal-content modal-content-create-project" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
                                     <h2>Tạo bài viết</h2>
                                     <button type="button" className="close-btn" onClick={() => setShowCreatePost(false)}>

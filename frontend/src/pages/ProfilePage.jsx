@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import '../styles/App.css';
 import EditProfileModal from '../modals/EditProfileModal.jsx';
@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
+  Pause,
 } from 'lucide-react';
 
 const API_URL = getApiBaseUrl();
@@ -43,10 +44,11 @@ const CREATOR_LABELS = {
   musician:     { emoji: '🎵', label: 'Nhạc sĩ / Ca sĩ', desc: 'Sáng tác nhạc, biểu diễn, beatmaker & âm thanh' },
   videographer: { emoji: '🎬', label: 'Làm phim / Video', desc: 'Sáng tạo nội dung video, YouTuber, dựng phim & vlog' },
   writer:       { emoji: '✍️',  label: 'Nhà văn / Tác giả', desc: 'Sáng tác tiểu thuyết, tản văn, thơ & copywriting' },
-  dancer:       { emoji: '💃', label: 'Vũ công / Biên đạo', desc: 'Biểu diễn vũ đạo, nhảy cover & biên đạo nghệ thuật' },
-  designer:     { emoji: '🖥️', label: 'Thiết kế đồ họa', desc: 'Thiết kế nhận diện, UI/UX, poster & đồ họa truyền thông' },
-  gamer:        { emoji: '🎮', label: 'Game Creator', desc: 'Streamer, sáng tạo nội dung gaming & bình luận game' },
-  crafter:      { emoji: '🧶', label: 'Thủ công / DIY', desc: 'Sản phẩm handmade mỹ nghệ, gốm sứ & đồ decor độc bản' },
+  dancer:       { emoji: '💃', label: 'Vũ công / Biên đạo', desc: 'Biểu diễn nhảy, biên đạo múa nghệ thuật & phong cách sống' },
+  designer:     { emoji: '🖥️', label: 'Thiết kế đồ họa', desc: 'UI/UX, Typography, 3D, Brand Identity & Kiến trúc' },
+  gamer:        { emoji: '🎮', label: 'Game Creator / Streamer', desc: 'Stream game, phân tích Esports & đánh giá Gaming' },
+  crafter:      { emoji: '🧶', label: 'Thủ công mỹ nghệ', desc: 'DIY, Handmade, Gốm sứ, Đan len & Nghệ thuật tạo hình' },
+  other:        { emoji: '✨', label: 'Sáng tạo nội dung', desc: 'Nhà sáng tạo đa lĩnh vực, phong cách sống & truyền cảm hứng' }
 };
 
 function ProfilePage() {
@@ -54,7 +56,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const API_URL = getApiBaseUrl();
-  const mediaUrl = (url) => url?.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
+  const mediaUrl = (url) => !url ? '' : url.startsWith('http') ? url : `${API_URL.replace(/\/api$/, '')}${url}`;
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -310,10 +312,122 @@ function ProfilePage() {
     }
   }, [fetchFriends, fetchFollowStatus, fetchUserStoriesAndHighlights, userProfile?.user_id]);
 
+  const [isHoldingPause, setIsHoldingPause] = useState(false);
+  const [viewerDuration, setViewerDuration] = useState(6);
+  const [viewerCurrentTime, setViewerCurrentTime] = useState(0);
+  const profileViewerVideoRef = useRef(null);
+  const holdStartTimeRef = useRef(0);
+  const isHoldingRef = useRef(false);
+  const holdTimerRef = useRef(null);
+
+  const handleNextStory = useCallback(() => {
+    if (!activeStoryViewer) return;
+    if (activeStoryIndex < activeStoryViewer.length - 1) {
+      setActiveStoryIndex(prev => prev + 1);
+      setViewerCurrentTime(0);
+    } else {
+      setActiveStoryViewer(null);
+      setViewerCurrentTime(0);
+    }
+  }, [activeStoryViewer, activeStoryIndex]);
+
+  const handlePrevStory = useCallback(() => {
+    if (activeStoryIndex > 0) {
+      setActiveStoryIndex(prev => prev - 1);
+      setViewerCurrentTime(0);
+    }
+  }, [activeStoryIndex]);
+
+  const handleHoldStart = (e) => {
+    if (e.target.closest('button, input, textarea, a, .story-close-button, .story-nav-btn')) {
+      return;
+    }
+    holdStartTimeRef.current = Date.now();
+    isHoldingRef.current = true;
+    if (profileViewerVideoRef.current) {
+      profileViewerVideoRef.current.pause();
+    }
+    clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = setTimeout(() => {
+      if (isHoldingRef.current) {
+        setIsHoldingPause(true);
+      }
+    }, 150);
+  };
+
+  const handleHoldEnd = (e) => {
+    if (!isHoldingRef.current) return;
+    isHoldingRef.current = false;
+    clearTimeout(holdTimerRef.current);
+    const duration = Date.now() - holdStartTimeRef.current;
+
+    setIsHoldingPause(false);
+    if (profileViewerVideoRef.current) {
+      profileViewerVideoRef.current.play().catch(() => {});
+    }
+
+    if (duration < 250 && e) {
+      const rect = e.currentTarget?.getBoundingClientRect();
+      let clientX = e.clientX;
+      if (clientX === undefined && e.changedTouches && e.changedTouches[0]) {
+        clientX = e.changedTouches[0].clientX;
+      }
+      if (rect && clientX !== undefined) {
+        const relativeX = clientX - rect.left;
+        if (relativeX < rect.width * 0.35) {
+          handlePrevStory();
+        } else {
+          handleNextStory();
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalRelease = () => {
+      if (isHoldingRef.current) {
+        isHoldingRef.current = false;
+        clearTimeout(holdTimerRef.current);
+        setIsHoldingPause(false);
+        if (profileViewerVideoRef.current) {
+          profileViewerVideoRef.current.play().catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('pointerup', handleGlobalRelease);
+    window.addEventListener('touchend', handleGlobalRelease);
+    window.addEventListener('mouseup', handleGlobalRelease);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalRelease);
+      window.removeEventListener('touchend', handleGlobalRelease);
+      window.removeEventListener('mouseup', handleGlobalRelease);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeStoryViewer || isHoldingPause) return;
+    const currentItem = activeStoryViewer[activeStoryIndex];
+    if (currentItem?.media_type === 'video') return;
+
+    setViewerDuration(6);
+    const timer = setInterval(() => {
+      setViewerCurrentTime(prev => {
+        if (prev >= 6) {
+          handleNextStory();
+          return 0;
+        }
+        return prev + 0.1;
+      });
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [activeStoryViewer, activeStoryIndex, isHoldingPause, handleNextStory]);
+
   const handleAvatarClick = () => {
     if (userActiveStories && userActiveStories.length > 0) {
       setActiveStoryViewer(userActiveStories);
       setActiveStoryIndex(0);
+      setViewerCurrentTime(0);
     } else if (currentUser && Number(currentUser.user_id) === Number(userProfile?.user_id)) {
       setShowCreatePost(true);
     }
@@ -325,16 +439,10 @@ function ProfilePage() {
       if (e.target.closest('input, textarea')) return;
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        if (activeStoryIndex < activeStoryViewer.length - 1) {
-          setActiveStoryIndex(prev => prev + 1);
-        } else {
-          setActiveStoryViewer(null);
-        }
+        handleNextStory();
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        if (activeStoryIndex > 0) {
-          setActiveStoryIndex(prev => prev - 1);
-        }
+        handlePrevStory();
       } else if (e.key === 'Escape') {
         e.preventDefault();
         setActiveStoryViewer(null);
@@ -342,7 +450,7 @@ function ProfilePage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeStoryViewer, activeStoryIndex]);
+  }, [activeStoryViewer, handleNextStory, handlePrevStory]);
 
   const handleCreateHighlight = async (e) => {
     e.preventDefault();
@@ -1069,137 +1177,238 @@ function ProfilePage() {
       />
 
       {/* MODAL XEM STORY / TIN NỔI BẬT FULLSCREEN */}
-      {activeStoryViewer && activeStoryViewer.length > 0 && (
-        <div className="story-viewer-backdrop" onClick={() => setActiveStoryViewer(null)}>
-          {activeStoryViewer[activeStoryIndex]?.media_url && (
+      {/* MODAL XEM STORY / TIN NỔI BẬT FULLSCREEN */}
+      {activeStoryViewer && activeStoryViewer.length > 0 && (() => {
+        const activeStory = activeStoryViewer[activeStoryIndex] || {};
+        let videoTrim = null;
+        let mediaTransform = null;
+        let parsedSticker = null;
+        try {
+          parsedSticker = JSON.parse(activeStory.sticker || '{}');
+          videoTrim = parsedSticker.videoTrim || null;
+          mediaTransform = parsedSticker.mediaTransform || null;
+        } catch {}
+
+        return (
+          <div className="story-viewer-backdrop" onClick={() => setActiveStoryViewer(null)}>
+            {/* Ambient Blur Background */}
+            {activeStory.media_url && (
+              <div
+                className="story-ambient-blur"
+                style={{ backgroundImage: `url(${mediaUrl(activeStory.media_url)})` }}
+              />
+            )}
+
             <div
-              className="story-ambient-blur"
-              style={{ backgroundImage: `url(${mediaUrl(activeStoryViewer[activeStoryIndex].media_url)})` }}
-            />
-          )}
-          <div className="story-viewer" onClick={e => e.stopPropagation()}>
-            {/* Nút điều hướng desktop Chevron Trái / Phải */}
-            {activeStoryIndex > 0 && (
-              <button
-                type="button"
-                className="story-nav-btn story-nav-btn-prev"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveStoryIndex(activeStoryIndex - 1);
-                }}
-                aria-label="Tin trước"
-                title="Tin trước"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            )}
-            {activeStoryIndex < activeStoryViewer.length - 1 && (
-              <button
-                type="button"
-                className="story-nav-btn story-nav-btn-next"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveStoryIndex(activeStoryIndex + 1);
-                }}
-                aria-label="Tin tiếp theo"
-                title="Tin tiếp theo"
-              >
-                <ChevronRight size={24} />
-              </button>
-            )}
-
-            <button
-              type="button"
-              className="story-close-button"
-              onClick={() => setActiveStoryViewer(null)}
-              aria-label="Đóng Story"
+              className={`story-viewer ${isHoldingPause ? 'is-holding-pause' : ''}`}
+              onClick={e => e.stopPropagation()}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
+              onMouseDown={handleHoldStart}
+              onMouseUp={handleHoldEnd}
+              onMouseLeave={handleHoldEnd}
+              onTouchStart={handleHoldStart}
+              onTouchEnd={handleHoldEnd}
+              onTouchCancel={handleHoldEnd}
             >
-              <X size={20} />
-            </button>
+              {/* Nút điều hướng desktop Chevron Trái / Phải */}
+              {activeStoryIndex > 0 && (
+                <button
+                  type="button"
+                  className="story-nav-btn story-nav-btn-prev"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePrevStory();
+                  }}
+                  aria-label="Tin trước"
+                  title="Tin trước"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+              )}
+              {activeStoryIndex < activeStoryViewer.length - 1 && (
+                <button
+                  type="button"
+                  className="story-nav-btn story-nav-btn-next"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNextStory();
+                  }}
+                  aria-label="Tin tiếp theo"
+                  title="Tin tiếp theo"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              )}
 
-            {/* Thanh tiến trình */}
-            <div className="story-progress-container">
-              {activeStoryViewer.map((_, idx) => (
-                <div key={idx} className="story-progress-bar">
-                  <div
-                    className={`story-progress-fill ${idx < activeStoryIndex ? 'completed' : idx === activeStoryIndex ? 'active' : ''}`}
-                  />
+              {/* Thanh tiến trình đa phân đoạn */}
+              <div className="story-progress-container">
+                {activeStoryViewer.map((_, idx) => (
+                  <div key={idx} className="story-progress-bar">
+                    <div
+                      className={`story-progress-fill ${idx < activeStoryIndex ? 'completed' : ''}`}
+                      style={{
+                        width: idx < activeStoryIndex
+                          ? '100%'
+                          : idx === activeStoryIndex
+                          ? `${viewerDuration > 0 ? Math.min(100, Math.max(0, (viewerCurrentTime / viewerDuration) * 100)) : 0}%`
+                          : '0%'
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Huy hiệu hiển thị khi nhấn giữ tạm dừng */}
+              {isHoldingPause && (
+                <div className="story-hold-pause-badge">
+                  <Pause size={13} fill="#ffffff" strokeWidth={0} />
+                  <span>Đang tạm dừng</span>
                 </div>
-              ))}
-            </div>
+              )}
 
-            {/* Thông tin chủ story */}
-            <div className="story-viewer-user">
-              <Avatar user={{ username: userProfile?.username, profile_photo_url: userProfile?.profile_photo_url }} size={36} />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <strong style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff' }}>
-                  {userProfile?.username}
-                  {userProfile?.is_verified && (
-                    <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
+              <button
+                type="button"
+                className="story-close-button"
+                onClick={() => setActiveStoryViewer(null)}
+                aria-label="Đóng Story"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Thông tin chủ story */}
+              <div className="story-viewer-user">
+                <Avatar user={{ username: userProfile?.username, profile_photo_url: userProfile?.profile_photo_url }} size={36} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <strong style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffffff' }}>
+                    {userProfile?.username}
+                    {userProfile?.is_verified && (
+                      <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    )}
+                  </strong>
+                  {activeStory.created_at && (
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+                      {new Date(activeStory.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   )}
-                </strong>
-                {activeStoryViewer[activeStoryIndex]?.created_at && (
-                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
-                    {new Date(activeStoryViewer[activeStoryIndex].created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                </div>
+              </div>
+
+              {/* Container hiển thị nội dung Story */}
+              <div className="story-viewer-media-container" onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}>
+                {activeStory.shared_post ? (
+                  <button
+                    type="button"
+                    className="story-shared-post"
+                    onClick={() => navigate(`/post/${activeStory.shared_post.post_id}`)}
+                  >
+                    {activeStory.shared_post.photo_url && (
+                      <img
+                        src={mediaUrl(activeStory.shared_post.photo_url)}
+                        alt="Bài viết được chia sẻ"
+                        onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
+                      />
+                    )}
+                    <div className="story-shared-post-content">
+                      <strong>@{activeStory.shared_post.username}</strong>
+                      <p>{activeStory.shared_post.caption || 'Bài viết hình ảnh'}</p>
+                      <small>Nhấn để xem bài viết</small>
+                    </div>
+                  </button>
+                ) : activeStory.media_type === 'video' ? (
+                  <video
+                    ref={profileViewerVideoRef}
+                    src={mediaUrl(activeStory.media_url)}
+                    autoPlay
+                    playsInline
+                    muted={videoTrim?.isMuted || false}
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    disablePictureInPicture
+                    disableRemotePlayback
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
+                    onEnded={handleNextStory}
+                    onLoadedMetadata={e => {
+                      const v = e.target;
+                      const sTime = videoTrim?.startTime || 0;
+                      const eTime = videoTrim?.endTime && videoTrim.endTime > 0 ? videoTrim.endTime : (v.duration || 15);
+                      setViewerDuration(eTime);
+                      if (sTime > 0) {
+                        v.currentTime = sTime;
+                      }
+                      setViewerCurrentTime(sTime);
+                    }}
+                    onTimeUpdate={e => {
+                      const v = e.target;
+                      setViewerCurrentTime(v.currentTime);
+                      if (videoTrim?.endTime && videoTrim.endTime > 0 && v.currentTime >= videoTrim.endTime) {
+                        handleNextStory();
+                      }
+                    }}
+                    style={{
+                      objectFit: mediaTransform?.fit || 'contain',
+                      transform: `scale(${mediaTransform?.scale || 1}) translate(${mediaTransform?.offset?.x || 0}px, ${mediaTransform?.offset?.y || 0}px)`
+                    }}
+                  />
+                ) : activeStory.media_url ? (
+                  <img
+                    src={mediaUrl(activeStory.media_url)}
+                    alt={`Story của ${userProfile?.username}`}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
+                    style={{
+                      objectFit: mediaTransform?.fit || 'contain',
+                      transform: `scale(${mediaTransform?.scale || 1}) translate(${mediaTransform?.offset?.x || 0}px, ${mediaTransform?.offset?.y || 0}px)`
+                    }}
+                  />
+                ) : (
+                  <div style={{ background: 'linear-gradient(135deg, #18181b, #09090b)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', fontSize: '20px', color: '#ffffff' }}>
+                    {activeStory.caption || 'Khoảnh khắc nổi bật'}
+                  </div>
+                )}
+
+                {/* Text & Sticker overlay */}
+                {parsedSticker && (
+                  <>
+                    {parsedSticker.sticker && (
+                      <div
+                        className="story-sticker"
+                        style={{
+                          left: `${parsedSticker.stickerPos?.x ?? 50}%`,
+                          top: `${parsedSticker.stickerPos?.y ?? 35}%`,
+                          position: 'absolute',
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: 12
+                        }}
+                      >
+                        <span>{parsedSticker.sticker}</span>
+                      </div>
+                    )}
+                    {parsedSticker.text && (
+                      <div
+                        className="story-text-overlay"
+                        style={{
+                          left: `${parsedSticker.textPos?.x ?? 50}%`,
+                          top: `${parsedSticker.textPos?.y ?? 55}%`,
+                          position: 'absolute',
+                          transform: 'translate(-50%, -50%)',
+                          color: parsedSticker.textColor || '#ffffff',
+                          background: parsedSticker.textBg ? 'rgba(0, 0, 0, 0.65)' : 'transparent',
+                          textAlign: parsedSticker.textAlign || 'center',
+                          zIndex: 12,
+                          padding: '6px 12px',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        {parsedSticker.text}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
-
-            {/* Nội dung Story */}
-            <div className="story-viewer-body" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              {activeStoryViewer[activeStoryIndex]?.media_type === 'video' ? (
-                <video
-                  src={mediaUrl(activeStoryViewer[activeStoryIndex].media_url)}
-                  autoPlay
-                  controls
-                  playsInline
-                  onEnded={() => {
-                    if (activeStoryIndex < activeStoryViewer.length - 1) {
-                      setActiveStoryIndex(activeStoryIndex + 1);
-                    } else {
-                      setActiveStoryViewer(null);
-                    }
-                  }}
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                />
-              ) : activeStoryViewer[activeStoryIndex]?.media_url ? (
-                <img
-                  src={mediaUrl(activeStoryViewer[activeStoryIndex].media_url)}
-                  alt="Story"
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                />
-              ) : (
-                <div style={{ background: 'linear-gradient(135deg, #18181b, #09090b)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', fontSize: '20px', color: '#ffffff' }}>
-                  {activeStoryViewer[activeStoryIndex]?.caption || activeStoryViewer[activeStoryIndex]?.sticker || 'Khoảnh khắc nổi bật'}
-                </div>
-              )}
-            </div>
-
-            {/* Khu vực chạm trái / phải để chuyển Story */}
-            <div
-              style={{ position: 'absolute', top: '60px', left: 0, width: '40%', height: 'calc(100% - 60px)', zIndex: 10, cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (activeStoryIndex > 0) setActiveStoryIndex(activeStoryIndex - 1);
-              }}
-            />
-            <div
-              style={{ position: 'absolute', top: '60px', right: 0, width: '40%', height: 'calc(100% - 60px)', zIndex: 10, cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (activeStoryIndex < activeStoryViewer.length - 1) {
-                  setActiveStoryIndex(activeStoryIndex + 1);
-                } else {
-                  setActiveStoryViewer(null);
-                }
-              }}
-            />
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* MODAL TẠO TIN NỔI BẬT MỚI */}
       {isCreateHighlightOpen && (

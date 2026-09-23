@@ -152,40 +152,6 @@ export default function ShareModal({ post, currentUser, onClose, onPostUpdated }
     window.dispatchEvent(new CustomEvent('open-story-with-post', { detail: post }));
   };
 
-  // 5. Đăng lại lên bảng tin (Repost)
-  const handleRepost = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return alert('Vui lòng đăng nhập để đăng lại bài viết.');
-
-    const userCaption = window.prompt("Nhập nội dung chia sẻ của bạn (Có thể để trống):");
-    if (userCaption === null) return;
-
-    try {
-      setIsSharingPost(true);
-      const res = await safeFetch('/posts/' + (post.post_id || post.id) + '/share', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify({ caption: userCaption })
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        return alert(errData.message || 'Có lỗi xảy ra khi đăng lại bài viết');
-      }
-
-      alert('Đăng lại bài viết lên bảng tin thành công!');
-      if (onPostUpdated) onPostUpdated();
-      onClose();
-    } catch (err) {
-      console.error("Lỗi khi đăng lại bài viết:", err);
-      alert('Không thể kết nối máy chủ.');
-    } finally {
-      setIsSharingPost(false);
-    }
-  };
 
   const filteredFriends = friends.filter(f =>
     f.username?.toLowerCase().includes(searchQuery.toLowerCase().trim())
@@ -316,20 +282,9 @@ export default function ShareModal({ post, currentUser, onClose, onPostUpdated }
             </div>
             <span>Lên Story</span>
           </button>
-
-          {/* Đăng lại lên bảng tin */}
-          <button
-            type="button"
-            className="share-action-item"
-            onClick={handleRepost}
-            disabled={isSharingPost}
-          >
-            <div className="share-action-icon-circle">
-              <Repeat size={18} />
-            </div>
-            <span>{isSharingPost ? 'Đang đăng...' : 'Đăng lại'}</span>
-          </button>
         </div>
+
+
 
         {/* Chia sẻ tới các nền tảng mạng xã hội khác */}
         <div className="share-social-platforms-section">

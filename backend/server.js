@@ -188,17 +188,17 @@ app.get('/api/suggestions/:userId', async (req, res) => {
             const matchedTags = originalTags.filter(ot => commonInterests.some(ci => normalizeStr(ot).includes(ci)));
             const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : commonInterests.slice(0, 2).join(', ');
 
-            // 1. Ưu tiên hàng đầu: Tài khoản KOL tích xanh có sở thích liên quan (+150 điểm)
+            // 1. Ưu tiên hàng đầu: Tài khoản tích xanh có sở thích liên quan (+150 điểm)
             if (user.is_verified && commonInterests.length > 0) {
                 score += 150 + commonInterests.length * 30;
-                reason = `⭐ KOL cùng sở thích: ${displayCommon}`;
+                reason = `✨ Cùng sở thích: ${displayCommon}`;
             } else if (commonInterests.length > 0) {
                 score += commonInterests.length * 35;
                 reason = `✨ Cùng sở thích: ${displayCommon}`;
             } else if (user.is_verified) {
-                // Tự động đề xuất KOL nổi bật (+50 điểm)
+                // Tự động đề xuất người dùng nổi bật (+50 điểm)
                 score += 50;
-                reason = '⭐ KOL nổi bật';
+                reason = 'Gợi ý cho bạn';
             }
 
             // 2. So khớp địa chỉ / nơi ở (+40 điểm)

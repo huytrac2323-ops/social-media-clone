@@ -522,13 +522,13 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                     common = currInterests.filter(ci => uInterests.some(ui => ui.includes(ci) || ci.includes(ui)));
                 }
 
-                // 1. Ưu tiên hàng đầu: Tài khoản KOL tích xanh có sở thích liên quan (+150 điểm)
+                // 1. Ưu tiên hàng đầu: Tài khoản tích xanh có sở thích liên quan (+150 điểm)
                 if (u.is_verified && common.length > 0) {
                     score += 150 + common.length * 30;
                     const originalTags = (u.interests || '').split(',').map(s => s.trim()).filter(Boolean);
                     const matchedTags = originalTags.filter(ot => common.some(ci => normalizeStr(ot).includes(ci)));
                     const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : common.slice(0, 2).join(', ');
-                    reason = `⭐ KOL cùng sở thích: ${displayCommon}`;
+                    reason = `✨ Cùng sở thích: ${displayCommon}`;
                 } else if (common.length > 0) {
                     score += common.length * 35;
                     const originalTags = (u.interests || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -536,9 +536,9 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                     const displayCommon = matchedTags.length > 0 ? matchedTags.slice(0, 2).join(', ') : common.slice(0, 2).join(', ');
                     reason = `✨ Cùng sở thích: ${displayCommon}`;
                 } else if (u.is_verified) {
-                    // Tự động đề xuất KOL nổi bật (+50 điểm)
+                    // Tự động đề xuất người dùng nổi bật (+50 điểm)
                     score += 50;
-                    reason = '⭐ KOL nổi bật';
+                    reason = 'Gợi ý cho bạn';
                 }
 
                 // 2. So khớp địa chỉ / nơi ở (+40 điểm)
@@ -2361,6 +2361,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                             <div
                                 className={`story-viewer ${isHoldingPause ? 'is-holding-pause' : ''}`}
                                 onClick={e => e.stopPropagation()}
+                                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
                                 onMouseDown={handleHoldStart}
                                 onMouseUp={handleHoldEnd}
                                 onMouseLeave={handleHoldEnd}
@@ -2470,7 +2471,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     <strong>{activeStory.username}</strong>
                                 </div>
 
-                                <div className="story-viewer-media-container">
+                                <div className="story-viewer-media-container" onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}>
                                     {activeStory.shared_post ? (
                                         <button
                                             type="button"
@@ -2481,6 +2482,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                 <img
                                                     src={mediaUrl(activeStory.shared_post.photo_url)}
                                                     alt="Ảnh bài viết được chia sẻ"
+                                                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); }}
                                                 />
                                             )}
                                             <div className="story-shared-post-content">
@@ -2505,6 +2507,10 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                     autoPlay
                                                     playsInline
                                                     muted={videoTrim?.isMuted || false}
+                                                    controlsList="nodownload nofullscreen noremoteplayback"
+                                                    disablePictureInPicture
+                                                    disableRemotePlayback
+                                                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
                                                     onEnded={handleNextStory}
                                                     style={{
                                                         objectFit: mediaTransform?.fit || 'contain',
@@ -2545,6 +2551,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                                 <img
                                                     src={mediaUrl(activeStory.media_url)}
                                                     alt={`Story của ${activeStory.username}`}
+                                                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); return false; }}
                                                     style={{
                                                         objectFit: mediaTransform?.fit || 'contain',
                                                         transform: `scale(${mediaTransform?.scale || 1}) translate(${mediaTransform?.offset?.x || 0}px, ${mediaTransform?.offset?.y || 0}px)`

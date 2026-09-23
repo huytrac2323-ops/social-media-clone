@@ -7,6 +7,7 @@ const {
     getAdminUsers,
     toggleVerifyUser,
     toggleBanUser,
+    requestRoleOtp,
     updateUserRole,
     getVerificationRequests,
     approveVerificationRequest,
@@ -25,6 +26,7 @@ router.get('/stats', getAdminStats);
 router.get('/users', getAdminUsers);
 router.patch('/users/:userId/verify', toggleVerifyUser);
 router.patch('/users/:userId/ban', toggleBanUser);
+router.post('/role-otp', requestRoleOtp);
 router.patch('/users/:userId/role', updateUserRole);
 
 // Xét duyệt Tích Xanh

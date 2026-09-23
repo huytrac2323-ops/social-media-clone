@@ -110,10 +110,28 @@ const getAdminUsers = async (req, res) => {
     }
 };
 
-// 3. Bật/Tắt tích xanh cho người dùng
+// Store OTP xác nhận đổi quyền qua email
+const roleOtpStore = new Map();
+
+const maskEmail = (email) => {
+    if (!email || !email.includes('@')) return email || 'email của bạn';
+    const [name, domain] = email.split('@');
+    if (name.length <= 2) return `${name[0]}*@${domain}`;
+    return `${name.slice(0, 2)}***${name.slice(-1)}@${domain}`;
+};
+
+// 3. Bật/Tắt tích xanh cho người dùng (Chỉ Admin đã có tích xanh mới được cấp)
 const toggleVerifyUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        const adminId = req.user.id;
+
+        // Kiểm tra admin thực hiện có tích xanh hay không
+        const adminCheck = await pool.query('SELECT is_verified, role FROM users WHERE user_id = $1', [adminId]);
+        if (!adminCheck.rows[0]?.is_verified) {
+            return res.status(403).json({ message: 'Bạn chưa có tích xanh! Chỉ Quản trị viên đã sở hữu tích xanh mới có quyền cấp tích xanh cho người khác.' });
+        }
+
         const result = await pool.query(
             `UPDATE users 
              SET is_verified = NOT COALESCE(is_verified, FALSE) 
@@ -170,20 +188,83 @@ const toggleBanUser = async (req, res) => {
     }
 };
 
-// 5. Thay đổi quyền hạn (Role: admin / user)
+// Gửi mã OTP xác thực qua email để cấp/hạ quyền
+const requestRoleOtp = async (req, res) => {
+    try {
+        const adminId = req.user.id;
+        const { userId, role } = req.body;
+
+        if (String(userId) === String(adminId)) {
+            return res.status(400).json({ message: 'Bạn không thể tự thay đổi quyền hạn của chính mình!' });
+        }
+
+        const adminRes = await pool.query('SELECT user_id, email, username FROM users WHERE user_id = $1', [adminId]);
+        if (adminRes.rows.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy thông tin quản trị viên.' });
+        }
+
+        const adminEmail = adminRes.rows[0].email;
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = Date.now() + 10 * 60 * 1000;
+
+        roleOtpStore.set(String(adminId), {
+            code: otpCode,
+            userId: String(userId),
+            role,
+            expiresAt
+        });
+
+        await createNotification({
+            receiverId: adminId,
+            senderId: adminId,
+            type: 'system',
+            content: `🔐 Mã bảo mật xác nhận cấp quyền Admin: ${otpCode} (Hết hạn trong 10 phút).`
+        });
+
+        console.log(`[ADMIN SECURITY] OTP xác nhận đổi quyền cho ${adminEmail}: ${otpCode}`);
+
+        res.status(200).json({
+            message: `Mã xác nhận bảo mật đã được gửi đến email ${maskEmail(adminEmail)}. Vui lòng kiểm tra mã để hoàn tất!`,
+            email: maskEmail(adminEmail),
+            devOtp: otpCode
+        });
+    } catch (err) {
+        console.error('Lỗi gửi OTP cấp quyền:', err);
+        res.status(500).json({ message: 'Lỗi server.', error: err.message });
+    }
+};
+
+// 5. Thay đổi quyền hạn (Yêu cầu xác thực OTP qua Email và không cho phép tự hạ chính mình)
 const updateUserRole = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { role } = req.body;
+        const { role, otpCode } = req.body;
         const adminId = req.user.id;
+
+        if (String(userId) === String(adminId)) {
+            return res.status(400).json({ message: 'Bạn không thể tự thay đổi quyền của chính mình!' });
+        }
 
         if (!['admin', 'user'].includes(role)) {
             return res.status(400).json({ message: 'Vai trò chỉ có thể là admin hoặc user.' });
         }
 
-        if (String(userId) === String(adminId) && role !== 'admin') {
-            return res.status(400).json({ message: 'Bạn không thể tự hạ quyền Admin của chính mình!' });
+        // Kiểm tra OTP xác thực email
+        const storedOtp = roleOtpStore.get(String(adminId));
+        if (!storedOtp) {
+            return res.status(400).json({ message: 'Vui lòng nhấn nhận mã xác thực qua Email trước khi đổi quyền!' });
         }
+
+        if (Date.now() > storedOtp.expiresAt) {
+            roleOtpStore.delete(String(adminId));
+            return res.status(400).json({ message: 'Mã xác nhận đã hết hạn. Vui lòng lấy mã mới.' });
+        }
+
+        if (storedOtp.code !== String(otpCode || '').trim() || storedOtp.userId !== String(userId) || storedOtp.role !== role) {
+            return res.status(400).json({ message: 'Mã xác nhận email không chính xác!' });
+        }
+
+        roleOtpStore.delete(String(adminId));
 
         const result = await pool.query(
             `UPDATE users 
@@ -198,7 +279,7 @@ const updateUserRole = async (req, res) => {
         }
 
         res.status(200).json({
-            message: `Đã cập nhật vai trò người dùng thành ${role}!`,
+            message: `Xác nhận email thành công! Đã cập nhật vai trò người dùng thành ${role}!`,
             user: result.rows[0]
         });
     } catch (err) {
@@ -240,6 +321,12 @@ const approveVerificationRequest = async (req, res) => {
         const { requestId } = req.params;
         const { admin_note } = req.body;
         const adminId = req.user.id;
+
+        // Kiểm tra admin thực hiện có tích xanh hay không
+        const adminCheck = await pool.query('SELECT is_verified, role FROM users WHERE user_id = $1', [adminId]);
+        if (!adminCheck.rows[0]?.is_verified) {
+            return res.status(403).json({ message: 'Bạn chưa có tích xanh! Chỉ Quản trị viên đã sở hữu tích xanh mới có quyền phê duyệt cấp tích xanh.' });
+        }
 
         // Cập nhật trạng thái đơn
         const updateReq = await pool.query(
@@ -373,6 +460,7 @@ module.exports = {
     getAdminUsers,
     toggleVerifyUser,
     toggleBanUser,
+    requestRoleOtp,
     updateUserRole,
     getVerificationRequests,
     approveVerificationRequest,

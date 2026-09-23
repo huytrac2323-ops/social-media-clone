@@ -65,6 +65,15 @@ export default function AdminPage() {
     const [userVerifiedFilter, setUserVerifiedFilter] = useState('');
     const [userBannedFilter, setUserBannedFilter] = useState('');
 
+    // Modal xác thực OTP Email khi thay đổi quyền
+    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+    const [roleTargetUser, setRoleTargetUser] = useState(null);
+    const [roleNextRole, setRoleNextRole] = useState('admin');
+    const [roleOtpInput, setRoleOtpInput] = useState('');
+    const [roleOtpLoading, setRoleOtpLoading] = useState(false);
+    const [roleOtpSentEmail, setRoleOtpSentEmail] = useState('');
+    const [roleDevOtp, setRoleDevOtp] = useState('');
+
     const token = window.localStorage.getItem('token');
 
     // Kiểm tra quyền Admin
@@ -160,6 +169,10 @@ export default function AdminPage() {
 
     // Xử lý duyệt / từ chối đơn tích xanh
     const openActionModal = (req, type) => {
+        if (type === 'approve' && !currentUser?.is_verified) {
+            alert('Tài khoản Quản trị viên của bạn chưa có Tích Xanh! Chỉ Quản trị viên đã có tích xanh mới có quyền phê duyệt cấp tích xanh cho người khác.');
+            return;
+        }
         setSelectedRequest(req);
         setActionType(type);
         setActionNote(type === 'approve' ? 'Hồ sơ đạt tiêu chuẩn Nhà sáng tạo uy tín.' : 'Hồ sơ chưa đủ thông tin hoặc sản phẩm thực tế.');
@@ -168,6 +181,10 @@ export default function AdminPage() {
 
     const submitRequestAction = async () => {
         if (!selectedRequest) return;
+        if (actionType === 'approve' && !currentUser?.is_verified) {
+            alert('Tài khoản Quản trị viên của bạn chưa có Tích Xanh! Chỉ Quản trị viên đã có tích xanh mới có quyền phê duyệt.');
+            return;
+        }
         try {
             const endpoint = `/admin/verification-requests/${selectedRequest.request_id}/${actionType}`;
             const res = await safeFetch(endpoint, {
@@ -195,6 +212,10 @@ export default function AdminPage() {
 
     // Xử lý Quản lý User
     const handleToggleVerify = async (userId) => {
+        if (!currentUser?.is_verified) {
+            alert('Tài khoản Quản trị viên của bạn chưa có Tích Xanh! Chỉ Quản trị viên đã có tích xanh mới có quyền cấp tích xanh cho người khác.');
+            return;
+        }
         try {
             const res = await safeFetch(`/admin/users/${userId}/verify`, {
                 method: 'PATCH',
@@ -213,6 +234,10 @@ export default function AdminPage() {
     };
 
     const handleToggleBan = async (userId) => {
+        if (Number(userId) === Number(currentUser?.user_id)) {
+            alert('Bạn không thể tự khóa tài khoản của chính mình!');
+            return;
+        }
         if (!window.confirm('Bạn có chắc muốn đổi trạng thái khóa/mở khóa tài khoản này?')) return;
         try {
             const res = await safeFetch(`/admin/users/${userId}/ban`, {
@@ -230,26 +255,73 @@ export default function AdminPage() {
         }
     };
 
-    const handleUpdateRole = async (userId, currentRole) => {
-        const nextRole = currentRole === 'admin' ? 'user' : 'admin';
-        if (!window.confirm(`Bạn có chắc muốn chuyển quyền người dùng này thành "${nextRole}"?`)) return;
+    // Khởi tạo quy trình thay đổi quyền (bảo mật OTP qua Email)
+    const handleInitiateRoleChange = async (targetUser) => {
+        if (Number(targetUser.user_id) === Number(currentUser?.user_id)) {
+            alert('Bạn không thể tự thay đổi quyền hạn của chính mình!');
+            return;
+        }
+        const nextRole = targetUser.role === 'admin' ? 'user' : 'admin';
+        setRoleTargetUser(targetUser);
+        setRoleNextRole(nextRole);
+        setRoleOtpInput('');
+        setRoleDevOtp('');
+        setIsRoleModalOpen(true);
+        setRoleOtpLoading(true);
+
         try {
-            const res = await safeFetch(`/admin/users/${userId}/role`, {
+            const res = await safeFetch('/admin/role-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId: targetUser.user_id, role: nextRole })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setRoleOtpSentEmail(data.email || 'email quản trị viên của bạn');
+                if (data.devOtp) setRoleDevOtp(data.devOtp);
+            } else {
+                alert(data.message || 'Không thể tạo mã xác thực.');
+            }
+        } catch (err) {
+            alert('Lỗi khi gửi mã xác nhận qua email.');
+        } finally {
+            setRoleOtpLoading(false);
+        }
+    };
+
+    // Xác nhận đổi quyền sau khi nhập đúng mã OTP gửi qua email
+    const handleConfirmRoleChange = async () => {
+        if (!roleTargetUser || !roleOtpInput.trim()) {
+            alert('Vui lòng nhập mã xác thực OTP 6 số đã được gửi qua email!');
+            return;
+        }
+        try {
+            setRoleOtpLoading(true);
+            const res = await safeFetch(`/admin/users/${roleTargetUser.user_id}/role`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ role: nextRole })
+                body: JSON.stringify({ role: roleNextRole, otpCode: roleOtpInput.trim() })
             });
             const data = await res.json();
             if (res.ok) {
-                setUsersList(prev => prev.map(u => u.user_id === userId ? { ...u, role: data.user.role } : u));
+                alert(data.message || 'Cập nhật vai trò người dùng thành công!');
+                setUsersList(prev => prev.map(u => u.user_id === roleTargetUser.user_id ? { ...u, role: data.user.role } : u));
+                setIsRoleModalOpen(false);
+                setRoleTargetUser(null);
+                setRoleOtpInput('');
             } else {
-                alert(data.message);
+                alert(data.message || 'Mã xác nhận OTP không đúng hoặc đã hết hạn.');
             }
         } catch (err) {
-            alert('Lỗi kết nối máy chủ.');
+            alert('Lỗi kết nối máy chủ khi xác nhận đổi quyền.');
+        } finally {
+            setRoleOtpLoading(false);
         }
     };
 
@@ -539,6 +611,24 @@ export default function AdminPage() {
                                 {/* TAB 2: XÉT DUYỆT TÍCH XANH */}
                                 {activeTab === 'verifications' && (
                                     <div>
+                                        {!currentUser?.is_verified && (
+                                            <div style={{
+                                                padding: '12px 16px',
+                                                marginBottom: '16px',
+                                                borderRadius: '10px',
+                                                background: 'rgba(234, 179, 8, 0.12)',
+                                                border: '1px solid rgba(234, 179, 8, 0.3)',
+                                                color: '#fbbf24',
+                                                fontSize: '13px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                <AlertTriangle size={18} />
+                                                <span>Tài khoản Quản trị viên của bạn chưa có <strong>Tích Xanh</strong>. Bạn có thể xem danh sách đơn, nhưng chỉ Admin đã sở hữu Tích Xanh mới có quyền cấp tích xanh cho người khác.</span>
+                                            </div>
+                                        )}
+
                                         {/* Status Filter */}
                                         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                                             {[
@@ -700,19 +790,22 @@ export default function AdminPage() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => openActionModal(req, 'approve')}
+                                                                    disabled={!currentUser?.is_verified}
+                                                                    title={!currentUser?.is_verified ? 'Bạn chưa có tích xanh nên không thể phê duyệt cấp tích xanh' : 'Phê duyệt & Cấp Tích Xanh'}
                                                                     style={{
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '6px',
                                                                         padding: '8px 18px',
                                                                         borderRadius: '8px',
-                                                                        background: '#22c55e',
-                                                                        border: 'none',
-                                                                        color: '#ffffff',
+                                                                        background: currentUser?.is_verified ? '#22c55e' : 'rgba(255, 255, 255, 0.08)',
+                                                                        border: currentUser?.is_verified ? 'none' : '1px solid rgba(255, 255, 255, 0.15)',
+                                                                        color: currentUser?.is_verified ? '#ffffff' : 'var(--text-muted, #94a3b8)',
                                                                         fontWeight: '700',
-                                                                        cursor: 'pointer',
+                                                                        cursor: currentUser?.is_verified ? 'pointer' : 'not-allowed',
                                                                         fontSize: '13px',
-                                                                        boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
+                                                                        boxShadow: currentUser?.is_verified ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                                                                        opacity: currentUser?.is_verified ? 1 : 0.6
                                                                     }}
                                                                 >
                                                                     <CheckCircle size={15} />
@@ -874,7 +967,8 @@ export default function AdminPage() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleToggleVerify(u.user_id)}
-                                                                    title="Bấm để bật/tắt tích xanh"
+                                                                    disabled={!currentUser?.is_verified}
+                                                                    title={!currentUser?.is_verified ? 'Bạn cần có tích xanh để cấp tích xanh cho người khác' : 'Bấm để bật/tắt tích xanh'}
                                                                     style={{
                                                                         display: 'inline-flex',
                                                                         alignItems: 'center',
@@ -884,9 +978,10 @@ export default function AdminPage() {
                                                                         border: 'none',
                                                                         background: u.is_verified ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)',
                                                                         color: u.is_verified ? '#22c55e' : 'var(--text-muted, #94a3b8)',
-                                                                        cursor: 'pointer',
+                                                                        cursor: currentUser?.is_verified ? 'pointer' : 'not-allowed',
                                                                         fontSize: '12px',
-                                                                        fontWeight: '700'
+                                                                        fontWeight: '700',
+                                                                        opacity: currentUser?.is_verified ? 1 : 0.6
                                                                     }}
                                                                 >
                                                                     {u.is_verified ? '🛡️ Có tích' : 'Chưa có'}
@@ -905,41 +1000,56 @@ export default function AdminPage() {
                                                                 </span>
                                                             </td>
                                                             <td style={{ padding: '12px 16px' }}>
-                                                                <div style={{ display: 'flex', gap: '6px' }}>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleUpdateRole(u.user_id, u.role)}
-                                                                        title={u.role === 'admin' ? 'Hạ quyền xuống user' : 'Thăng cấp lên Admin'}
-                                                                        style={{
-                                                                            padding: '4px 8px',
-                                                                            borderRadius: '6px',
-                                                                            border: '1px solid var(--border-color, #334155)',
-                                                                            background: 'transparent',
-                                                                            color: 'var(--text-main, #ffffff)',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '11px'
-                                                                        }}
-                                                                    >
-                                                                        {u.role === 'admin' ? 'Hạ User' : 'Set Admin'}
-                                                                    </button>
+                                                                {Number(u.user_id) === Number(currentUser?.user_id) ? (
+                                                                    <span style={{
+                                                                        fontSize: '11px',
+                                                                        color: '#38bdf8',
+                                                                        fontWeight: '700',
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: '6px',
+                                                                        background: 'rgba(56, 189, 248, 0.12)',
+                                                                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                                                                        display: 'inline-block'
+                                                                    }}>
+                                                                        Chính bạn (Admin)
+                                                                    </span>
+                                                                ) : (
+                                                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleInitiateRoleChange(u)}
+                                                                            title={u.role === 'admin' ? 'Hạ quyền xuống user (Xác thực qua Email)' : 'Thăng cấp lên Admin (Xác thực qua Email)'}
+                                                                            style={{
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '6px',
+                                                                                border: '1px solid var(--border-color, #334155)',
+                                                                                background: 'transparent',
+                                                                                color: 'var(--text-main, #ffffff)',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '11px'
+                                                                            }}
+                                                                        >
+                                                                            {u.role === 'admin' ? 'Hạ User' : 'Set Admin'}
+                                                                        </button>
 
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleToggleBan(u.user_id)}
-                                                                        title={u.is_banned ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
-                                                                        style={{
-                                                                            padding: '4px 8px',
-                                                                            borderRadius: '6px',
-                                                                            border: '1px solid var(--border-color, #334155)',
-                                                                            background: u.is_banned ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                                                            color: u.is_banned ? '#22c55e' : '#ef4444',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '11px'
-                                                                        }}
-                                                                    >
-                                                                        {u.is_banned ? <Unlock size={13} /> : <Lock size={13} />}
-                                                                    </button>
-                                                                </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleToggleBan(u.user_id)}
+                                                                            title={u.is_banned ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                                                                            style={{
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '6px',
+                                                                                border: '1px solid var(--border-color, #334155)',
+                                                                                background: u.is_banned ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                                                                color: u.is_banned ? '#22c55e' : '#ef4444',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '11px'
+                                                                            }}
+                                                                        >
+                                                                            {u.is_banned ? <Unlock size={13} /> : <Lock size={13} />}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -1016,6 +1126,153 @@ export default function AdminPage() {
                             >
                                 Xác nhận {actionType === 'approve' ? 'Duyệt' : 'Từ chối'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Xác nhận bảo mật qua Email khi thay đổi quyền */}
+            {isRoleModalOpen && roleTargetUser && (
+                <div className="modal-overlay" onClick={() => !roleOtpLoading && setIsRoleModalOpen(false)}>
+                    <div className="modal-content" style={{ maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                            <div style={{
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '10px',
+                                background: 'rgba(236, 72, 153, 0.15)',
+                                color: '#ec4899',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <ShieldCheck size={22} />
+                            </div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '17px', color: 'var(--text-main, #ffffff)' }}>
+                                    Xác thực bảo mật qua Email
+                                </h3>
+                                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
+                                    Xác nhận thao tác quản trị viên
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid var(--border-color, #334155)',
+                            marginBottom: '16px',
+                            fontSize: '13px',
+                            lineHeight: '1.5'
+                        }}>
+                            <div>
+                                Bạn đang chuyển quyền tài khoản <strong>@{roleTargetUser.username}</strong> thành{' '}
+                                <span style={{
+                                    color: roleNextRole === 'admin' ? '#ec4899' : '#38bdf8',
+                                    fontWeight: '700'
+                                }}>
+                                    {roleNextRole === 'admin' ? 'Quản trị viên (Admin)' : 'Người dùng thông thường (User)'}
+                                </span>.
+                            </div>
+                            <div style={{ marginTop: '8px', color: '#94a3b8', fontSize: '12px' }}>
+                                📧 Mã xác thực 6 số đã được gửi tới email quản trị viên của bạn: <strong>{roleOtpSentEmail || 'email của bạn'}</strong>.
+                            </div>
+                            {roleDevOtp && (
+                                <div style={{ marginTop: '6px', padding: '6px 10px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span>Mã xác nhận bảo mật (Dev): <strong>{roleDevOtp}</strong></span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setRoleOtpInput(roleDevOtp)}
+                                        style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}
+                                    >
+                                        Điền nhanh
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ marginBottom: '18px' }}>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main, #ffffff)' }}>
+                                Nhập mã xác nhận 6 số từ Email:
+                            </label>
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={roleOtpInput}
+                                onChange={e => setRoleOtpInput(e.target.value.replace(/\D/g, ''))}
+                                placeholder="VD: 123456"
+                                autoFocus
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color, #334155)',
+                                    background: 'var(--bg-surface-secondary, rgba(255,255,255,0.05))',
+                                    color: 'var(--text-main, #ffffff)',
+                                    fontSize: '18px',
+                                    letterSpacing: '4px',
+                                    textAlign: 'center',
+                                    fontWeight: '700',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <button
+                                type="button"
+                                onClick={() => handleInitiateRoleChange(roleTargetUser)}
+                                disabled={roleOtpLoading}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#38bdf8',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    padding: 0
+                                }}
+                            >
+                                {roleOtpLoading ? 'Đang gửi...' : 'Gửi lại mã'}
+                            </button>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsRoleModalOpen(false)}
+                                    disabled={roleOtpLoading}
+                                    style={{
+                                        padding: '8px 14px',
+                                        borderRadius: '8px',
+                                        background: 'transparent',
+                                        border: '1px solid var(--border-color, #334155)',
+                                        color: 'var(--text-main, #ffffff)',
+                                        cursor: 'pointer',
+                                        fontSize: '13px'
+                                    }}
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmRoleChange}
+                                    disabled={roleOtpLoading || roleOtpInput.length < 6}
+                                    style={{
+                                        padding: '8px 18px',
+                                        borderRadius: '8px',
+                                        background: (roleOtpLoading || roleOtpInput.length < 6) ? 'rgba(255, 255, 255, 0.1)' : '#ec4899',
+                                        border: 'none',
+                                        color: '#ffffff',
+                                        fontWeight: '700',
+                                        cursor: (roleOtpLoading || roleOtpInput.length < 6) ? 'not-allowed' : 'pointer',
+                                        fontSize: '13px',
+                                        boxShadow: (roleOtpLoading || roleOtpInput.length < 6) ? 'none' : '0 2px 8px rgba(236, 72, 153, 0.35)'
+                                    }}
+                                >
+                                    {roleOtpLoading ? 'Đang xác thực...' : 'Xác nhận đổi quyền'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,21 @@ import { Bookmark, Heart, Eye, Sparkles } from 'lucide-react';
 import { safeFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext.jsx';
 
+export function getCategoryClass(category) {
+  if (!category) return 'tag-all';
+  const c = category.toLowerCase();
+  if (c.includes('ui') || c.includes('ux')) return 'tag-uiux';
+  if (c.includes('3d') || c.includes('hoạt hình') || c.includes('motion')) return 'tag-3dmotion';
+  if (c.includes('đồ họa') || c.includes('graphic')) return 'tag-graphic';
+  if (c.includes('brand') || c.includes('logo')) return 'tag-branding';
+  if (c.includes('minh họa') || c.includes('art') || c.includes('illustrat')) return 'tag-illustration';
+  if (c.includes('video') || c.includes('film') || c.includes('phim') || c.includes('editor')) return 'tag-video';
+  if (c.includes('ảnh') || c.includes('photo')) return 'tag-photo';
+  if (c.includes('web') || c.includes('tech') || c.includes('lập trình')) return 'tag-web';
+  if (c.includes('figma')) return 'tag-figma';
+  return 'tag-all';
+}
+
 function ProjectCard({ post, onOpenModal, onLike }) {
   const { currentUser } = useAuth();
   const [isSaved, setIsSaved] = useState(Boolean(post.isSaved));
@@ -105,7 +120,7 @@ function ProjectCard({ post, onOpenModal, onLike }) {
 
           {/* Tag thể loại và xem chi tiết ở góc dưới */}
           <div className="hover-bottom-row">
-            <span className="behance-category-tag">
+            <span className={`behance-category-tag ${getCategoryClass(projectCategory)}`}>
               #{projectCategory.replace(/\s+/g, '')}
             </span>
             <span className="hover-view-label">Xem dự án →</span>

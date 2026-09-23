@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Avatar from '../components/Avatar.jsx';
+import { getCategoryClass } from '../components/ProjectCard.jsx';
 import { safeFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -192,7 +193,7 @@ function ProjectDetailModal({ project, onClose, onLike, onCommentSubmit }) {
             <div className="behance-project-header">
               <h1 className="behance-project-main-title">{title}</h1>
               {project.category && (
-                <div className="behance-project-category-badge">
+                <div className={`behance-project-category-badge ${getCategoryClass(project.category)}`}>
                   <Sparkles size={14} />
                   <span>{project.category}</span>
                 </div>

@@ -32,16 +32,16 @@ import {
 } from 'lucide-react';
 
 const CATEGORIES_LIST = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'UI/UX Design', label: 'UI/UX Design' },
-  { id: 'Thiết kế đồ họa', label: 'Đồ họa & Thương hiệu' },
-  { id: '3D & Hoạt hình', label: '3D & Motion' },
-  { id: 'Minh họa & Art', label: 'Minh họa (Illustration)' },
-  { id: 'Làm Video & Editor', label: 'Video & Phim' },
-  { id: 'Nhiếp ảnh', label: 'Nhiếp ảnh' },
-  { id: 'Website', label: 'Website & Web App' },
-  { id: 'Branding & Logo', label: 'Logo & Bộ nhận diện' },
-  { id: 'Figma', label: 'Figma' }
+  { id: 'all', label: 'Tất cả', tagClass: 'tag-all' },
+  { id: 'UI/UX Design', label: 'UI/UX Design', tagClass: 'tag-uiux' },
+  { id: 'Thiết kế đồ họa', label: 'Đồ họa & Thương hiệu', tagClass: 'tag-graphic' },
+  { id: '3D & Hoạt hình', label: '3D & Motion', tagClass: 'tag-3dmotion' },
+  { id: 'Minh họa & Art', label: 'Minh họa (Illustration)', tagClass: 'tag-illustration' },
+  { id: 'Làm Video & Editor', label: 'Video & Phim', tagClass: 'tag-video' },
+  { id: 'Nhiếp ảnh', label: 'Nhiếp ảnh', tagClass: 'tag-photo' },
+  { id: 'Website', label: 'Website & Web App', tagClass: 'tag-web' },
+  { id: 'Branding & Logo', label: 'Logo & Bộ nhận diện', tagClass: 'tag-branding' },
+  { id: 'Figma', label: 'Figma', tagClass: 'tag-figma' }
 ];
 
 const SCOPE_TABS = [
@@ -51,14 +51,24 @@ const SCOPE_TABS = [
 ];
 
 const CREATOR_FIELDS = [
-  { id: 'all', label: 'Tất cả lĩnh vực' },
-  { id: 'UI/UX', label: 'UI/UX Design' },
-  { id: 'designer', label: 'Đồ họa & Thương hiệu' },
-  { id: '3D', label: '3D & Motion' },
-  { id: 'illustrator', label: 'Minh họa (Illustration)' },
-  { id: 'videographer', label: 'Làm Video' },
-  { id: 'photographer', label: 'Nhiếp ảnh' },
-  { id: 'web', label: 'Lập trình & Tech' }
+  { id: 'all', label: 'Tất cả lĩnh vực', tagClass: 'tag-all' },
+  { id: 'UI/UX', label: 'UI/UX Design', tagClass: 'tag-uiux' },
+  { id: 'designer', label: 'Đồ họa & Thương hiệu', tagClass: 'tag-graphic' },
+  { id: '3D', label: '3D & Motion', tagClass: 'tag-3dmotion' },
+  { id: 'illustrator', label: 'Minh họa (Illustration)', tagClass: 'tag-illustration' },
+  { id: 'videographer', label: 'Làm Video', tagClass: 'tag-video' },
+  { id: 'photographer', label: 'Nhiếp ảnh', tagClass: 'tag-photo' },
+  { id: 'web', label: 'Lập trình & Tech', tagClass: 'tag-web' }
+];
+
+const COLLAB_CATEGORIES = [
+  { id: 'all', label: 'Tất cả tin tuyển', tagClass: 'tag-all' },
+  { id: 'UI/UX Design', label: 'UI/UX Design', tagClass: 'tag-uiux' },
+  { id: 'Đồ họa & Thương hiệu', label: 'Đồ họa & Thương hiệu', tagClass: 'tag-graphic' },
+  { id: '3D & Motion Graphics', label: '3D & Motion', tagClass: 'tag-3dmotion' },
+  { id: 'Minh họa & Art', label: 'Minh họa & Art', tagClass: 'tag-illustration' },
+  { id: 'Làm Video & Editor', label: 'Video & Editor', tagClass: 'tag-video' },
+  { id: 'Lập trình & Tech', label: 'Lập trình & Tech', tagClass: 'tag-web' }
 ];
 
 export default function BehanceProjectsPage({
@@ -299,7 +309,7 @@ export default function BehanceProjectsPage({
               <button
                 type="button"
                 key={cat.id}
-                className={`behance-tag-pill ${activeCategory === cat.id ? 'active' : ''}`}
+                className={`behance-tag-pill ${cat.tagClass || ''} ${activeCategory === cat.id ? 'active' : ''}`}
                 onClick={() => setActiveCategory(cat.id)}
               >
                 {cat.id !== 'all' ? `#${cat.label}` : cat.label}
@@ -315,7 +325,7 @@ export default function BehanceProjectsPage({
               <button
                 type="button"
                 key={f.id}
-                className={`behance-tag-pill ${creatorField === f.id ? 'active' : ''}`}
+                className={`behance-tag-pill ${f.tagClass || ''} ${creatorField === f.id ? 'active' : ''}`}
                 onClick={() => setCreatorField(f.id)}
               >
                 {f.label}
@@ -327,14 +337,14 @@ export default function BehanceProjectsPage({
         {/* BỘ LỌC LĨNH VỰC CHO TAB TIN TÌM NST */}
         {activeScope === 'collaborations' && (
           <div className="behance-tags-scroll-container no-scrollbar">
-            {['all', 'UI/UX Design', 'Đồ họa & Thương hiệu', '3D & Motion Graphics', 'Minh họa & Art', 'Làm Video & Editor', 'Lập trình & Tech'].map(cat => (
+            {COLLAB_CATEGORIES.map(cat => (
               <button
                 type="button"
-                key={cat}
-                className={`behance-tag-pill ${collabCategory === cat ? 'active' : ''}`}
-                onClick={() => setCollabCategory(cat)}
+                key={cat.id}
+                className={`behance-tag-pill ${cat.tagClass || ''} ${collabCategory === cat.id ? 'active' : ''}`}
+                onClick={() => setCollabCategory(cat.id)}
               >
-                {cat === 'all' ? 'Tất cả tin tuyển' : cat}
+                {cat.label}
               </button>
             ))}
           </div>

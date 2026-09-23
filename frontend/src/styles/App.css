@@ -183,13 +183,16 @@ input, textarea {
 .app-layout,
 .app-main-layout {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: 1680px;
+  margin: 0;
+  padding-left: 20px;
+  padding-right: 24px;
   position: relative;
   min-height: 100vh;
+  gap: 24px;
 }
 
 /* Left Sidebar Column - Sticky follows on scroll */
@@ -218,7 +221,7 @@ input, textarea {
 /* Center Feed Column */
 .app-feed-col {
   flex: 1;
-  max-width: 630px;
+  max-width: 780px;
   width: 100%;
   min-width: 0;
   padding: 20px 16px 80px;
@@ -7034,19 +7037,22 @@ button:active:not(:disabled),
 }
 
 .btn-header-create-post {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-  color: #fff;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-  transition: all 0.18s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 18px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+  color: #fff !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+  transition: all 0.18s ease !important;
 }
 
 .btn-header-create-post:hover {
@@ -7359,8 +7365,8 @@ button:active:not(:disabled),
 
 .behance-subheader-section {
   width: 100%;
-  max-width: 1800px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   padding: 24px 32px 14px;
   display: flex;
   flex-direction: column;
@@ -7700,11 +7706,11 @@ button:active:not(:disabled),
 
 .social-feed-layout-container {
   width: 100%;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 24px 16px 80px;
+  max-width: 960px;
+  margin: 0;
+  padding: 24px 32px 80px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .social-feed-center-col {

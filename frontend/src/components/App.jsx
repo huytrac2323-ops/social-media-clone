@@ -365,8 +365,20 @@ function AppContent() {
                 <Route path="/login" element={<LoginPage/>}/>
                 <Route path="/forgot-password" element={<ForgotPasswordPage/>}/>
                 <Route path="/saved-posts" element={<SavedPostsPage/>}/>
-                <Route path="/explore" element={<ExplorePage/>}/>
                 <Route path="/messages" element={<MessagesPage/>}/>
+                <Route path="/explore" element={
+                    <BehanceProjectsPage
+                        posts={posts}
+                        allUsers={allUsers}
+                        friends={friends}
+                        friendUserIds={friendUserIds}
+                        onLike={handleLike}
+                        onCommentSubmit={handleCommentSubmit}
+                        onPostCreated={refreshData}
+                        onPostDeleted={refreshData}
+                        onPostUpdated={refreshData}
+                    />}
+                />
                 <Route path="/messages/:userId" element={<MessagesPage/>}/>
                 <Route path="/notifications" element={<NotificationsPage/>}/>
                 <Route path="/admin" element={<AdminPage/>}/>

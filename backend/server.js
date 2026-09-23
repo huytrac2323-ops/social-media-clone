@@ -61,6 +61,7 @@ app.use('/api/spotify', spotifyRoutes);
 app.use('/api/explore', exploreRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/collaborations', require('./routes/collaborationRoutes'));
 
 
 
@@ -561,6 +562,26 @@ const startServer = async () => {
         await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS tools_used JSONB DEFAULT '[]'::jsonb").catch(e => console.warn('Lưu ý migration tools_used:', e.message));
         await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS category VARCHAR(100)").catch(e => console.warn('Lưu ý migration category:', e.message));
         await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS views_count INTEGER DEFAULT 0").catch(e => console.warn('Lưu ý migration views_count:', e.message));
+
+        // Migration cho Tin Tìm Kiếm & Hợp Tác Nhà Sáng Tạo (Creator Collaborations)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS creator_collaborations (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                category VARCHAR(100) NOT NULL,
+                budget VARCHAR(100),
+                deadline VARCHAR(100),
+                job_type VARCHAR(50) DEFAULT 'freelance',
+                description TEXT NOT NULL,
+                skills_required JSONB DEFAULT '[]'::jsonb,
+                status VARCHAR(20) DEFAULT 'open',
+                contact_info VARCHAR(255),
+                views_count INTEGER DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        `).catch(e => console.warn('Lưu ý migration creator_collaborations:', e.message));
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS open_for_collab BOOLEAN DEFAULT TRUE").catch(e => console.warn('Lưu ý migration open_for_collab:', e.message));
 
         client.release();
 

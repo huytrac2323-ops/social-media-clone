@@ -367,16 +367,11 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     const [feedDisplayMode, setFeedDisplayMode] = useState('grid'); // 'grid' (mặc định Lưới Behance) | 'timeline' (Dòng thời gian)
     const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
-    const filteredPosts = useMemo(() => {
+    // Chỉ lấy bài viết status xã hội thông thường (kiểu Instagram), loại trừ tác phẩm Behance project
+    const socialPosts = useMemo(() => {
         if (!posts || posts.length === 0) return [];
-        if (feedFilterCategory === 'all') return posts;
-        return posts.filter(p => {
-            const matchCategory = p.category === feedFilterCategory;
-            const matchTool = p.toolsUsed && p.toolsUsed.some(t => t.toLowerCase().includes(feedFilterCategory.toLowerCase()));
-            const matchText = p.title && p.title.toLowerCase().includes(feedFilterCategory.toLowerCase());
-            return matchCategory || matchTool || matchText;
-        });
-    }, [posts, feedFilterCategory]);
+        return posts.filter(p => p.postType !== 'project');
+    }, [posts]);
 
     // Memoize preview URLs để KHÔNG tạo lại Blob URL mỗi khi re-render (ngăn chặn reset video khi gõ chữ, chọn icon, nhạc)
     const storyMediaPreviewUrl = useMemo(() => {
@@ -2985,6 +2980,7 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                                     </button>
                                 </div>
                                 <CreatePost
+                                    defaultMode="social"
                                     onPostCreated={() => {
                                         onPostCreated();
                                         setShowCreatePost(false);
@@ -2994,71 +2990,10 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                         </div>
                     )}
 
-                    {/* GỢI Ý TÀI KHOẢN DÀNH CHO MOBILE (CHUẨN INSTAGRAM) */}
-                    {suggestions && suggestions.length > 0 && (
-                        <section className="ig-mobile-suggestions-section">
-                            <div className="ig-suggestions-header">
-                                <span className="ig-suggestions-title">Gợi ý cho bạn</span>
-                                <button
-                                    type="button"
-                                    className="ig-suggestions-see-all"
-                                    onClick={() => navigate('/explore')}
-                                >
-                                    Xem tất cả
-                                </button>
-                            </div>
-                            <div className="ig-suggestions-scroll-track no-scrollbar">
-                                {suggestions.map(user => {
-                                    const isSent = sentSuggestionRequests.has(Number(user.user_id));
-                                    return (
-                                        <div key={user.user_id} className="ig-suggested-card">
-                                            <div
-                                                className="ig-suggested-card-inner"
-                                                onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
-                                                role="button"
-                                                tabIndex={0}
-                                            >
-                                                <Avatar user={user} size={54} />
-                                                <div className="ig-suggested-username-row">
-                                                    <span className="ig-suggested-username">{user.username}</span>
-                                                    {user.is_verified && (
-                                                        <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
-                                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                                <span className="ig-suggested-reason" title={user.suggestion_reason || 'Gợi ý cho bạn'}>
-                                                    {user.suggestion_reason || 'Gợi ý cho bạn'}
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className={`ig-suggested-action-btn ${followedSuggestionIds.has(Number(user.user_id)) ? 'sent' : ''}`}
-                                                onClick={(e) => handleFollowSuggestion(user.user_id, e)}
-                                            >
-                                                {followedSuggestionIds.has(Number(user.user_id)) ? (
-                                                    <>
-                                                        <UserCheck size={13} style={{ display: 'inline', marginRight: '4px' }} />
-                                                        Đang theo dõi
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <UserPlus size={13} style={{ display: 'inline', marginRight: '4px' }} />
-                                                        Theo dõi
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </section>
-                    )}
-
                     {/* DÒNG THỜI GIAN BÀI VIẾT XÃ HỘI (TIMELINE) */}
                     <div className="social-posts-stream">
-                        {posts && posts.length > 0 ? (
-                            posts.map(post => (
+                        {socialPosts && socialPosts.length > 0 ? (
+                            socialPosts.map(post => (
                                 <PostCard
                                     key={post.post_id || post.id}
                                     post={post}

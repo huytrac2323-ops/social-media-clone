@@ -187,13 +187,13 @@ function SidebarNav({ onCreatePost }) {
                     {/* Nav Links */}
                     <ul className="nav-links-list">
                         <li>
-                            <Link to="/" className={`nav-link-item ${isActive('/') ? 'active' : ''}`} title="Trang chủ">
+                            <Link to="/feed" className={`nav-link-item ${isActive('/feed') ? 'active' : ''}`} title="Bảng tin bài viết">
                                 <Home size={20} />
                                 {!isCollapsed && <span>Trang chủ</span>}
                             </Link>
                         </li>
                         <li>
-                            <Link to="/explore" className={`nav-link-item ${isActive('/explore') ? 'active' : ''}`} title="Khám phá">
+                            <Link to="/" className={`nav-link-item ${isActive('/') ? 'active' : ''}`} title="Explore">
                                 <Compass size={20} />
                                 {!isCollapsed && <span>Khám phá</span>}
                             </Link>

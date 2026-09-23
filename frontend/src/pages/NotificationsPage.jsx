@@ -161,7 +161,7 @@ function NotificationsPage() {
       <div className="app-layout">
         <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
 
-        <main style={{ flex: 1, maxWidth: '680px', minWidth: 0, paddingBottom: '80px', margin: '0 auto', width: '100%' }}>
+        <main style={{ flex: 1, maxWidth: '760px', minWidth: 0, paddingBottom: '80px', margin: 0, width: '100%' }}>
           <div style={{
             background: 'var(--bg-card, #18181b)',
             border: '1px solid var(--border-subtle, #27272a)',

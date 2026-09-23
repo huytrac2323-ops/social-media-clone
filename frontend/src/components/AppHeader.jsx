@@ -11,9 +11,6 @@ import {
   Briefcase,
   Search,
   Plus,
-  Users,
-  UserPlus,
-  UserCheck,
   MessageCircle,
   ShieldCheck,
   Bookmark,
@@ -38,10 +35,7 @@ export default function AppHeader({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showJobsModal, setShowJobsModal] = useState(false);
-  const [showSuggestionsMenu, setShowSuggestionsMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [sentRequests, setSentRequests] = useState(new Set());
   const [theme, setTheme] = useState(() => {
     try {
       return localStorage.getItem('theme') || 'dark';
@@ -50,30 +44,11 @@ export default function AppHeader({
     }
   });
 
-  const suggestionsRef = useRef(null);
   const profileMenuRef = useRef(null);
 
-  // Tính toán gợi ý kết bạn
-  useEffect(() => {
-    if (!allUsers || allUsers.length === 0) return;
-    const currentId = currentUser?.user_id || currentUser?.id;
-    const filtered = allUsers
-      .filter(u => {
-        const uId = Number(u.user_id || u.id);
-        if (currentId && uId === Number(currentId)) return false;
-        if (friendUserIds.has(uId)) return false;
-        return true;
-      })
-      .slice(0, 15);
-    setSuggestions(filtered);
-  }, [allUsers, currentUser, friendUserIds]);
-
-  // Click outside để đóng menu
+  // Click outside để đóng menu profile
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
-        setShowSuggestionsMenu(false);
-      }
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
         setShowProfileMenu(false);
       }
@@ -102,37 +77,6 @@ export default function AppHeader({
     }
   };
 
-  const handleSendFriendRequest = async (targetId, e) => {
-    e.stopPropagation();
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-    const myId = Number(currentUser.user_id || currentUser.id);
-    const tId = Number(targetId);
-    setSentRequests(prev => new Set(prev).add(tId));
-    try {
-      const res = await safeFetch('/friends/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requester_id: myId, addressee_id: tId })
-      });
-      if (!res.ok) {
-        setSentRequests(prev => {
-          const next = new Set(prev);
-          next.delete(tId);
-          return next;
-        });
-      }
-    } catch {
-      setSentRequests(prev => {
-        const next = new Set(prev);
-        next.delete(tId);
-        return next;
-      });
-    }
-  };
-
   const currentUsername = currentUser?.username || currentUser?.user?.username || '';
   const profilePath = currentUsername ? `/profile/${encodeURIComponent(currentUsername)}` : '/profile';
   const isAdmin = currentUser?.role === 'admin' || currentUser?.user?.role === 'admin';
@@ -155,10 +99,10 @@ export default function AppHeader({
           <nav className="behance-nav-links">
             <Link
               to="/"
-              className={`behance-nav-item ${location.pathname === '/' ? 'active' : ''}`}
+              className={`behance-nav-item ${location.pathname === '/' || location.pathname === '/explore' ? 'active' : ''}`}
             >
               <Sparkles size={16} />
-              <span>Dự án Behance</span>
+              <span>Explore</span>
             </Link>
 
             <Link
@@ -175,7 +119,7 @@ export default function AppHeader({
               onClick={() => setShowJobsModal(true)}
             >
               <Briefcase size={16} />
-              <span>Cơ hội việc làm</span>
+              <span>Tìm & Hợp tác NST</span>
               <span className="jobs-pill-hot">HOT</span>
             </button>
           </nav>
@@ -205,7 +149,7 @@ export default function AppHeader({
           </form>
         </div>
 
-        {/* CÁC TIỆN ÍCH BÊN PHẢI (CHUYỂN TỪ SIDEBAR PHẢI LÊN HEADER) */}
+        {/* CÁC TIỆN ÍCH BÊN PHẢI */}
         <div className="behance-header-right">
           {/* NÚT TẠO BÀI VIẾT / ĐĂNG DỰ ÁN */}
           {currentUser && (
@@ -214,96 +158,11 @@ export default function AppHeader({
               className="btn-header-create-post"
               onClick={onCreatePost}
               title="Đăng dự án hoặc chia sẻ trạng thái"
+              style={{ whiteSpace: 'nowrap', flexShrink: 0, height: '38px', minWidth: 'fit-content' }}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span>Tạo tác phẩm</span>
+              <span style={{ whiteSpace: 'nowrap' }}>Tạo tác phẩm</span>
             </button>
-          )}
-
-          {/* GỢI Ý KẾT BẠN (DROPDOWN POPOVER) */}
-          {currentUser && (
-            <div className="header-dropdown-wrap" ref={suggestionsRef}>
-              <button
-                type="button"
-                className={`header-icon-btn ${showSuggestionsMenu ? 'active' : ''}`}
-                onClick={() => setShowSuggestionsMenu(!showSuggestionsMenu)}
-                title="Gợi ý kết bạn sáng tạo"
-                aria-label="Gợi ý kết bạn"
-              >
-                <Users size={19} />
-                {suggestions.length > 0 && (
-                  <span className="header-badge-count">{Math.min(suggestions.length, 9)}</span>
-                )}
-              </button>
-
-              {showSuggestionsMenu && (
-                <div className="header-popover-menu suggestions-popover">
-                  <div className="popover-header">
-                    <span className="popover-title">Gợi ý kết bạn</span>
-                    <Link
-                      to="/explore"
-                      className="popover-link-more"
-                      onClick={() => setShowSuggestionsMenu(false)}
-                    >
-                      Khám phá thêm
-                    </Link>
-                  </div>
-
-                  <div className="suggestions-popover-list no-scrollbar">
-                    {suggestions.length > 0 ? (
-                      suggestions.map(user => {
-                        const isSent = sentRequests.has(Number(user.user_id || user.id));
-                        return (
-                          <div key={user.user_id || user.id} className="suggestion-popover-item">
-                            <div
-                              className="suggestion-popover-meta"
-                              onClick={() => {
-                                navigate(`/profile/${encodeURIComponent(user.username)}`);
-                                setShowSuggestionsMenu(false);
-                              }}
-                            >
-                              <Avatar user={user} size={36} />
-                              <div className="suggestion-popover-info">
-                                <div className="suggestion-popover-name">
-                                  <span>{user.username}</span>
-                                  {user.is_verified && (
-                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="#0095f6">
-                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                                    </svg>
-                                  )}
-                                </div>
-                                <span className="suggestion-popover-sub">Nhà sáng tạo</span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              className={`btn-header-add-friend ${isSent ? 'sent' : ''}`}
-                              disabled={isSent}
-                              onClick={(e) => handleSendFriendRequest(user.user_id || user.id, e)}
-                            >
-                              {isSent ? (
-                                <>
-                                  <UserCheck size={12} />
-                                  <span>Đã gửi</span>
-                                </>
-                              ) : (
-                                <>
-                                  <UserPlus size={12} />
-                                  <span>Kết bạn</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="popover-empty">Không có gợi ý mới lúc này</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
           )}
 
           {/* THÔNG BÁO HỆ THỐNG */}

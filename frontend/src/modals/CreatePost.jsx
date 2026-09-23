@@ -41,11 +41,11 @@ const PORTFOLIO_CATEGORIES = [
   'Khác'
 ];
 
-function CreatePost({ onPostCreated }) {
+function CreatePost({ onPostCreated, defaultMode = 'social' }) {
   const { currentUser } = useAuth();
 
   // Tab: 'social' (Trạng thái nhanh) | 'portfolio' (Đăng Dự án)
-  const [activeTab, setActiveTab] = useState('social');
+  const [activeTab, setActiveTab] = useState(defaultMode || 'social');
 
   // --- SOCIAL MODE STATE ---
   const [inputText, setInputText] = useState('');

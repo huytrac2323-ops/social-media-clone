@@ -66,17 +66,18 @@ const getCreators = async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 30, 100);
 
     try {
-        let conditions = ['creator_type IS NOT NULL'];
+        let conditions = ['1=1'];
         let params = [];
         let paramIndex = 1;
 
         if (creatorType && creatorType !== 'all') {
-            conditions.push(`creator_type = $${paramIndex++}`);
-            params.push(creatorType);
+            conditions.push(`(creator_type ILIKE $${paramIndex} OR bio ILIKE $${paramIndex} OR interests ILIKE $${paramIndex})`);
+            params.push(`%${creatorType}%`);
+            paramIndex++;
         }
 
         if (query) {
-            conditions.push(`(username ILIKE $${paramIndex} OR bio ILIKE $${paramIndex} OR interests ILIKE $${paramIndex})`);
+            conditions.push(`(username ILIKE $${paramIndex} OR bio ILIKE $${paramIndex} OR interests ILIKE $${paramIndex} OR creator_type ILIKE $${paramIndex})`);
             params.push(`%${query}%`);
             paramIndex++;
         }
@@ -108,6 +109,7 @@ const getCreators = async (req, res) => {
         const sql = `
             SELECT user_id, username, profile_photo_url, bio, creator_type, is_verified,
                    address, hometown, interests, created_at,
+                   COALESCE(open_for_collab, true) AS open_for_collab,
                    (SELECT COUNT(*) FROM follows WHERE followee_id = users.user_id) AS follower_count,
                    (SELECT COUNT(*) FROM post WHERE user_id = users.user_id) AS post_count
             FROM users

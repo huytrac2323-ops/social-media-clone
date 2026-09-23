@@ -100,7 +100,15 @@ const getUserByUsername = async (req, res) => {
         }
 
         // ĐƯỢC PHÉP XEM: Tiếp tục query posts và stats như cũ
-        const postsResult = await pool.query('SELECT post_id, photo_url, caption FROM post WHERE user_id = $1 ORDER BY created_at DESC', [userProfile.user_id]);
+        const postsResult = await pool.query(`
+            SELECT post_id, photo_url, caption, created_at,
+                   post_type, title, project_images, tools_used, category,
+                   COALESCE((SELECT COUNT(*)::int FROM post_likes pr WHERE pr.post_id = post.post_id), 0) AS like_count,
+                   COALESCE(views_count, 0) AS views_count
+            FROM post
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+        `, [userProfile.user_id]);
         userProfile.posts = postsResult.rows;
 
         const statsResult = await pool.query(`

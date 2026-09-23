@@ -14,7 +14,9 @@ import {
     Search,
     Globe,
     MessageCircle,
-    ShieldCheck
+    ShieldCheck,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 
 function SidebarNav({ onCreatePost }) {
@@ -22,6 +24,22 @@ function SidebarNav({ onCreatePost }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [query, setQuery] = useState('');
+
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        try {
+            return localStorage.getItem('sidebar_collapsed') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const toggleCollapse = () => {
+        setIsCollapsed(prev => {
+            const next = !prev;
+            try { localStorage.setItem('sidebar_collapsed', String(next)); } catch {}
+            return next;
+        });
+    };
 
     const currentUsername = (currentUser?.username && currentUser.username !== 'null' && currentUser.username !== 'undefined')
         ? currentUser.username
@@ -103,65 +121,85 @@ function SidebarNav({ onCreatePost }) {
             {/* ============================================== */}
             {/* DESKTOP / TABLET SIDEBAR (≥ 768px)             */}
             {/* ============================================== */}
-            <aside className="app-sidebar-col" aria-label="Điều hướng chính">
+            <aside className={`app-sidebar-col ${isCollapsed ? 'collapsed' : ''}`} aria-label="Điều hướng chính">
                 <nav className="modern-sidebar">
-                    {/* Brand Logo & Compact Admin Link */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px' }}>
+                    {/* Brand Logo & Collapse Toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', width: '100%', marginBottom: '14px', position: 'relative' }}>
                         <Link to="/" className="brand-logo-container" title="Trang chủ" style={{ marginBottom: 0 }}>
                             <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '34px', height: '34px', borderRadius: '10px', objectFit: 'cover' }} />
-                            <span className="brand-logo-text" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', fontSize: '19px' }}>NovaGen</span>
+                            {!isCollapsed && (
+                                <span className="brand-logo-text" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', fontSize: '19px' }}>NovaGen</span>
+                            )}
                         </Link>
-                        {isAdmin && (
+
+                        <button
+                            type="button"
+                            className="sidebar-collapse-toggle-btn"
+                            onClick={toggleCollapse}
+                            title={isCollapsed ? "Mở rộng thanh menu" : "Thu gọn chỉ hiển thị Icon"}
+                            aria-label={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
+                        >
+                            {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+                        </button>
+                    </div>
+
+                    {/* Admin Badge */}
+                    {isAdmin && !isCollapsed && (
+                        <div style={{ marginBottom: '12px' }}>
                             <Link
                                 to="/admin"
                                 title="Trang quản trị"
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '3px',
-                                    padding: '3px 7px',
+                                    gap: '5px',
+                                    padding: '4px 10px',
                                     borderRadius: '10px',
                                     background: isActive('/admin') ? 'rgba(236, 72, 153, 0.25)' : 'rgba(236, 72, 153, 0.12)',
                                     border: '1px solid rgba(236, 72, 153, 0.35)',
                                     color: '#f472b6',
-                                    fontSize: '11px',
+                                    fontSize: '11.5px',
                                     fontWeight: '700',
-                                    textDecoration: 'none'
+                                    textDecoration: 'none',
+                                    width: '100%',
+                                    justifyContent: 'center'
                                 }}
                             >
-                                <ShieldCheck size={12} color="#ec4899" />
-                                <span>Admin</span>
+                                <ShieldCheck size={13} color="#ec4899" />
+                                <span>Quản trị hệ thống</span>
                             </Link>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     {/* Quick Search */}
-                    <form className="sidebar-search-box" onSubmit={submitSearch}>
-                        <Search size={16} className="search-icon" />
-                        <input
-                            value={query}
-                            onChange={event => setQuery(event.target.value)}
-                            placeholder="Tìm kiếm..."
-                            aria-label="Tìm kiếm"
-                        />
-                    </form>
+                    {!isCollapsed && (
+                        <form className="sidebar-search-box" onSubmit={submitSearch}>
+                            <Search size={16} className="search-icon" />
+                            <input
+                                value={query}
+                                onChange={event => setQuery(event.target.value)}
+                                placeholder="Tìm kiếm tác phẩm..."
+                                aria-label="Tìm kiếm"
+                            />
+                        </form>
+                    )}
 
                     {/* Nav Links */}
                     <ul className="nav-links-list">
                         <li>
                             <Link to="/" className={`nav-link-item ${isActive('/') ? 'active' : ''}`} title="Trang chủ">
                                 <Home size={20} />
-                                <span>Trang chủ</span>
+                                {!isCollapsed && <span>Trang chủ</span>}
                             </Link>
                         </li>
                         <li>
                             <Link to="/explore" className={`nav-link-item ${isActive('/explore') ? 'active' : ''}`} title="Khám phá">
                                 <Compass size={20} />
-                                <span>Khám phá</span>
+                                {!isCollapsed && <span>Khám phá</span>}
                             </Link>
                         </li>
                         <li>
-                            <NotificationDropdown />
+                            <NotificationDropdown compact={isCollapsed} />
                         </li>
 
                         {currentUser ? (
@@ -169,7 +207,7 @@ function SidebarNav({ onCreatePost }) {
                                 <li>
                                     <Link to="/messages" className={`nav-link-item ${isActive('/messages') ? 'active' : ''}`} title="Tin nhắn">
                                         <MessageCircle size={20} />
-                                        <span>Tin nhắn</span>
+                                        {!isCollapsed && <span>Tin nhắn</span>}
                                     </Link>
                                 </li>
                                 <li>
@@ -179,7 +217,7 @@ function SidebarNav({ onCreatePost }) {
                                         title="Đã lưu"
                                     >
                                         <Bookmark size={20} />
-                                        <span>Đã lưu</span>
+                                        {!isCollapsed && <span>Đã lưu</span>}
                                     </Link>
                                 </li>
                                 <li>
@@ -189,14 +227,19 @@ function SidebarNav({ onCreatePost }) {
                                         title="Trang cá nhân"
                                     >
                                         <User size={20} />
-                                        <span>Trang cá nhân</span>
+                                        {!isCollapsed && <span>Trang cá nhân</span>}
                                     </Link>
                                 </li>
 
                                 <li style={{ marginTop: '10px' }}>
-                                    <button type="button" className="sidebar-post-btn" onClick={onCreatePost} title="Đăng bài">
+                                    <button
+                                        type="button"
+                                        className="sidebar-post-btn"
+                                        onClick={onCreatePost}
+                                        title="Tạo bài viết / Đăng dự án"
+                                    >
                                         <PlusCircle size={18} />
-                                        <span>Tạo bài viết</span>
+                                        {!isCollapsed && <span>Tạo dự án</span>}
                                     </button>
                                 </li>
                             </>
@@ -204,7 +247,7 @@ function SidebarNav({ onCreatePost }) {
                             <li>
                                 <Link to="/login" className={`nav-link-item ${isActive('/login') ? 'active' : ''}`} title="Đăng nhập">
                                     <LogIn size={20} />
-                                    <span>Đăng nhập</span>
+                                    {!isCollapsed && <span>Đăng nhập</span>}
                                 </Link>
                             </li>
                         )}
@@ -215,20 +258,24 @@ function SidebarNav({ onCreatePost }) {
                         <div className="sidebar-user-footer">
                             <Link to={profilePath} className="sidebar-user-info" title="Xem hồ sơ">
                                 <Avatar user={currentUser} size={36} />
-                                <div className="sidebar-user-meta">
-                                    <div className="sidebar-user-name">{currentUser.username || currentUser.full_name || 'Người dùng'}</div>
-                                    <div className="sidebar-user-role">@{currentUser.username || 'user'}</div>
-                                </div>
+                                {!isCollapsed && (
+                                    <div className="sidebar-user-meta">
+                                        <div className="sidebar-user-name">{currentUser.username || currentUser.full_name || 'Người dùng'}</div>
+                                        <div className="sidebar-user-role">@{currentUser.username || 'user'}</div>
+                                    </div>
+                                )}
                             </Link>
-                            <button
-                                type="button"
-                                className="sidebar-logout-btn"
-                                onClick={handleLogout}
-                                title="Đăng xuất"
-                                aria-label="Đăng xuất"
-                            >
-                                <LogOut size={18} />
-                            </button>
+                            {!isCollapsed && (
+                                <button
+                                    type="button"
+                                    className="sidebar-logout-btn"
+                                    onClick={handleLogout}
+                                    title="Đăng xuất"
+                                    aria-label="Đăng xuất"
+                                >
+                                    <LogOut size={18} />
+                                </button>
+                            )}
                         </div>
                     )}
                 </nav>

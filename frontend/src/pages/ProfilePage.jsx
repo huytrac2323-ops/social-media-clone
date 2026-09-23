@@ -3,6 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import '../styles/App.css';
 import EditProfileModal from '../modals/EditProfileModal.jsx';
 import CreatePost from '../modals/CreatePost.jsx';
+import ProjectCard from '../components/ProjectCard.jsx';
+import ProjectDetailModal from '../modals/ProjectDetailModal.jsx';
+import PostCard from '../components/PostCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
 import SidebarNav from '../components/SidebarNav.jsx';
@@ -37,7 +40,12 @@ import {
   Mail,
   Phone,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Briefcase,
+  Layers,
+  Clock,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 
 const API_URL = getApiBaseUrl();
@@ -68,7 +76,8 @@ function ProfilePage() {
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('posts');
+  const [activeTab, setActiveTab] = useState('portfolio'); // 'portfolio' (Tác phẩm) | 'timeline' (Dòng thời gian) | 'saved'
+  const [selectedProject, setSelectedProject] = useState(null);
   const [friends, setFriends] = useState([]);
   const [followStatus, setFollowStatus] = useState(null);
   const [retryStatus, setRetryStatus] = useState('');
@@ -684,12 +693,43 @@ function ProfilePage() {
   const { stats = {}, bio, posts = [] } = userProfile;
   const isOwnProfile = currentUser ? Number(currentUser.user_id) === Number(userProfile.user_id) : false;
 
+  const formattedProfilePosts = (posts || []).map(p => {
+    let parsedProjectImages = [];
+    let parsedToolsUsed = [];
+    try {
+      parsedProjectImages = Array.isArray(p.project_images) ? p.project_images : (typeof p.project_images === 'string' ? JSON.parse(p.project_images || '[]') : []);
+    } catch { parsedProjectImages = []; }
+    try {
+      parsedToolsUsed = Array.isArray(p.tools_used) ? p.tools_used : (typeof p.tools_used === 'string' ? JSON.parse(p.tools_used || '[]') : []);
+    } catch { parsedToolsUsed = []; }
+
+    return {
+      id: p.post_id || p.id,
+      userId: userProfile.user_id,
+      author: userProfile.username,
+      authorAvatar: userProfile.profile_photo_url,
+      isVerified: userProfile.is_verified,
+      time: p.created_at || new Date().toISOString(),
+      content: p.caption,
+      imageUrl: p.photo_url || null,
+      likes: parseInt(p.like_count, 10) || 0,
+      isLiked: false,
+      comments: p.comments || [],
+      postType: p.post_type || 'social',
+      title: p.title || '',
+      projectImages: parsedProjectImages,
+      toolsUsed: parsedToolsUsed,
+      category: p.category || '',
+      viewsCount: parseInt(p.views_count, 10) || 0
+    };
+  });
+
   return (
     <div className="app-shell">
       <div className="app-layout">
         <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
 
-        <main style={{ flex: 1, maxWidth: '900px', minWidth: 0, paddingBottom: '80px' }}>
+        <main style={{ flex: 1, maxWidth: '1100px', minWidth: 0, paddingBottom: '80px' }}>
           {/* PROFILE HEADER CARD */}
           <section className="profile-header-card">
             {currentUser && (
@@ -762,13 +802,34 @@ function ProfilePage() {
                 )}
 
                 {isOwnProfile ? (
-                  <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
-                    <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
-                    Chỉnh sửa hồ sơ
-                  </button>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                    <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
+                      <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
+                      Chỉnh sửa hồ sơ
+                    </button>
+                    <div className="profile-commission-badge" title="Sẵn sàng nhận dự án & báo giá">
+                      <Briefcase size={13} />
+                      <span>Đang nhận dự án</span>
+                    </div>
+                  </div>
                 ) : (
                   currentUser && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn-profile-cta-hire"
+                        onClick={() => {
+                          localStorage.setItem('activeChatUser', JSON.stringify({
+                            user_id: userProfile.user_id || userProfile.id,
+                            username: userProfile.username
+                          }));
+                          window.dispatchEvent(new Event('open-chat'));
+                        }}
+                      >
+                        <Briefcase size={15} />
+                        <span>Nhắn tin báo giá / Mời hợp tác</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={handleFollowToggle}
@@ -1119,15 +1180,24 @@ function ProfilePage() {
             )}
           </section>
 
-          {/* TABS SELECTOR */}
+          {/* TABS SELECTOR (TÁC PHẨM & DÒNG THỜI GIAN) */}
           <div className="profile-tabs-nav">
             <button
               type="button"
-              className={`profile-tab-button ${activeTab === 'posts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('posts')}
+              className={`profile-tab-button ${activeTab === 'portfolio' ? 'active' : ''}`}
+              onClick={() => setActiveTab('portfolio')}
             >
-              <Grid size={16} />
-              <span>BÀI VIẾT</span>
+              <LayoutGrid size={16} />
+              <span>TÁC PHẨM</span>
+            </button>
+
+            <button
+              type="button"
+              className={`profile-tab-button ${activeTab === 'timeline' ? 'active' : ''}`}
+              onClick={() => setActiveTab('timeline')}
+            >
+              <List size={16} />
+              <span>DÒNG THỜI GIAN</span>
             </button>
 
             {isOwnProfile && (
@@ -1140,74 +1210,114 @@ function ProfilePage() {
                 <span>ĐÃ LƯU</span>
               </Link>
             )}
-
-            <button
-              type="button"
-              className={`profile-tab-button ${activeTab === 'tagged' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tagged')}
-            >
-              <Tag size={16} />
-              <span>ĐƯỢC GẮN THẺ</span>
-            </button>
           </div>
 
-          {/* POSTS GRID */}
-          <div className="profile-grid-container">
-            {Array.isArray(posts) && posts.length > 0 ? (
-              posts.map(post => (
-                <div
-                  key={post.post_id}
-                  className="profile-grid-item"
-                  onClick={() => handlePostClick(post.post_id)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') handlePostClick(post.post_id);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  {post.photo_url ? (
-                    <img src={post.photo_url} alt={post.caption || 'Bài viết'} loading="lazy" />
-                  ) : (
-                    <div style={{
-                      padding: '20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
-                      textAlign: 'center',
-                      fontSize: '13.5px',
-                      color: 'var(--text-secondary)',
-                      background: 'var(--bg-input)'
-                    }}>
-                      {post.caption}
-                    </div>
-                  )}
-
-                  {/* Overlay on hover */}
-                  <div className="profile-grid-item-overlay">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Heart size={18} fill="white" />
-                      {post.like_count ?? 0}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MessageCircle size={18} fill="white" />
-                      {post.comment_count ?? (post.comments ? post.comments.length : 0)}
-                    </span>
+          {/* TAB 1: TÁC PHẨM (BEHANCE GRID FEED) */}
+          {activeTab === 'portfolio' && (
+            <div className="behance-grid-feed">
+              {formattedProfilePosts.length > 0 ? (
+                formattedProfilePosts.map(post => (
+                  <ProjectCard
+                    key={post.id}
+                    post={post}
+                    onOpenModal={(p) => setSelectedProject(p)}
+                    onLike={() => {}}
+                  />
+                ))
+              ) : (
+                <div className="empty-feed-card" style={{ gridColumn: '1 / -1' }}>
+                  <div className="empty-feed-icon-wrap">
+                    <Layers size={32} color="#0095f6" />
                   </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
+                    Chưa có tác phẩm nào
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 16px' }}>
+                    {isOwnProfile
+                      ? 'Hãy chia sẻ dự án Portfolio đầu tiên để khách hàng và cộng đồng khám phá!'
+                      : 'Nhà sáng tạo này chưa đăng dự án Portfolio nào.'}
+                  </p>
+                  {isOwnProfile && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCreatePost(true)}
+                      style={{
+                        padding: '8px 18px',
+                        borderRadius: '999px',
+                        background: 'var(--accent-gradient, #3b82f6)',
+                        color: '#fff',
+                        border: 'none',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Đăng Dự Án Mới
+                    </button>
+                  )}
                 </div>
-              ))
-            ) : (
-              <div style={{
-                gridColumn: '1 / -1',
-                padding: '48px 0',
-                textAlign: 'center',
-                color: 'var(--text-muted)'
-              }}>
-                <p style={{ fontSize: '15px' }}>Chưa có bài viết nào.</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: DÒNG THỜI GIAN (TIMELINE STATUS POSTS) */}
+          {activeTab === 'timeline' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {formattedProfilePosts.length > 0 ? (
+                formattedProfilePosts.map(post => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    friendUserIds={new Set(friends.map(f => Number(f.user_id || f.id)))}
+                    onLike={() => {}}
+                    onCommentSubmit={() => {}}
+                    onPostDeleted={() => fetchUserProfile()}
+                    onPostUpdated={() => fetchUserProfile()}
+                  />
+                ))
+              ) : (
+                <div className="empty-feed-card">
+                  <div className="empty-feed-icon-wrap">
+                    <Clock size={30} color="#60a5fa" />
+                  </div>
+                  <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Chưa có bài chia sẻ nào trên dòng thời gian.</p>
+                </div>
+              )}
+            </div>
+          )}
         </main>
+
+        {/* MODAL XEM CHI TIẾT DỰ ÁN BEHANCE */}
+        {selectedProject && (
+          <ProjectDetailModal
+            project={selectedProject}
+            onClose={() => setSelectedProject(null)}
+            onLike={() => {
+              setSelectedProject(prev => prev ? {
+                ...prev,
+                isLiked: !prev.isLiked,
+                likes: prev.isLiked ? Math.max(0, (prev.likes || 1) - 1) : (prev.likes || 0) + 1
+              } : null);
+            }}
+            onCommentSubmit={(postId, text) => {
+              setSelectedProject(prev => prev ? {
+                ...prev,
+                comments: [
+                  ...(prev.comments || []),
+                  {
+                    comment_id: 'temp-' + Date.now(),
+                    comment_text: text,
+                    created_at: new Date().toISOString(),
+                    user_id: currentUser?.user_id,
+                    username: currentUser?.username,
+                    profile_photo_url: currentUser?.profile_photo_url,
+                    is_verified: currentUser?.is_verified
+                  }
+                ]
+              } : null);
+            }}
+          />
+        )}
 
         <ChatWidget />
       </div>

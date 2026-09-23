@@ -195,21 +195,38 @@ function AppContent() {
                 const currentFriendSet = new Set(
                     (Array.isArray(friends) ? friends : []).map(f => Number(f.user_id || f.id))
                 );
-                const formattedPosts = data.map(post => ({
-                    id: post.post_id,
-                    userId: post.user_id,
-                    author: post.username,
-                    isVerified: Boolean(post.is_verified),
-                    time: post.created_at || post.time || new Date().toISOString(),
-                    content: post.caption,
-                    imageUrl: post.photo_url || null,
-                    likes: parseInt(post.like_count, 10) || 0,
-                    isLiked: Boolean(post.is_liked_by_user),
-                    isFriend: Boolean(post.is_friend || currentFriendSet.has(Number(post.user_id))),
-                    friendRequestSent: Boolean(post.friend_request_sent),
-                    comments: post.comments || [],
-                    authorAvatar: post.profile_photo_url
-                }));
+                const formattedPosts = data.map(post => {
+                    let parsedProjectImages = [];
+                    let parsedToolsUsed = [];
+                    try {
+                        parsedProjectImages = Array.isArray(post.project_images) ? post.project_images : (typeof post.project_images === 'string' ? JSON.parse(post.project_images || '[]') : []);
+                    } catch { parsedProjectImages = []; }
+                    try {
+                        parsedToolsUsed = Array.isArray(post.tools_used) ? post.tools_used : (typeof post.tools_used === 'string' ? JSON.parse(post.tools_used || '[]') : []);
+                    } catch { parsedToolsUsed = []; }
+
+                    return {
+                        id: post.post_id,
+                        userId: post.user_id,
+                        author: post.username,
+                        isVerified: Boolean(post.is_verified),
+                        time: post.created_at || post.time || new Date().toISOString(),
+                        content: post.caption,
+                        imageUrl: post.photo_url || null,
+                        likes: parseInt(post.like_count, 10) || 0,
+                        isLiked: Boolean(post.is_liked_by_user),
+                        isFriend: Boolean(post.is_friend || currentFriendSet.has(Number(post.user_id))),
+                        friendRequestSent: Boolean(post.friend_request_sent),
+                        comments: post.comments || [],
+                        authorAvatar: post.profile_photo_url,
+                        postType: post.post_type || 'social',
+                        title: post.title || '',
+                        projectImages: parsedProjectImages,
+                        toolsUsed: parsedToolsUsed,
+                        category: post.category || '',
+                        viewsCount: parseInt(post.views_count, 10) || 0
+                    };
+                });
                 const sortedPosts = formattedPosts.sort((a, b) => b.id - a.id);
                 setPosts(sortedPosts);
             } catch (error) {

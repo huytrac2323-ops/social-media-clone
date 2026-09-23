@@ -553,6 +553,15 @@ const startServer = async () => {
             )
         `);
         await client.query('ALTER TABLE saved_posts ADD COLUMN IF NOT EXISTS collection_id INTEGER REFERENCES saved_collections(collection_id) ON DELETE SET NULL');
+
+        // Migration cho Mạng Lưới Nhà Sáng Tạo Behance Portfolio
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS post_type VARCHAR(20) DEFAULT 'social'").catch(e => console.warn('Lưu ý migration post_type:', e.message));
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS title VARCHAR(255)").catch(e => console.warn('Lưu ý migration title:', e.message));
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS project_images JSONB DEFAULT '[]'::jsonb").catch(e => console.warn('Lưu ý migration project_images:', e.message));
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS tools_used JSONB DEFAULT '[]'::jsonb").catch(e => console.warn('Lưu ý migration tools_used:', e.message));
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS category VARCHAR(100)").catch(e => console.warn('Lưu ý migration category:', e.message));
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS views_count INTEGER DEFAULT 0").catch(e => console.warn('Lưu ý migration views_count:', e.message));
+
         client.release();
 
         server.listen(PORT, () => {

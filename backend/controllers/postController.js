@@ -24,6 +24,8 @@ const getPosts = async (req, res) => {
         let query = `
             SELECT
                 p.post_id, p.caption, p.photo_url, p.created_at,
+                p.post_type, p.title, p.project_images, p.tools_used, p.category,
+                COALESCE(p.views_count, 0) AS views_count,
                 u.user_id, u.username, u.profile_photo_url,
                 (u.is_verified IS TRUE) AS is_verified,
                 COALESCE((SELECT COUNT(*)::int FROM post_likes pr WHERE pr.post_id = p.post_id), 0) AS like_count,
@@ -93,7 +95,10 @@ const getPostById = async (req, res) => {
             : 'AND u.is_private IS NOT TRUE AND u.is_verified IS TRUE';
 
         let query = `
-            SELECT p.post_id, p.caption, p.photo_url, p.created_at, u.user_id, u.username, u.profile_photo_url,
+            SELECT p.post_id, p.caption, p.photo_url, p.created_at,
+                   p.post_type, p.title, p.project_images, p.tools_used, p.category,
+                   COALESCE(p.views_count, 0) AS views_count,
+                   u.user_id, u.username, u.profile_photo_url,
                    (u.is_verified IS TRUE) AS is_verified,
                    COALESCE((SELECT COUNT(*)::int FROM post_likes pl WHERE pl.post_id = p.post_id), 0) AS like_count,
                    ${currentUserId ? 'EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user,' : 'FALSE AS is_liked_by_user,'}
@@ -127,49 +132,114 @@ const getPostById = async (req, res) => {
 };
 
 
-// Tạo bài viết mới
+// Helper upload file lên Cloudinary hoặc lưu local
+const uploadFileHelper = async (file) => {
+    const hasCloudinaryConfig = process.env.CLOUDINARY_CLOUD_NAME
+        && process.env.CLOUDINARY_API_KEY
+        && process.env.CLOUDINARY_API_SECRET;
+    if (hasCloudinaryConfig) {
+        const uploadResult = await cloudinary.uploader.upload(file.path, {
+            folder: 'social-media-clone-posts'
+        });
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return uploadResult.secure_url;
+    } else {
+        return `/uploads/${path.basename(file.path)}`;
+    }
+};
+
+// Tạo bài viết mới (Hỗ trợ cả Social Mode và Behance Portfolio Mode)
 const createPost = async (req, res) => {
-    // Chỉ lấy caption và user_id từ body
-    const { caption, user_id, location } = req.body;
+    const {
+        caption,
+        user_id,
+        location,
+        post_type = 'social',
+        title,
+        category,
+        tools_used,
+        project_images
+    } = req.body;
 
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
 
     let finalPhotoUrl = null;
+    let resolvedProjectImages = [];
+    let resolvedToolsUsed = [];
+
+    // Parse tools_used nếu client gửi dạng JSON string
+    try {
+        if (tools_used) {
+            resolvedToolsUsed = typeof tools_used === 'string' ? JSON.parse(tools_used) : tools_used;
+        }
+    } catch {
+        resolvedToolsUsed = [];
+    }
+
+    // Parse project_images ban đầu nếu client gửi dạng JSON string
+    try {
+        if (project_images) {
+            resolvedProjectImages = typeof project_images === 'string' ? JSON.parse(project_images) : project_images;
+        }
+    } catch {
+        resolvedProjectImages = [];
+    }
 
     try {
-        // Kiểm tra nếu có file ảnh được đính kèm qua Multer
+        // 1. Xử lý ảnh đại diện / cover photo
         if (req.file) {
-            const hasCloudinaryConfig = process.env.CLOUDINARY_CLOUD_NAME
-                && process.env.CLOUDINARY_API_KEY
-                && process.env.CLOUDINARY_API_SECRET;
-            if (hasCloudinaryConfig) {
-                const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-                    folder: 'social-media-clone-posts'
+            finalPhotoUrl = await uploadFileHelper(req.file);
+        } else if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+            // Tìm file ảnh bìa (postImage hoặc coverImage hoặc file đầu tiên)
+            const coverFile = req.files.find(f => f.fieldname === 'postImage' || f.fieldname === 'coverImage') || req.files[0];
+            if (coverFile) {
+                finalPhotoUrl = await uploadFileHelper(coverFile);
+            }
+
+            // Xử lý các file thuộc case study (projectImages)
+            const caseStudyFiles = req.files.filter(f => f !== coverFile);
+            for (const cFile of caseStudyFiles) {
+                const url = await uploadFileHelper(cFile);
+                resolvedProjectImages.push({
+                    url,
+                    caption: ''
                 });
-                finalPhotoUrl = uploadResult.secure_url;
-                fs.unlinkSync(req.file.path);
-            } else {
-                finalPhotoUrl = `/uploads/${path.basename(req.file.path)}`;
             }
         } else if (req.body.photo_url) {
-            // Hỗ trợ trường hợp phụ: client gửi sẵn URL
             finalPhotoUrl = req.body.photo_url;
         }
 
-        // Lưu dữ liệu vào database
+        // Lưu dữ liệu vào database với các cột của Portfolio
         const result = await pool.query(
-            'INSERT INTO post (user_id, caption, photo_url, location, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
-            [user_id, caption, finalPhotoUrl, location || null]
+            `INSERT INTO post (
+                user_id, caption, photo_url, location,
+                post_type, title, category, tools_used, project_images, views_count, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, NOW()) RETURNING *`,
+            [
+                user_id,
+                caption || '',
+                finalPhotoUrl,
+                location || null,
+                post_type || 'social',
+                title || null,
+                category || null,
+                JSON.stringify(resolvedToolsUsed),
+                JSON.stringify(resolvedProjectImages)
+            ]
         );
-// Đảm bảo kết quả trả về JSON cho client có chứa trường created_at
+
         res.status(201).json(result.rows[0]);
-
-
     } catch (err) {
         // Dọn dẹp file tạm nếu quá trình upload hoặc lưu database bị lỗi
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }
+        if (req.files && Array.isArray(req.files)) {
+            req.files.forEach(f => {
+                if (fs.existsSync(f.path)) fs.unlinkSync(f.path);
+            });
+        }
+        console.error("Lỗi createPost:", err);
         res.status(500).send({ message: "Lỗi server khi đăng bài", error: err.message });
     }
 };
@@ -337,19 +407,35 @@ const sharePost = async (req, res) => {
         client.release();
     }
 };
+
 const deleteComment = async (req, res) => {
     const { commentId } = req.params;
     try {
         const result = await pool.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *', [commentId]);
-
         if (result.rowCount === 0) {
             return res.status(404).json({ error: "Không tìm thấy bình luận cần xóa!" });
         }
-
         res.status(200).json({ message: "Đã xóa bình luận thành công!" });
     } catch (err) {
         console.error("Lỗi khi xóa bình luận:", err.message);
         res.status(500).json({ error: "Lỗi Server", details: err.message });
+    }
+};
+
+const recordPostView = async (req, res) => {
+    const { postId } = req.params;
+    try {
+        const result = await pool.query(
+            'UPDATE post SET views_count = COALESCE(views_count, 0) + 1 WHERE post_id = $1 RETURNING views_count',
+            [postId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy bài viết.' });
+        }
+        res.json({ views_count: result.rows[0].views_count });
+    } catch (err) {
+        console.error("Lỗi recordPostView:", err);
+        res.status(500).json({ message: "Lỗi server khi tăng lượt xem", error: err.message });
     }
 };
 
@@ -362,6 +448,6 @@ module.exports = {
     likePost,
     commentPost,
     sharePost,
-    deleteComment
-
+    deleteComment,
+    recordPostView
 };

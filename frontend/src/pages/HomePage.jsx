@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
-import ProjectCard from '../components/ProjectCard.jsx';
-import ProjectDetailModal from '../modals/ProjectDetailModal.jsx';
-import SidebarNav from '../components/SidebarNav.jsx';
+import AppHeader from '../components/AppHeader.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ChatWidget from '../components/ChatWidget/ChatWidget';
@@ -1446,13 +1444,16 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
     };
 
     return (
-        <div className="app-shell">
-            <div className="app-layout">
-                {/* CỘT TRÁI: THANH ĐIỀU HƯỚNG */}
-                <SidebarNav onCreatePost={() => setShowCreatePost(true)} />
+        <div className="social-feed-page-wrapper">
+            <AppHeader
+                onCreatePost={() => setShowCreatePost(true)}
+                allUsers={allUsers}
+                friendUserIds={friendUserIds}
+            />
 
-                {/* CỘT GIỮA: BẢNG TIN TRUNG TÂM */}
-                <main className={`app-feed-col ${isRightSidebarCollapsed ? 'expanded-full' : ''}`}>
+            <div className="social-feed-layout-container">
+                {/* BẢNG TIN TRUNG TÂM */}
+                <main className="social-feed-center-col">
                     {/* BĂNG CHUYỀN STORIES */}
                     <section className="story-bar-container">
                         <div className="story-scroll-track no-scrollbar">
@@ -3054,264 +3055,37 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
                         </section>
                     )}
 
-                    {/* THANH ĐIỀU KHIỂN & BỘ LỌC THỂ LOẠI BEHANCE GRID */}
-                    <div className="behance-feed-control-bar">
-                        <div className="behance-filter-chips no-scrollbar">
-                            {[
-                                { id: 'all', label: '🌟 Tất cả' },
-                                { id: 'Thiết kế đồ họa', label: '🎨 Đồ họa' },
-                                { id: 'UI/UX Design', label: '📱 UI/UX' },
-                                { id: '3D & Hoạt hình', label: '🧊 3D Art' },
-                                { id: 'Minh họa & Art', label: '🖌️ Minh họa' },
-                                { id: 'Nhiếp ảnh', label: '📸 Nhiếp ảnh' },
-                                { id: 'Branding & Logo', label: '✨ Branding' }
-                            ].map(cat => (
-                                <button
-                                    type="button"
-                                    key={cat.id}
-                                    className={`behance-filter-chip ${feedFilterCategory === cat.id ? 'active' : ''}`}
-                                    onClick={() => setFeedFilterCategory(cat.id)}
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="behance-feed-mode-actions">
-                            <button
-                                type="button"
-                                className={`feed-mode-toggle-btn ${feedDisplayMode === 'grid' ? 'active' : ''}`}
-                                onClick={() => setFeedDisplayMode('grid')}
-                                title="Lưới tác phẩm Behance"
-                            >
-                                <LayoutGrid size={15} />
-                                <span className="mode-text">Lưới</span>
-                            </button>
-                            <button
-                                type="button"
-                                className={`feed-mode-toggle-btn ${feedDisplayMode === 'timeline' ? 'active' : ''}`}
-                                onClick={() => setFeedDisplayMode('timeline')}
-                                title="Dòng thời gian"
-                            >
-                                <List size={15} />
-                                <span className="mode-text">Bài viết</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                className={`feed-sidebar-toggle-btn ${isRightSidebarCollapsed ? 'active' : ''}`}
-                                onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-                                title={isRightSidebarCollapsed ? 'Hiện cột gợi ý' : 'Bung rộng 100% không gian'}
-                            >
-                                {isRightSidebarCollapsed ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-                            </button>
-                        </div>
+                    {/* DÒNG THỜI GIAN BÀI VIẾT XÃ HỘI (TIMELINE) */}
+                    <div className="social-posts-stream">
+                        {posts && posts.length > 0 ? (
+                            posts.map(post => (
+                                <PostCard
+                                    key={post.post_id || post.id}
+                                    post={post}
+                                    friendUserIds={friendUserIds}
+                                    onLike={onLike}
+                                    onCommentSubmit={onCommentSubmit}
+                                    onPostDeleted={onPostDeleted}
+                                    onPostUpdated={onPostUpdated}
+                                />
+                            ))
+                        ) : (
+                            <div className="empty-feed-card">
+                                <div className="empty-feed-icon-wrap">
+                                    <Users size={32} color="#0095f6" />
+                                </div>
+                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
+                                    Chào mừng bạn đến với Bảng tin NovaGen 🎨
+                                </h3>
+                                <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 20px', lineHeight: 1.5 }}>
+                                    Chưa có bài viết mới. Hãy tạo bài viết đầu tiên hoặc kết bạn với các tác giả để cập nhật tin tức!
+                                </p>
+                            </div>
+                        )}
                     </div>
-
-                    {/* DANH SÁCH BÀI VIẾT: GRID HOẶC TIMELINE */}
-                    {feedDisplayMode === 'grid' ? (
-                        <div className="behance-grid-feed">
-                            {filteredPosts && filteredPosts.length > 0 ? (
-                                filteredPosts.map(post => (
-                                    <ProjectCard
-                                        key={post.post_id || post.id}
-                                        post={post}
-                                        onOpenModal={(p) => setSelectedProject(p)}
-                                        onLike={onLike}
-                                    />
-                                ))
-                            ) : (
-                                <div className="empty-feed-card" style={{ gridColumn: '1 / -1' }}>
-                                    <div className="empty-feed-icon-wrap">
-                                        <Layers size={32} color="#0095f6" />
-                                    </div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
-                                        Chưa có tác phẩm nào trong mục này
-                                    </h3>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 16px' }}>
-                                        Hãy là người đầu tiên đăng dự án hoặc chọn xem "Tất cả" để khám phá thêm!
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFeedFilterCategory('all')}
-                                        style={{
-                                            padding: '8px 18px',
-                                            borderRadius: '999px',
-                                            background: 'var(--accent-gradient, #3b82f6)',
-                                            color: '#fff',
-                                            border: 'none',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Xem tất cả tác phẩm
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {filteredPosts && filteredPosts.length > 0 ? (
-                                filteredPosts.map(post => (
-                                    <PostCard
-                                        key={post.post_id || post.id}
-                                        post={post}
-                                        friendUserIds={friendUserIds}
-                                        onLike={onLike}
-                                        onCommentSubmit={onCommentSubmit}
-                                        onPostDeleted={onPostDeleted}
-                                        onPostUpdated={onPostUpdated}
-                                    />
-                                ))
-                            ) : (
-                                <div className="empty-feed-card">
-                                    <div className="empty-feed-icon-wrap">
-                                        <Users size={32} color="#0095f6" />
-                                    </div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
-                                        Chào mừng bạn đến với NovaGen 🎨
-                                    </h3>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 20px', lineHeight: 1.5 }}>
-                                        Hãy theo dõi hoặc kết bạn với các tài khoản để xem các bài viết mới nhất!
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </main>
 
-                {/* MODAL XEM CHI TIẾT TÁC PHẨM TRÀN VIỀN BEHANCE (70% - 30%) */}
-                {selectedProject && (
-                    <ProjectDetailModal
-                        project={selectedProject}
-                        onClose={() => setSelectedProject(null)}
-                        onLike={(postId) => {
-                            if (onLike) onLike(postId);
-                            setSelectedProject(prev => prev ? {
-                                ...prev,
-                                isLiked: !prev.isLiked,
-                                likes: prev.isLiked ? Math.max(0, (prev.likes || 1) - 1) : (prev.likes || 0) + 1
-                            } : null);
-                        }}
-                        onCommentSubmit={(postId, text) => {
-                            if (onCommentSubmit) onCommentSubmit(postId, text);
-                            setSelectedProject(prev => prev ? {
-                                ...prev,
-                                comments: [
-                                    ...(prev.comments || []),
-                                    {
-                                        comment_id: 'temp-' + Date.now(),
-                                        comment_text: text,
-                                        created_at: new Date().toISOString(),
-                                        user_id: currentUser?.user_id,
-                                        username: currentUser?.username,
-                                        profile_photo_url: currentUser?.profile_photo_url,
-                                        is_verified: currentUser?.is_verified
-                                    }
-                                ]
-                            } : null);
-                        }}
-                    />
-                )}
-
-                {/* CỘT PHẢI: GỢI Ý KẾT BẠN & VIỆC LÀM CREATIVE (TỰ ĐỘNG ẨN KHI THU GỌN) */}
-                {!isRightSidebarCollapsed && (
-                    <aside className="app-widget-col">
-                        {/* WIDGET 1: GỢI Ý KẾT BẠN */}
-                        <div className="widget-card">
-                            <div className="widget-title">
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Users size={18} color="#60a5fa" />
-                                    Gợi ý kết bạn
-                                </span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {suggestions && suggestions.length > 0 ? (
-                                    suggestions.map(user => {
-                                        const isSent = sentSuggestionRequests.has(Number(user.user_id));
-                                        return (
-                                            <div key={user.user_id} className="suggestion-user-row">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => navigate(`/profile/${encodeURIComponent(user.username)}`)}
-                                                    className="suggestion-user-meta"
-                                                    title={`Xem trang của ${user.username}`}
-                                                >
-                                                    <Avatar user={user} size={36} />
-                                                    <div>
-                                                        <div className="suggestion-username" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            {user.username}
-                                                            {user.is_verified && (
-                                                                <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6">
-                                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                                                </svg>
-                                                            )}
-                                                        </div>
-                                                        <div className="suggestion-subtitle" style={{ color: '#38bdf8', fontWeight: 500, fontSize: '11.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={user.suggestion_reason || 'Gợi ý cho bạn'}>
-                                                            {user.suggestion_reason || 'Gợi ý cho bạn'}
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleAddFriendSuggestion(user.user_id, e)}
-                                                    className={`btn-connect-user ${isSent ? 'sent' : ''}`}
-                                                    disabled={isSent}
-                                                    title={isSent ? 'Đã gửi lời mời' : 'Thêm bạn bè'}
-                                                >
-                                                    <UserPlus size={14} style={{ display: 'inline', marginRight: '4px' }} />
-                                                    {isSent ? 'Đã gửi' : 'Kết bạn'}
-                                                </button>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>
-                                        Không có gợi ý mới
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* WIDGET 2: VIỆC LÀM & CƠ HỘI HỢP TÁC CREATIVE */}
-                        <div className="widget-card creative-jobs-widget">
-                            <div className="widget-title">
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Briefcase size={18} color="#34d399" />
-                                    Cơ hội việc làm & Dự án
-                                </span>
-                            </div>
-                            <div className="creative-jobs-list">
-                                <div className="creative-job-item">
-                                    <div className="creative-job-header">
-                                        <span className="job-tag hot">HOT</span>
-                                        <span className="job-salary">25 - 40 triệu</span>
-                                    </div>
-                                    <div className="job-title">Senior UI/UX Designer (FinTech)</div>
-                                    <div className="job-company">Remote / Toàn thời gian</div>
-                                </div>
-                                <div className="creative-job-item">
-                                    <div className="creative-job-header">
-                                        <span className="job-tag freelance">FREELANCE</span>
-                                        <span className="job-salary">15 - 20 triệu</span>
-                                    </div>
-                                    <div className="job-title">3D Motion Graphic Video 60s</div>
-                                    <div className="job-company">Theo dự án • Deadline 2 tuần</div>
-                                </div>
-                                <div className="creative-job-item">
-                                    <div className="creative-job-header">
-                                        <span className="job-tag branding">BRAND</span>
-                                        <span className="job-salary">Thỏa thuận</span>
-                                    </div>
-                                    <div className="job-title">Bộ nhận diện Visual Brand Identity</div>
-                                    <div className="job-company">Hà Nội / HCM • Hợp đồng</div>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-                )}
-
+                {/* CHAT WIDGET TRỰC TIẾP */}
                 <ChatWidget />
             </div>
         </div>

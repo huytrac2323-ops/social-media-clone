@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import '../styles/App.css';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
+import BehanceProjectsPage from '../pages/BehanceProjectsPage.jsx';
 import PostPage from '../pages/PostPage.jsx';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import SavedPostsPage from '../components/SavedPostsPage.jsx';
@@ -328,6 +329,19 @@ function AppContent() {
         <div className="app-root-wrapper">
             <Routes>
                 <Route path="/" element={
+                    <BehanceProjectsPage
+                        posts={posts}
+                        allUsers={allUsers}
+                        friends={friends}
+                        friendUserIds={friendUserIds}
+                        onLike={handleLike}
+                        onCommentSubmit={handleCommentSubmit}
+                        onPostCreated={refreshData}
+                        onPostDeleted={refreshData}
+                        onPostUpdated={refreshData}
+                    />}
+                />
+                <Route path="/feed" element={
                     <HomePage
                         posts={posts}
                         allUsers={allUsers}
@@ -340,6 +354,9 @@ function AppContent() {
                         onPostUpdated={refreshData}
                     />}
                 />
+                <Route path="/projects" element={<Navigate to="/" replace />} />
+                <Route path="/social" element={<Navigate to="/feed" replace />} />
+                <Route path="/timeline" element={<Navigate to="/feed" replace />} />
                 <Route path="/post/:postId"
                        element={<PostPage onPostDeleted={refreshData} onPostUpdated={refreshData}/>}/>
                 <Route path="/profile/:username" element={<ProfilePage/>}/>

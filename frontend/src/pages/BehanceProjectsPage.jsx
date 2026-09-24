@@ -668,7 +668,9 @@ export default function BehanceProjectsPage({
                               style={{
                                 fontSize: '11px', fontWeight: '600',
                                 padding: '2px 8px', borderRadius: '6px',
-                                background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)'
+                                background: 'var(--bg-elevated, rgba(255,255,255,0.06))',
+                                border: '1px solid var(--border-subtle, transparent)',
+                                color: 'var(--text-secondary)'
                               }}
                             >
                               #{sk}

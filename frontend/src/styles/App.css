@@ -1639,7 +1639,7 @@ input, textarea {
 .post-caption-box {
   font-size: 14.5px;
   line-height: 1.6;
-  color: #e2e8f0;
+  color: var(--text-primary);
   margin-bottom: 12px;
   word-break: break-word;
 }
@@ -1698,7 +1698,7 @@ input, textarea {
 
 .shared-post-caption {
   font-size: 13.5px;
-  color: #e2e8f0;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
@@ -1783,7 +1783,7 @@ input, textarea {
 }
 
 .comment-text-body {
-  color: #cbd5e1;
+  color: var(--text-primary);
 }
 
 .comment-time {
@@ -2327,12 +2327,12 @@ input, textarea {
 .profile-menu-sheet {
   width: 100%;
   max-width: 420px;
-  background: rgba(18, 24, 38, 0.96);
+  background: var(--bg-card);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-subtle);
   border-radius: 22px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -3455,12 +3455,10 @@ input, textarea {
 }
 
 /* =================================================== */
-/* STORY RESTRICTION: DESKTOP HIDES STORY CREATION     */
+/* STORY CREATION: VISIBLE ON ALL VIEWPORTS            */
 /* =================================================== */
-@media screen and (min-width: 769px) {
-  .story-create-item {
-    display: none !important;
-  }
+.story-create-item {
+  display: flex !important;
 }
 
 /* =================================================== */
@@ -5881,7 +5879,7 @@ button:active:not(:disabled),
   background: rgba(18, 24, 38, 0.85);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--text-primary);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5946,7 +5944,7 @@ button:active:not(:disabled),
 .behance-project-description {
   font-size: 16px;
   line-height: 1.7;
-  color: #cbd5e1;
+  color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-word;
   background: rgba(255, 255, 255, 0.02);
@@ -6245,7 +6243,7 @@ button:active:not(:disabled),
 }
 
 .behance-comment-text {
-  color: #cbd5e1;
+  color: var(--text-primary);
   line-height: 1.4;
   word-break: break-word;
 }
@@ -7310,12 +7308,12 @@ button:active:not(:disabled),
   position: absolute;
   right: 0;
   top: calc(100% + 12px);
-  background: rgba(18, 24, 38, 0.98);
+  background: var(--bg-card);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-subtle);
   border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   z-index: 1100;
   animation: modalFadeIn 0.18s ease-out;
 }
@@ -8051,13 +8049,13 @@ button:active:not(:disabled),
 .spotlight-title {
   font-size: 18px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   line-height: 1.35;
 }
 
 .spotlight-desc {
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   line-height: 1.55;
 }
 
@@ -8286,7 +8284,7 @@ button:active:not(:disabled),
 
 .job-description-text {
   font-size: 13.5px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -8600,4 +8598,468 @@ button:active:not(:disabled),
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 7. Header Popover Menus & Dropdowns */
+[data-theme="light"] .header-popover-menu {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .profile-popover-username {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .profile-popover-email {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .profile-popover-item {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .profile-popover-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .profile-popover-divider {
+  background: #e2e8f0 !important;
+}
+
+[data-theme="light"] .popover-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .popover-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .suggestion-popover-name {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .suggestion-popover-sub {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .popover-empty {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .profile-menu-sheet {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14) !important;
+}
+
+[data-theme="light"] .profile-menu-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .profile-menu-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .profile-menu-icon-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .profile-menu-user-summary {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .profile-menu-user-name {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .profile-menu-user-sub {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .profile-menu-item {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .profile-menu-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* 8. Feed Quick Post Composer Card */
+[data-theme="light"] .create-post-trigger-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .create-post-input-mock {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+[data-theme="light"] .create-post-input-mock:hover {
+  background: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .create-post-actions-row {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .create-post-action-btn {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .create-post-action-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* 9. Feed Post Cards & Comments */
+[data-theme="light"] .post-caption-box {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .shared-post-caption {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .shared-post-nested-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .post-action-bar {
+  border-top-color: #e2e8f0 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .post-menu-dropdown {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .post-menu-dropdown button {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .post-menu-dropdown button:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .comment-bubble {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .comment-author-name {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .comment-text-body {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .comment-input-form {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .comment-input-form input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .comment-input-form input::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] .empty-feed-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 10. Behance Modal & Spotlight */
+[data-theme="light"] .behance-modal-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.16) !important;
+}
+
+[data-theme="light"] .behance-modal-close-floating {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .behance-modal-close-floating:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+
+[data-theme="light"] .behance-project-description {
+  color: #1e293b !important;
+  background: #f8fafc !important;
+}
+
+[data-theme="light"] .behance-tools-section {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .behance-tool-badge {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .behance-comment-bubble {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .behance-comment-user {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .behance-comment-text {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .behance-comment-input-form {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .behance-comment-input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .behance-spotlight-card {
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.95) 0%, rgba(245, 243, 255, 0.95) 100%) !important;
+  border: 1px solid #bfdbfe !important;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.08) !important;
+}
+
+[data-theme="light"] .spotlight-title {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .spotlight-desc {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .behance-scope-tabs {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .behance-scope-btn {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .behance-scope-btn:hover {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .behance-scope-btn.active {
+  background: #e0e7ff !important;
+  color: #2563eb !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+[data-theme="light"] .behance-sort-select {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .behance-tag-pill {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+[data-theme="light"] .behance-tag-pill:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .btn-behance-filter-toggle {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 11. Collaborations & Creative Jobs */
+[data-theme="light"] .creative-jobs-modal-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .creative-jobs-modal-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .jobs-modal-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .jobs-modal-sub {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .jobs-modal-close {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .jobs-modal-close:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .creative-job-fullcard {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .creative-job-fullcard:hover {
+  background: #ffffff !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.08) !important;
+}
+
+[data-theme="light"] .job-main-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .job-description-text {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .job-tag-badge {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .job-card-action-bar {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+/* 12. Messages & Chat */
+[data-theme="light"] .messages-chat-pane {
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .messages-chat-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .messages-chat-header-name {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .bubble-them {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .messages-typing-bubble {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .messages-input-form {
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .messages-input-form input {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .messages-input-form input:focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+[data-theme="light"] .messages-contact-item:hover {
+  background: #f1f5f9 !important;
+}
+
+[data-theme="light"] .messages-contact-item.active {
+  background: #e0e7ff !important;
+  border-color: #93c5fd !important;
+}
+
+[data-theme="light"] .messages-contact-name {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .messages-reaction-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .messages-reaction-btn:hover {
+  background: #e2e8f0 !important;
+}
+
+/* 13. Create Post Modal Components */
+[data-theme="light"] .composer-tabs-header {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .composer-tab-btn {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .composer-tab-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .composer-tab-btn.active {
+  background: #e0e7ff !important;
+  color: #2563eb !important;
+  border-color: #93c5fd !important;
+}
+
+[data-theme="light"] .portfolio-step-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .tool-chip {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .tool-chip:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tool-chip.active {
+  background: #f3e8ff !important;
+  border-color: #c084fc !important;
+  color: #7e22ce !important;
 }

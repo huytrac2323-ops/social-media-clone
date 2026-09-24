@@ -358,8 +358,8 @@ function NotificationsPage() {
 
                         {/* Content */}
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: '13.5px', color: 'var(--text-main, #ffffff)', lineHeight: 1.4, wordBreak: 'break-word' }}>
-                            <strong style={{ color: '#ffffff', marginRight: '4px' }}>
+                          <div style={{ fontSize: '13.5px', color: 'var(--text-primary, #ffffff)', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                            <strong style={{ color: 'var(--text-primary, #ffffff)', marginRight: '4px' }}>
                               {notification.username || 'Người dùng'}
                             </strong>
                             <span>{notification.content}</span>

@@ -287,3 +287,44 @@
   font-size: 13px;
   margin-top: 8px;
 }
+
+/* =================================================== */
+/* LIGHT THEME FOR MODAL COMPONENTS                    */
+/* =================================================== */
+[data-theme="light"] .modal-content {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .modal-header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .modal-header h2 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .close-btn {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .close-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .modal-footer {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .privacy-setting {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .privacy-label {
+  color: #0f172a !important;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { safeFetch } from '../utils/api';
 import {
@@ -13,7 +13,12 @@ import {
     CreditCard,
     X,
     ExternalLink,
-    HelpCircle
+    Copy,
+    QrCode,
+    Building2,
+    RefreshCw,
+    HelpCircle,
+    ArrowRight
 } from 'lucide-react';
 import '../styles/Modal.css';
 
@@ -64,22 +69,138 @@ const PACKAGES = [
 function VipModal({ isOpen, onClose }) {
     const { currentUser, updateUser } = useAuth();
     const [selectedPackageId, setSelectedPackageId] = useState('vip_creator');
+    const [paymentMethod, setPaymentMethod] = useState('vietqr'); // 'vietqr' | 'vnpay'
     const [bankCode, setBankCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState(null);
 
+    // VietQR State
+    const [vietQrData, setVietQrData] = useState(null);
+    const [loadingQr, setLoadingQr] = useState(false);
+    const [confirmingQr, setConfirmingQr] = useState(false);
+    const [copiedKey, setCopiedKey] = useState(null);
+
+    const token = window.localStorage.getItem('token');
+
+    // Hàm gọi tạo mã VietQR
+    const fetchVietQr = useCallback(async (packageId) => {
+        if (!currentUser) return;
+        setLoadingQr(true);
+        setStatusMsg(null);
+        try {
+            const res = await safeFetch('/payment/create-vietqr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    packageId: packageId || selectedPackageId,
+                    userId: currentUser.user_id || currentUser.id
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setVietQrData(data);
+            } else {
+                setStatusMsg({ type: 'error', text: data.message || 'Không thể tạo mã VietQR.' });
+            }
+        } catch (err) {
+            console.error('Lỗi khi lấy VietQR:', err);
+            setStatusMsg({ type: 'error', text: 'Không thể tải mã VietQR chuyển khoản.' });
+        } finally {
+            setLoadingQr(false);
+        }
+    }, [currentUser, selectedPackageId, token]);
+
+    // Khi mở modal hoặc đổi package, nếu đang ở tab VietQR thì tự sinh mã QR
     useEffect(() => {
+        if (isOpen && currentUser && paymentMethod === 'vietqr') {
+            fetchVietQr(selectedPackageId);
+        }
         if (!isOpen) {
             setStatusMsg(null);
             setLoading(false);
+            setConfirmingQr(false);
+            setCopiedKey(null);
         }
-    }, [isOpen]);
+    }, [isOpen, selectedPackageId, paymentMethod, currentUser, fetchVietQr]);
 
     if (!isOpen) return null;
 
     const currentVipTier = currentUser?.vip_tier;
     const isAlreadyVip = currentVipTier && currentVipTier !== 'free';
+    const selectedPackage = PACKAGES.find(p => p.id === selectedPackageId) || PACKAGES[0];
 
+    const handleCopy = (text, key) => {
+        navigator.clipboard.writeText(String(text));
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
+    };
+
+    // Xác nhận đã chuyển khoản VietQR thành công
+    const handleConfirmVietQr = async () => {
+        if (!currentUser) {
+            alert('Vui lòng đăng nhập.');
+            return;
+        }
+        if (!vietQrData?.orderId) {
+            alert('Chưa có thông tin mã đơn hàng VietQR.');
+            return;
+        }
+
+        setConfirmingQr(true);
+        setStatusMsg({ type: 'info', text: 'Đang xác minh giao dịch chuyển khoản VietQR...' });
+
+        try {
+            const res = await safeFetch('/payment/confirm-vietqr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    orderId: vietQrData.orderId,
+                    userId: currentUser.user_id || currentUser.id
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Xác nhận chuyển khoản thất bại.');
+            }
+
+            // Cập nhật người dùng mới vào Context
+            if (data.user) {
+                updateUser({
+                    vip_tier: data.user.vip_tier,
+                    vip_badge: data.user.vip_badge,
+                    is_verified: true,
+                    ad_free: true,
+                    post_boost_credits: data.user.post_boost_credits,
+                    vip_expires_at: data.user.vip_expires_at
+                });
+            }
+
+            setStatusMsg({
+                type: 'success',
+                text: `🎉 ${data.message} Tích xanh và toàn bộ quyền lợi VIP của bạn đã được kích hoạt thành công!`
+            });
+
+            setTimeout(() => {
+                onClose();
+                window.location.reload();
+            }, 2000);
+        } catch (err) {
+            console.error('Lỗi xác nhận VietQR:', err);
+            setStatusMsg({ type: 'error', text: err.message || 'Xác nhận chuyển khoản thất bại.' });
+        } finally {
+            setConfirmingQr(false);
+        }
+    };
+
+    // Thanh toán qua cổng VNPAY
     const handleVnpayPayment = async () => {
         if (!currentUser) {
             alert('Vui lòng đăng nhập để thực hiện nâng cấp gói VIP.');
@@ -90,7 +211,6 @@ function VipModal({ isOpen, onClose }) {
         setStatusMsg({ type: 'info', text: 'Đang kết nối cổng thanh toán VNPAY an toàn...' });
 
         try {
-            const token = window.localStorage.getItem('token');
             const res = await safeFetch('/payment/create-payment-url', {
                 method: 'POST',
                 headers: {
@@ -112,7 +232,6 @@ function VipModal({ isOpen, onClose }) {
 
             if (data.paymentUrl) {
                 setStatusMsg({ type: 'success', text: 'Đang chuyển hướng sang cổng thanh toán VNPAY...' });
-                // Chuyển hướng tới cổng thanh toán VNPAY Sandbox / Production
                 window.location.href = data.paymentUrl;
             } else {
                 throw new Error('Không nhận được đường dẫn thanh toán từ máy chủ.');
@@ -124,6 +243,7 @@ function VipModal({ isOpen, onClose }) {
         }
     };
 
+    // Kích hoạt thử nghiệm nhanh
     const handleSandboxInstantTest = async () => {
         if (!currentUser) {
             alert('Vui lòng đăng nhập để thử nghiệm tính năng VIP.');
@@ -134,7 +254,6 @@ function VipModal({ isOpen, onClose }) {
         setStatusMsg({ type: 'info', text: 'Đang kích hoạt gói VIP trực tiếp trong môi trường thử nghiệm Sandbox...' });
 
         try {
-            const token = window.localStorage.getItem('token');
             const res = await safeFetch('/payment/test-sandbox-activate', {
                 method: 'POST',
                 headers: {
@@ -152,7 +271,6 @@ function VipModal({ isOpen, onClose }) {
                 throw new Error(data.message || 'Kích hoạt thử nghiệm thất bại.');
             }
 
-            // Đồng bộ dữ liệu người dùng mới vào AuthContext
             if (data.user) {
                 updateUser({
                     vip_tier: data.user.vip_tier,
@@ -187,7 +305,7 @@ function VipModal({ isOpen, onClose }) {
                 className="modal-content vip-modal-container"
                 onClick={e => e.stopPropagation()}
                 style={{
-                    maxWidth: '820px',
+                    maxWidth: '860px',
                     width: '95%',
                     maxHeight: '92vh',
                     overflowY: 'auto',
@@ -241,7 +359,7 @@ function VipModal({ isOpen, onClose }) {
                     <p style={{
                         fontSize: '14px',
                         color: 'var(--text-secondary)',
-                        maxWidth: '520px',
+                        maxWidth: '540px',
                         margin: '0 auto',
                         lineHeight: 1.5
                     }}>
@@ -294,12 +412,15 @@ function VipModal({ isOpen, onClose }) {
                         </div>
                     )}
 
-                    {/* Package Cards Grid */}
+                    {/* Step 1: Chọn gói VIP */}
+                    <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Bước 1: Chọn gói thành viên VIP
+                    </div>
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                         gap: '18px',
-                        marginBottom: '24px'
+                        marginBottom: '26px'
                     }}>
                         {PACKAGES.map(pkg => {
                             const isSelected = selectedPackageId === pkg.id;
@@ -390,114 +511,434 @@ function VipModal({ isOpen, onClose }) {
                         })}
                     </div>
 
-                    {/* Payment Gateway Options & Actions */}
-                    <div style={{
-                        background: 'var(--bg-main)',
-                        padding: '18px 20px',
-                        borderRadius: '16px',
-                        border: '1px solid var(--border-subtle)',
-                        marginBottom: '20px'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <CreditCard size={18} color="#0095f6" />
-                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                                    Cổng thanh toán: VNPAY (Thẻ ATM nội địa, VNPAY-QR, Thẻ quốc tế)
-                                </span>
-                            </div>
-                            <span style={{ fontSize: '11px', background: 'rgba(0, 149, 246, 0.1)', color: '#0095f6', padding: '3px 8px', borderRadius: '6px', fontWeight: '700' }}>
-                                TỰ ĐỘNG KÍCH HOẠT
-                            </span>
-                        </div>
-
-                        {/* Bank Code Selection (Optional) */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                            <label style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                                Phương thức mong muốn:
-                            </label>
-                            <select
-                                value={bankCode}
-                                onChange={e => setBankCode(e.target.value)}
-                                style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--border-subtle)',
-                                    background: 'var(--bg-surface)',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '13px',
-                                    outline: 'none'
-                                }}
-                            >
-                                <option value="">Tất cả phương thức VNPAY (Khuyên dùng)</option>
-                                <option value="VNPAYQR">Thanh toán qua ứng dụng hỗ trợ VNPAY-QR</option>
-                                <option value="VNBANK">Thẻ ATM / Tài khoản ngân hàng nội địa</option>
-                                <option value="INTCARD">Thẻ thanh toán quốc tế (Visa, Master, JCB)</option>
-                            </select>
-                        </div>
+                    {/* Step 2: Chọn phương thức thanh toán */}
+                    <div style={{ marginBottom: '12px', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Bước 2: Chọn phương thức thanh toán
                     </div>
 
-                    {/* Action Buttons */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '12px',
+                        marginBottom: '20px',
+                        flexWrap: 'wrap'
+                    }}>
                         <button
                             type="button"
-                            onClick={handleVnpayPayment}
-                            disabled={loading}
+                            onClick={() => setPaymentMethod('vietqr')}
                             style={{
-                                width: '100%',
-                                padding: '14px',
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, #005baa, #0095f6)',
-                                color: '#ffffff',
-                                border: 'none',
-                                fontSize: '15px',
-                                fontWeight: '700',
+                                flex: 1,
+                                minWidth: '240px',
+                                padding: '14px 16px',
+                                borderRadius: '14px',
+                                border: `2px solid ${paymentMethod === 'vietqr' ? '#10b981' : 'var(--border-subtle)'}`,
+                                background: paymentMethod === 'vietqr' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-main)',
+                                color: 'var(--text-primary)',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
+                                background: '#10b981',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '8px',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                boxShadow: '0 4px 14px rgba(0, 91, 170, 0.35)',
-                                transition: 'all 0.2s ease'
-                            }}
-                        >
-                            <CreditCard size={18} />
-                            <span>{loading ? 'Đang xử lý...' : 'Thanh toán an toàn qua cổng VNPAY'}</span>
-                            <ExternalLink size={16} />
+                                color: '#fff',
+                                flexShrink: 0
+                            }}>
+                                <QrCode size={22} />
+                            </div>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '14px', fontWeight: '700' }}>Chuyển khoản VietQR 24/7</span>
+                                    <span style={{ fontSize: '10.5px', background: '#10b981', color: '#fff', padding: '1px 6px', borderRadius: '4px', fontWeight: '700' }}>KHUYÊN DÙNG</span>
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                    Quét mã VCB • Tiền vào tài khoản ngay tức thì 0đ phí
+                                </div>
+                            </div>
                         </button>
 
-                        {/* Test Sandbox Button for instant evaluation */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                        <button
+                            type="button"
+                            onClick={() => setPaymentMethod('vnpay')}
+                            style={{
+                                flex: 1,
+                                minWidth: '240px',
+                                padding: '14px 16px',
+                                borderRadius: '14px',
+                                border: `2px solid ${paymentMethod === 'vnpay' ? '#0095f6' : 'var(--border-subtle)'}`,
+                                background: paymentMethod === 'vnpay' ? 'rgba(0, 149, 246, 0.08)' : 'var(--bg-main)',
+                                color: 'var(--text-primary)',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
+                                background: '#0095f6',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                flexShrink: 0
+                            }}>
+                                <CreditCard size={22} />
+                            </div>
+                            <div>
+                                <span style={{ fontSize: '14px', fontWeight: '700' }}>Cổng thanh toán VNPAY</span>
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                    Thẻ ATM nội địa • VNPAY-QR • Thẻ quốc tế
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+
+                    {/* CHI TIẾT PHƯƠNG THỨC 1: VIETQR */}
+                    {paymentMethod === 'vietqr' && (
+                        <div style={{
+                            background: 'var(--bg-main)',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border-subtle)',
+                            padding: '22px',
+                            marginBottom: '20px'
+                        }}>
+                            {loadingQr ? (
+                                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                    <RefreshCw className="spinning" size={32} color="#10b981" style={{ margin: '0 auto 12px' }} />
+                                    <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Đang tạo mã VietQR chuyển khoản...</div>
+                                </div>
+                            ) : vietQrData ? (
+                                <div>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                                        gap: '24px',
+                                        alignItems: 'center'
+                                    }}>
+                                        {/* Cột 1: Mã QR Code */}
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{
+                                                display: 'inline-block',
+                                                padding: '12px',
+                                                background: '#ffffff',
+                                                borderRadius: '16px',
+                                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                                                border: '2px solid #e2e8f0'
+                                            }}>
+                                                <img
+                                                    src={vietQrData.qrUrl}
+                                                    alt="VietQR Vietcombank"
+                                                    style={{ width: '220px', height: 'auto', display: 'block', borderRadius: '8px' }}
+                                                />
+                                            </div>
+                                            <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                                Mở ứng dụng ngân hàng bất kỳ để quét mã
+                                            </div>
+                                        </div>
+
+                                        {/* Cột 2: Thông tin tài khoản nhận tiền */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <div style={{
+                                                background: 'rgba(16, 185, 129, 0.08)',
+                                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px'
+                                            }}>
+                                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase' }}>
+                                                    Ngân hàng thụ hưởng
+                                                </div>
+                                                <div style={{ fontSize: '15px', fontWeight: '800', color: '#10b981', marginTop: '2px' }}>
+                                                    {vietQrData.bankConfig?.bankName || 'Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank)'}
+                                                </div>
+                                            </div>
+
+                                            {/* Số tài khoản */}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '10px 14px',
+                                                background: 'var(--bg-surface)',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border-subtle)'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Số tài khoản Vietcombank</div>
+                                                    <div style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
+                                                        {vietQrData.bankConfig?.accountNo || '9394465396'}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCopy(vietQrData.bankConfig?.accountNo || '9394465396', 'accountNo')}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        background: copiedKey === 'accountNo' ? '#10b981' : 'var(--bg-main)',
+                                                        color: copiedKey === 'accountNo' ? '#fff' : 'var(--text-primary)',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {copiedKey === 'accountNo' ? <Check size={14} /> : <Copy size={14} />}
+                                                    <span>{copiedKey === 'accountNo' ? 'Đã sao chép' : 'Sao chép'}</span>
+                                                </button>
+                                            </div>
+
+                                            {/* Số tiền */}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '10px 14px',
+                                                background: 'var(--bg-surface)',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border-subtle)'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Số tiền thanh toán</div>
+                                                    <div style={{ fontSize: '17px', fontWeight: '900', color: selectedPackage.color }}>
+                                                        {Number(vietQrData.amount || selectedPackage.price).toLocaleString('vi-VN')} VNĐ
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCopy(vietQrData.amount || selectedPackage.price, 'amount')}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        background: copiedKey === 'amount' ? '#10b981' : 'var(--bg-main)',
+                                                        color: copiedKey === 'amount' ? '#fff' : 'var(--text-primary)',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {copiedKey === 'amount' ? <Check size={14} /> : <Copy size={14} />}
+                                                    <span>{copiedKey === 'amount' ? 'Đã sao chép' : 'Sao chép'}</span>
+                                                </button>
+                                            </div>
+
+                                            {/* Nội dung chuyển khoản */}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '10px 14px',
+                                                background: 'rgba(234, 179, 8, 0.08)',
+                                                borderRadius: '12px',
+                                                border: '1px dashed rgba(234, 179, 8, 0.4)'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Nội dung chuyển khoản (Bắt buộc)</div>
+                                                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#eab308' }}>
+                                                        {vietQrData.addInfo}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCopy(vietQrData.addInfo, 'addInfo')}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        background: copiedKey === 'addInfo' ? '#10b981' : 'var(--bg-main)',
+                                                        color: copiedKey === 'addInfo' ? '#fff' : 'var(--text-primary)',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {copiedKey === 'addInfo' ? <Check size={14} /> : <Copy size={14} />}
+                                                    <span>{copiedKey === 'addInfo' ? 'Đã sao chép' : 'Sao chép'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Nút hoàn tất chuyển khoản */}
+                                    <div style={{ marginTop: '20px' }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleConfirmVietQr}
+                                            disabled={confirmingQr}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                borderRadius: '12px',
+                                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                fontSize: '15px',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                cursor: confirmingQr ? 'not-allowed' : 'pointer',
+                                                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            <CheckCircle2 size={19} />
+                                            <span>{confirmingQr ? 'Đang xác minh giao dịch...' : 'Tôi đã chuyển khoản thành công - Kích hoạt VIP ngay'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchVietQr(selectedPackageId)}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '10px',
+                                            background: '#10b981',
+                                            color: '#fff',
+                                            border: 'none',
+                                            fontWeight: '700',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Tạo mã VietQR cho gói này
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* CHI TIẾT PHƯƠNG THỨC 2: VNPAY GATEWAY */}
+                    {paymentMethod === 'vnpay' && (
+                        <div style={{
+                            background: 'var(--bg-main)',
+                            padding: '18px 20px',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border-subtle)',
+                            marginBottom: '20px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <CreditCard size={18} color="#0095f6" />
+                                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                                        Cổng thanh toán: VNPAY (ATM nội địa, VNPAY-QR, Thẻ quốc tế)
+                                    </span>
+                                </div>
+                                <span style={{ fontSize: '11px', background: 'rgba(0, 149, 246, 0.1)', color: '#0095f6', padding: '3px 8px', borderRadius: '6px', fontWeight: '700' }}>
+                                    TỰ ĐỘNG KÍCH HOẠT
+                                </span>
+                            </div>
+
+                            {/* Bank Code Selection */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                                <label style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                                    Phương thức mong muốn:
+                                </label>
+                                <select
+                                    value={bankCode}
+                                    onChange={e => setBankCode(e.target.value)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-surface)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '13px',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="">Tất cả phương thức VNPAY (Khuyên dùng)</option>
+                                    <option value="VNPAYQR">Thanh toán qua ứng dụng hỗ trợ VNPAY-QR</option>
+                                    <option value="VNBANK">Thẻ ATM / Tài khoản ngân hàng nội địa</option>
+                                    <option value="INTCARD">Thẻ thanh toán quốc tế (Visa, Master, JCB)</option>
+                                </select>
+                            </div>
+
                             <button
                                 type="button"
-                                onClick={handleSandboxInstantTest}
+                                onClick={handleVnpayPayment}
                                 disabled={loading}
                                 style={{
-                                    flex: 1,
-                                    padding: '11px 14px',
+                                    width: '100%',
+                                    padding: '14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(234, 179, 8, 0.12)',
-                                    color: '#eab308',
-                                    border: '1px dashed rgba(234, 179, 8, 0.4)',
-                                    fontSize: '13px',
+                                    background: 'linear-gradient(135deg, #005baa, #0095f6)',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    fontSize: '15px',
                                     fontWeight: '700',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '6px',
+                                    gap: '8px',
                                     cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.15s ease'
+                                    boxShadow: '0 4px 14px rgba(0, 91, 170, 0.35)',
+                                    transition: 'all 0.2s ease'
                                 }}
-                                title="Kích hoạt trực tiếp ngay lập tức để kiểm tra tính năng VIP mà không cần nhập mã OTP ngân hàng"
                             >
-                                <Zap size={15} />
-                                <span>Kích hoạt thử nghiệm nhanh (Sandbox Test Mode)</span>
+                                <CreditCard size={18} />
+                                <span>{loading ? 'Đang kết nối VNPAY...' : 'Chuyển sang cổng thanh toán VNPAY'}</span>
+                                <ExternalLink size={16} />
                             </button>
                         </div>
+                    )}
+
+                    {/* Nút kích hoạt thử nghiệm nhanh Sandbox */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                        <button
+                            type="button"
+                            onClick={handleSandboxInstantTest}
+                            disabled={loading || confirmingQr}
+                            style={{
+                                flex: 1,
+                                padding: '11px 14px',
+                                borderRadius: '12px',
+                                background: 'rgba(234, 179, 8, 0.12)',
+                                color: '#eab308',
+                                border: '1px dashed rgba(234, 179, 8, 0.4)',
+                                fontSize: '13px',
+                                fontWeight: '700',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                cursor: (loading || confirmingQr) ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.15s ease'
+                            }}
+                            title="Kích hoạt trực tiếp ngay lập tức để kiểm tra tính năng VIP mà không cần nạp tiền thực tế"
+                        >
+                            <Zap size={15} />
+                            <span>Kích hoạt thử nghiệm nhanh (Sandbox Test Mode)</span>
+                        </button>
                     </div>
 
-                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                            🔒 Giao dịch được bảo mật bởi chuẩn thanh toán VNPAY API • Kích hoạt quyền lợi ngay sau khi hoàn tất
+                    <div style={{ textAlign: 'center', marginTop: '18px' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            🔒 Giao dịch Napas 24/7 an toàn qua Vietcombank STK 9394465396 • Kích hoạt quyền lợi ngay sau khi thanh toán
                         </span>
                     </div>
                 </div>

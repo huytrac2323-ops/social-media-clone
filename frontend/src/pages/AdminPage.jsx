@@ -20,7 +20,9 @@ import {
     AlertTriangle,
     BarChart3,
     Check,
-    X
+    X,
+    CreditCard,
+    QrCode
 } from 'lucide-react';
 import '../styles/App.css';
 
@@ -64,6 +66,10 @@ export default function AdminPage() {
     const [userRoleFilter, setUserRoleFilter] = useState('');
     const [userVerifiedFilter, setUserVerifiedFilter] = useState('');
     const [userBannedFilter, setUserBannedFilter] = useState('');
+
+    // Giao dịch VIP & VietQR
+    const [transactions, setTransactions] = useState([]);
+    const [loadingTxns, setLoadingTxns] = useState(false);
 
     // Modal xác thực OTP Email khi thay đổi quyền
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -142,16 +148,35 @@ export default function AdminPage() {
         }
     }, [token, userSearch, userRoleFilter, userVerifiedFilter, userBannedFilter]);
 
+    // Fetch danh sách giao dịch VIP / VietQR
+    const fetchTransactions = useCallback(async () => {
+        setLoadingTxns(true);
+        try {
+            const res = await safeFetch('/payment/transactions', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setTransactions(data);
+            }
+        } catch (err) {
+            console.error('Lỗi tải danh sách giao dịch:', err);
+        } finally {
+            setLoadingTxns(false);
+        }
+    }, [token]);
+
     // Tải toàn bộ dữ liệu ban đầu
     const loadAllData = useCallback(async () => {
         setLoading(true);
         await Promise.all([
             fetchStats(),
             fetchVerificationRequests(),
-            fetchUsers()
+            fetchUsers(),
+            fetchTransactions()
         ]);
         setLoading(false);
-    }, [fetchStats, fetchVerificationRequests, fetchUsers]);
+    }, [fetchStats, fetchVerificationRequests, fetchUsers, fetchTransactions]);
 
     useEffect(() => {
         if (currentUser?.role === 'admin') {
@@ -159,11 +184,18 @@ export default function AdminPage() {
         }
     }, [currentUser, loadAllData]);
 
+    useEffect(() => {
+        if (activeTab === 'transactions') {
+            fetchTransactions();
+        }
+    }, [activeTab, fetchTransactions]);
+
     const handleRefresh = async () => {
         setRefreshing(true);
         if (activeTab === 'overview') await fetchStats();
         if (activeTab === 'verifications') await fetchVerificationRequests();
         if (activeTab === 'users') await fetchUsers();
+        if (activeTab === 'transactions') await fetchTransactions();
         setRefreshing(false);
     };
 
@@ -415,7 +447,8 @@ export default function AdminPage() {
                                 icon: ShieldCheck,
                                 badge: stats?.pendingRequests > 0 ? stats.pendingRequests : null
                             },
-                            { id: 'users', label: 'Quản lý Người dùng', icon: Users }
+                            { id: 'users', label: 'Quản lý Người dùng', icon: Users },
+                            { id: 'transactions', label: 'Giao dịch VIP (VietQR/VCB)', icon: CreditCard }
                         ].map(tab => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -1035,6 +1068,156 @@ export default function AdminPage() {
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* TAB 4: LỊCH SỬ GIAO DỊCH VIP / VIETQR */}
+                                {activeTab === 'transactions' && (
+                                    <div>
+                                        <div style={{
+                                            padding: '16px 20px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(16, 185, 129, 0.08)',
+                                            border: '1px solid rgba(16, 185, 129, 0.25)',
+                                            marginBottom: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            flexWrap: 'wrap',
+                                            gap: '12px'
+                                        }}>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: '15px', color: '#10b981', fontWeight: '800' }}>
+                                                    Tài khoản Vietcombank nhận tiền thanh toán trực tiếp
+                                                </h4>
+                                                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted, #94a3b8)' }}>
+                                                    Ngân hàng Ngoại Thương Việt Nam (VCB) • STK: <strong style={{ color: 'var(--text-main, #fff)' }}>9394465396</strong> • Đối soát giao dịch chuyển khoản VietQR Napas 24/7
+                                                </p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={fetchTransactions}
+                                                    disabled={loadingTxns}
+                                                    style={{
+                                                        padding: '8px 14px',
+                                                        borderRadius: '8px',
+                                                        background: 'var(--bg-surface, #1e293b)',
+                                                        border: '1px solid var(--border-color, #334155)',
+                                                        color: 'var(--text-main, #ffffff)',
+                                                        fontSize: '12.5px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    }}
+                                                >
+                                                    <RefreshCw size={14} className={loadingTxns ? 'spin-animation' : ''} />
+                                                    <span>Tải lại</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {loadingTxns ? (
+                                            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted, #94a3b8)' }}>
+                                                <RefreshCw className="spin-animation" size={28} style={{ margin: '0 auto 10px' }} />
+                                                <p>Đang tải lịch sử giao dịch...</p>
+                                            </div>
+                                        ) : transactions.length === 0 ? (
+                                            <div style={{
+                                                textAlign: 'center',
+                                                padding: '50px 20px',
+                                                background: 'var(--bg-surface, #1e293b)',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border-color, #334155)'
+                                            }}>
+                                                <CreditCard size={36} color="var(--text-muted, #64748b)" style={{ margin: '0 auto 12px' }} />
+                                                <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-main, #ffffff)' }}>Chưa có giao dịch nào</h3>
+                                                <p style={{ margin: '6px 0 0', fontSize: '13px', color: 'var(--text-muted, #94a3b8)' }}>
+                                                    Khi người dùng nâng cấp gói VIP qua VietQR hoặc VNPAY, thông tin chuyển khoản đối soát sẽ xuất hiện tại đây.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                background: 'var(--bg-surface, #1e293b)',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border-color, #334155)',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <div style={{ overflowX: 'auto' }}>
+                                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                                                        <thead>
+                                                            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-color, #334155)' }}>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Thời gian</th>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Người dùng</th>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Mã đơn (Nội dung CK)</th>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Gói VIP</th>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Số tiền</th>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Phương thức</th>
+                                                                <th style={{ padding: '12px 16px', color: 'var(--text-muted, #94a3b8)', fontWeight: '600' }}>Trạng thái</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {transactions.map(txn => {
+                                                                const isSuccess = txn.status === 'success';
+                                                                const isPending = txn.status === 'pending';
+                                                                const isVietQr = txn.payment_method?.includes('VIETQR');
+                                                                return (
+                                                                    <tr key={txn.id || txn.order_id} style={{ borderBottom: '1px solid var(--border-color, #334155)' }}>
+                                                                        <td style={{ padding: '14px 16px', color: 'var(--text-muted, #94a3b8)', whiteSpace: 'nowrap' }}>
+                                                                            {new Date(txn.created_at).toLocaleString('vi-VN')}
+                                                                        </td>
+                                                                        <td style={{ padding: '14px 16px', color: 'var(--text-main, #ffffff)' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                <Avatar src={txn.profile_photo_url} alt={txn.username} size={28} />
+                                                                                <span style={{ fontWeight: '600' }}>@{txn.username}</span>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: '700', color: '#eab308' }}>
+                                                                            {txn.order_id}
+                                                                        </td>
+                                                                        <td style={{ padding: '14px 16px', fontWeight: '600', color: txn.package_id === 'vip_pro' ? '#38bdf8' : '#eab308' }}>
+                                                                            {txn.package_id === 'vip_pro' ? '👑 VIP Pro' : '⭐ VIP Creator'}
+                                                                        </td>
+                                                                        <td style={{ padding: '14px 16px', fontWeight: '800', color: 'var(--text-main, #ffffff)' }}>
+                                                                            {Number(txn.amount).toLocaleString('vi-VN')} đ
+                                                                        </td>
+                                                                        <td style={{ padding: '14px 16px' }}>
+                                                                            <span style={{
+                                                                                padding: '3px 8px',
+                                                                                borderRadius: '6px',
+                                                                                fontSize: '11px',
+                                                                                fontWeight: '700',
+                                                                                background: isVietQr ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                                                                                color: isVietQr ? '#10b981' : '#38bdf8',
+                                                                                border: `1px solid ${isVietQr ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`
+                                                                            }}>
+                                                                                {isVietQr ? 'VietQR (VCB)' : txn.payment_method}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td style={{ padding: '14px 16px' }}>
+                                                                            <span style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '4px',
+                                                                                padding: '3px 8px',
+                                                                                borderRadius: '6px',
+                                                                                fontSize: '11px',
+                                                                                fontWeight: '700',
+                                                                                background: isSuccess ? 'rgba(34, 197, 94, 0.15)' : (isPending ? 'rgba(234, 179, 8, 0.15)' : 'rgba(239, 68, 68, 0.15)'),
+                                                                                color: isSuccess ? '#22c55e' : (isPending ? '#eab308' : '#ef4444')
+                                                                            }}>
+                                                                                {isSuccess ? '✓ Thành công' : (isPending ? '⏳ Đang chờ' : '✕ Thất bại')}
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </>

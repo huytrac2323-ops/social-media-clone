@@ -21,4 +21,14 @@ router.post('/boost-post/:postId', paymentController.boostPost);
 // 6. Kiểm tra trạng thái gói VIP và số lượt boost của người dùng
 router.get('/vip-status/:userId', paymentController.getVipStatus);
 
+// 7. Tạo mã VietQR chuyển khoản trực tiếp về Vietcombank của chủ web
+router.post('/create-vietqr', paymentController.createVietQrPayment);
+
+// 8. Xác nhận chuyển khoản VietQR thành công & kích hoạt VIP
+router.post('/confirm-vietqr', paymentController.confirmVietQrPayment);
+
+// 9. Lấy danh sách lịch sử giao dịch (cho Admin đối soát tài khoản ngân hàng)
+router.get('/transactions', paymentController.getAllTransactions);
+
 module.exports = router;
+

@@ -487,12 +487,143 @@ const getVipStatus = async (req, res) => {
     }
 };
 
+// Cấu hình tài khoản ngân hàng nhận tiền trực tiếp của chủ hệ thống (Vietcombank)
+const OWNER_BANK_CONFIG = {
+    bankId: 'vietcombank', // Vietcombank Napas ID
+    bankName: 'Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank)',
+    shortName: 'Vietcombank',
+    accountNo: '9394465396',
+    accountName: 'CHỦ TÀI KHOẢN VCB'
+};
+
+/**
+ * API: Tạo yêu cầu thanh toán chuyển khoản trực tiếp qua VietQR (Tài khoản VCB)
+ * POST /api/payment/create-vietqr
+ */
+const createVietQrPayment = async (req, res) => {
+    try {
+        const { packageId } = req.body;
+        const userId = req.user?.id || req.body.userId || req.body.user_id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Vui lòng đăng nhập để nâng cấp gói VIP.' });
+        }
+
+        const selectedPackage = VIP_PACKAGES[packageId];
+        if (!selectedPackage) {
+            return res.status(400).json({ message: 'Gói VIP không hợp lệ.' });
+        }
+
+        const date = new Date();
+        const createDate = formatVnpDate(date);
+        const orderSuffix = Math.floor(1000 + Math.random() * 9000);
+        const orderId = `NVG${createDate.slice(8)}${userId}${orderSuffix}`;
+        const amount = selectedPackage.amount;
+        const addInfo = `${orderId}`;
+
+        // Lưu bản ghi giao dịch chờ thanh toán vào DB
+        await pool.query(`
+            INSERT INTO payment_transactions 
+                (user_id, order_id, amount, package_id, payment_method, bank_code, status)
+            VALUES ($1, $2, $3, $4, 'VIETQR_VCB', 'Vietcombank', 'pending')
+            ON CONFLICT (order_id) DO NOTHING
+        `, [userId, orderId, amount, packageId]);
+
+        // Link sinh mã QR động chuẩn VietQR Napas
+        const qrUrl = `https://img.vietqr.io/image/${OWNER_BANK_CONFIG.bankId}-${OWNER_BANK_CONFIG.accountNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}`;
+
+        return res.status(200).json({
+            success: true,
+            orderId,
+            bankConfig: OWNER_BANK_CONFIG,
+            amount,
+            addInfo,
+            qrUrl,
+            package: selectedPackage
+        });
+    } catch (err) {
+        console.error('Lỗi khi tạo mã VietQR:', err);
+        return res.status(500).json({ message: 'Lỗi server khi tạo mã VietQR', error: err.message });
+    }
+};
+
+/**
+ * API: Xác nhận đã chuyển khoản thành công qua VietQR và kích hoạt VIP
+ * POST /api/payment/confirm-vietqr
+ */
+const confirmVietQrPayment = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const userId = req.user?.id || req.body.userId || req.body.user_id;
+
+        if (!userId || !orderId) {
+            return res.status(400).json({ message: 'Thiếu thông tin đơn hàng.' });
+        }
+
+        const txnRes = await pool.query(
+            'SELECT * FROM payment_transactions WHERE order_id = $1 AND user_id = $2 LIMIT 1',
+            [orderId, userId]
+        );
+
+        if (txnRes.rows.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy thông tin đơn hàng giao dịch.' });
+        }
+
+        const txn = txnRes.rows[0];
+
+        // Cập nhật trạng thái giao dịch
+        await pool.query(`
+            UPDATE payment_transactions 
+            SET status = 'success', 
+                updated_at = NOW() 
+            WHERE order_id = $1
+        `, [orderId]);
+
+        const selectedPackage = VIP_PACKAGES[txn.package_id] || VIP_PACKAGES.vip_creator;
+        const updatedUser = await applyVipUpgrade(userId, selectedPackage);
+
+        return res.status(200).json({
+            success: true,
+            message: `Xác nhận giao dịch thành công! ${selectedPackage.name} của bạn đã được kích hoạt.`,
+            package: selectedPackage,
+            user: updatedUser
+        });
+    } catch (err) {
+        console.error('Lỗi xác nhận VietQR:', err);
+        return res.status(500).json({ message: 'Lỗi server khi xác nhận thanh toán', error: err.message });
+    }
+};
+
+/**
+ * API: Lấy danh sách giao dịch cho Quản trị viên (đối soát tiền vào tài khoản Vietcombank)
+ * GET /api/payment/transactions
+ */
+const getAllTransactions = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT pt.*, u.username, u.profile_photo_url
+            FROM payment_transactions pt
+            JOIN users u ON pt.user_id = u.user_id
+            ORDER BY pt.created_at DESC
+            LIMIT 100
+        `);
+        return res.json(result.rows);
+    } catch (err) {
+        console.error('Lỗi lấy danh sách giao dịch:', err);
+        return res.status(500).json({ message: 'Lỗi server', error: err.message });
+    }
+};
+
 module.exports = {
     VIP_PACKAGES,
+    OWNER_BANK_CONFIG,
     createPaymentUrl,
     vnpayVerify,
     vnpayIpn,
     testSandboxActivate,
     boostPost,
-    getVipStatus
+    getVipStatus,
+    createVietQrPayment,
+    confirmVietQrPayment,
+    getAllTransactions
 };

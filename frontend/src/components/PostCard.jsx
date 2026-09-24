@@ -18,7 +18,10 @@ import {
   X,
   Clock,
   PlusCircle,
-  Repeat
+  Repeat,
+  Crown,
+  Rocket,
+  Zap
 } from 'lucide-react';
 import { safeFetch } from '../utils/api';
 import ShareModal from '../modals/ShareModal.jsx';
@@ -214,6 +217,43 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
     }
   };
 
+  const handleBoostPost = async () => {
+    setMenuOpen(false);
+    const token = localStorage.getItem('token');
+    if (!token) return alert('Vui lòng đăng nhập.');
+
+    const credits = Number(currentUser?.post_boost_credits || 0);
+    if (credits <= 0) {
+      if (window.confirm('Bạn hiện không còn lượt đẩy bài viết ưu tiên. Bạn có muốn nâng cấp gói VIP để nhận thêm lượt đẩy bài viết ngay không?')) {
+        window.dispatchEvent(new CustomEvent('open-vip-modal'));
+      }
+      return;
+    }
+
+    if (!window.confirm(`Bạn có muốn sử dụng 1 lượt đẩy bài để đưa bài viết này lên TOP Bảng tin trong 24 giờ không? (Lượt còn lại: ${credits})`)) {
+      return;
+    }
+
+    try {
+      const res = await safeFetch(`/payment/boost-post/${post.id || post.post_id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: currentUser.user_id })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Lỗi khi đẩy bài viết');
+      }
+      alert(data.message || '🚀 Đẩy bài viết thành công lên TOP Bảng tin!');
+      if (onPostUpdated) onPostUpdated();
+    } catch (err) {
+      alert(`Lỗi: ${err.message}`);
+    }
+  };
+
   const authorUser = {
     username: post.author || post.username,
     profile_photo_url: post.authorAvatar || post.profile_photo_url
@@ -225,6 +265,10 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
     hour: '2-digit',
     minute: '2-digit'
   }) : '';
+
+  const isAuthorVip = (post.vipTier && post.vipTier !== 'free') || (post.vip_tier && post.vip_tier !== 'free');
+  const authorVipTier = post.vipTier || post.vip_tier;
+  const isPostBoosted = Boolean(post.isBoosted || post.is_boosted);
 
   return (
     <>
@@ -264,11 +308,35 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
                 )}
+                {isAuthorVip && (
+                  <span title={authorVipTier === 'pro' ? 'Thành viên VIP Pro' : 'Thành viên VIP Creator'} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <Crown size={14} color={authorVipTier === 'pro' ? '#38bdf8' : '#eab308'} />
+                  </span>
+                )}
               </span>
-              <span className="post-time-stamp" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <Clock size={11} />
-                {formattedTime || 'Vừa xong'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span className="post-time-stamp" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Clock size={11} />
+                  {formattedTime || 'Vừa xong'}
+                </span>
+                {isPostBoosted && (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    padding: '1px 6px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 179, 8, 0.15))',
+                    border: '1px solid rgba(249, 115, 22, 0.35)',
+                    color: '#f97316',
+                    fontSize: '10.5px',
+                    fontWeight: '700'
+                  }}>
+                    <Rocket size={10} />
+                    <span>Đang thịnh hành</span>
+                  </span>
+                )}
+              </div>
             </div>
           </Link>
 
@@ -298,6 +366,15 @@ function PostCard({ post, friendUserIds, onLike, onCommentSubmit, onPostDeleted,
                 </button>
                 {menuOpen && (
                   <div className="post-menu-dropdown">
+                    <button
+                      type="button"
+                      onClick={handleBoostPost}
+                      style={{ color: '#f97316' }}
+                      title="Đẩy bài viết lên TOP Bảng tin"
+                    >
+                      <Rocket size={14} color="#f97316" />
+                      <span>Đẩy bài viết (Boost)</span>
+                    </button>
                     <button type="button" onClick={() => { setIsEditModalOpen(true); setMenuOpen(false); }}>
                       <Edit3 size={14} />
                       <span>{STRINGS.EDIT}</span>

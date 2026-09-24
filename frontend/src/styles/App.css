@@ -5450,34 +5450,86 @@ button:active:not(:disabled),
 /* BEHANCE CREATOR NETWORK & PORTFOLIO GRID SYSTEM    */
 /* =================================================== */
 
-/* 1. SIDEBAR COLLAPSE MODE (ICON-ONLY) */
-.app-sidebar-col.collapsed {
-  width: 72px !important;
-  padding: 20px 8px !important;
+/* 1. SIDEBAR COLLAPSE MODE (ICON-ONLY) & HEADER LAYOUT */
+.sidebar-brand-header {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 14px;
+  position: relative;
+  min-height: 40px;
+}
+
+.sidebar-brand-img {
+  min-width: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  flex-shrink: 0 !important;
+  border-radius: 10px;
+  object-fit: cover;
 }
 
 .sidebar-collapse-toggle-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-collapse-toggle-btn:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
   border-color: var(--border-light);
+  transform: scale(1.08);
+}
+
+.app-sidebar-col.collapsed {
+  width: 72px !important;
+  padding: 20px 8px !important;
+  align-items: center;
+  overflow: visible !important;
+}
+
+.app-sidebar-col.collapsed .sidebar-brand-header {
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.app-sidebar-col.collapsed .brand-logo-container {
+  padding: 0 !important;
+  margin: 0 auto !important;
+  justify-content: center !important;
+}
+
+.app-sidebar-col.collapsed .sidebar-collapse-toggle-btn {
+  position: absolute;
+  right: -13px;
+  top: 7px;
+  z-index: 60;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .app-sidebar-col.collapsed .nav-link-item {
+  justify-content: center;
+  padding: 12px;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+}
+
+.app-sidebar-col.collapsed .sidebar-vip-nav-btn {
   justify-content: center;
   padding: 12px;
   width: 48px;
@@ -5494,6 +5546,35 @@ button:active:not(:disabled),
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* VIP Button in Sidebar */
+.sidebar-vip-nav-btn {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(245, 158, 11, 0.04));
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #eab308;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-vip-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.08));
+  border-color: rgba(234, 179, 8, 0.5);
+  transform: translateY(-1px);
+}
+
+.sidebar-vip-nav-btn.is-vip {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.1));
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.sidebar-vip-nav-btn.is-vip:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(168, 85, 247, 0.18));
+  border-color: rgba(56, 189, 248, 0.6);
 }
 
 /* 2. EXPANDED FULL-SCREEN FEED */

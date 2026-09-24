@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import CreatePost from '../modals/CreatePost.jsx';
 import PostCard from '../components/PostCard.jsx';
 import AppHeader from '../components/AppHeader.jsx';
@@ -48,7 +48,8 @@ import {
     LayoutGrid,
     List,
     Briefcase,
-    Layers
+    Layers,
+    Crown
 } from 'lucide-react';
 
 const STORY_GRADIENTS = [
@@ -3000,17 +3001,142 @@ export default function HomePage({ posts, allUsers, friendUserIds, friends, onLi
 
                     {/* DÒNG THỜI GIAN BÀI VIẾT XÃ HỘI (TIMELINE) */}
                     <div className="social-posts-stream">
+                        {/* VIP Ad-Free Status Banner */}
+                        {(currentUser?.ad_free === true || (currentUser?.vip_tier && currentUser?.vip_tier !== 'free')) && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '10px 16px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(56, 189, 248, 0.08))',
+                                border: '1px solid rgba(234, 179, 8, 0.25)',
+                                marginBottom: '18px',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                    <Crown size={16} color={currentUser?.vip_tier === 'pro' ? '#38bdf8' : '#eab308'} />
+                                    <span>Gói <strong>{currentUser?.vip_tier === 'pro' ? 'VIP Pro' : 'VIP Creator'}</strong>: Bảng tin đã được gỡ bỏ 100% quảng cáo & bài viết được ưu tiên</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => window.dispatchEvent(new CustomEvent('open-vip-modal'))}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#eab308',
+                                        fontSize: '12px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Đặc quyền VIP →
+                                </button>
+                            </div>
+                        )}
+
                         {socialPosts && socialPosts.length > 0 ? (
-                            socialPosts.map(post => (
-                                <PostCard
-                                    key={post.post_id || post.id}
-                                    post={post}
-                                    friendUserIds={friendUserIds}
-                                    onLike={onLike}
-                                    onCommentSubmit={onCommentSubmit}
-                                    onPostDeleted={onPostDeleted}
-                                    onPostUpdated={onPostUpdated}
-                                />
+                            socialPosts.map((post, postIdx) => (
+                                <React.Fragment key={post.post_id || post.id}>
+                                    <PostCard
+                                        post={post}
+                                        friendUserIds={friendUserIds}
+                                        onLike={onLike}
+                                        onCommentSubmit={onCommentSubmit}
+                                        onPostDeleted={onPostDeleted}
+                                        onPostUpdated={onPostUpdated}
+                                    />
+
+                                    {/* Thẻ quảng cáo đối tác (Chỉ hiển thị cho người dùng Free, bị ẩn hoàn toàn với VIP) */}
+                                    {!(currentUser?.ad_free === true || (currentUser?.vip_tier && currentUser?.vip_tier !== 'free')) && (postIdx === 1 || (postIdx > 1 && (postIdx - 1) % 4 === 0)) && (
+                                        <div className="sponsored-feed-card" style={{
+                                            background: 'var(--bg-surface)',
+                                            border: '1px solid var(--border-subtle)',
+                                            borderRadius: '16px',
+                                            padding: '18px 20px',
+                                            marginBottom: '20px',
+                                            boxShadow: 'var(--shadow-card)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '2px 8px', borderRadius: '6px' }}>
+                                                        Được tài trợ
+                                                    </span>
+                                                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>NovaGen Creative Studio</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => window.dispatchEvent(new CustomEvent('open-vip-modal'))}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#eab308',
+                                                        fontSize: '11.5px',
+                                                        fontWeight: '700',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}
+                                                >
+                                                    <Crown size={13} color="#eab308" />
+                                                    <span>Tắt quảng cáo với VIP</span>
+                                                </button>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                                                <div style={{
+                                                    width: '56px',
+                                                    height: '56px',
+                                                    borderRadius: '12px',
+                                                    background: 'linear-gradient(135deg, #a855f7, #38bdf8)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0,
+                                                    color: '#fff',
+                                                    fontWeight: 900,
+                                                    fontSize: '18px'
+                                                }}>
+                                                    🎨
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                                                        Kho Tài Nguyên UI/UX & 3D Motion Độc Quyền Cho Nghệ Sĩ
+                                                    </h4>
+                                                    <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                                                        Khám phá hơn 10.000+ mockup, font chữ bản quyền và presets hiệu ứng sẵn sàng cho dự án của bạn.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '14px', gap: '10px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => window.dispatchEvent(new CustomEvent('open-vip-modal'))}
+                                                    style={{
+                                                        padding: '7px 14px',
+                                                        borderRadius: '8px',
+                                                        background: 'linear-gradient(135deg, #eab308, #f59e0b)',
+                                                        color: '#000',
+                                                        border: 'none',
+                                                        fontSize: '12px',
+                                                        fontWeight: '700',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}
+                                                >
+                                                    <Crown size={13} />
+                                                    <span>Nâng cấp VIP (Ẩn quảng cáo)</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </React.Fragment>
                             ))
                         ) : (
                             <div className="empty-feed-card">

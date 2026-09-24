@@ -62,6 +62,7 @@ app.use('/api/explore', exploreRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/verification', verificationRoutes);
 app.use('/api/collaborations', require('./routes/collaborationRoutes'));
+app.use('/api/payment', require('./routes/paymentRoutes'));
 
 
 
@@ -583,6 +584,33 @@ const startServer = async () => {
             )
         `).catch(e => console.warn('Lưu ý migration creator_collaborations:', e.message));
         await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS open_for_collab BOOLEAN DEFAULT TRUE").catch(e => console.warn('Lưu ý migration open_for_collab:', e.message));
+
+        // Migration cho Mô hình Freemium, Tính năng VIP & Cổng thanh toán VNPAY
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS vip_tier VARCHAR(20) DEFAULT 'free'").catch(e => console.warn('Lưu ý migration vip_tier:', e.message));
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS vip_badge VARCHAR(50)").catch(e => console.warn('Lưu ý migration vip_badge:', e.message));
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS vip_expires_at TIMESTAMP WITH TIME ZONE").catch(e => console.warn('Lưu ý migration vip_expires_at:', e.message));
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS ad_free BOOLEAN DEFAULT FALSE").catch(e => console.warn('Lưu ý migration ad_free:', e.message));
+        await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS post_boost_credits INTEGER DEFAULT 0").catch(e => console.warn('Lưu ý migration post_boost_credits:', e.message));
+
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN DEFAULT FALSE").catch(e => console.warn('Lưu ý migration is_boosted:', e.message));
+        await client.query("ALTER TABLE post ADD COLUMN IF NOT EXISTS boosted_until TIMESTAMP WITH TIME ZONE").catch(e => console.warn('Lưu ý migration boosted_until:', e.message));
+
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS payment_transactions (
+                transaction_id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                order_id VARCHAR(100) NOT NULL UNIQUE,
+                amount NUMERIC(15, 2) NOT NULL,
+                package_id VARCHAR(50) NOT NULL,
+                payment_method VARCHAR(50) DEFAULT 'VNPAY',
+                bank_code VARCHAR(50),
+                vnp_transaction_no VARCHAR(100),
+                vnp_response_code VARCHAR(10),
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+        `).catch(e => console.warn('Lưu ý migration payment_transactions:', e.message));
 
         client.release();
 

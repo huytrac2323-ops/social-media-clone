@@ -14,6 +14,8 @@ import ExplorePage from '../pages/ExplorePage.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
 import NotificationsPage from '../pages/NotificationsPage.jsx';
 import AdminPage from '../pages/AdminPage.jsx';
+import PaymentResultPage from '../pages/PaymentResultPage.jsx';
+import VipModal from '../modals/VipModal.jsx';
 import ChatBox from '../components/ChatBox.jsx';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -66,10 +68,17 @@ function AppContent() {
     const [friends, setFriends] = useState([]);
     const [dataVersion, setDataVersion] = useState(0);
     const [activeChat, setActiveChat] = useState(null);
+    const [isVipModalOpen, setIsVipModalOpen] = useState(false);
 
     const friendUserIds = new Set(
         friends.map(f => Number(f.user_id || f.id))
     );
+
+    useEffect(() => {
+        const handleOpenVip = () => setIsVipModalOpen(true);
+        window.addEventListener('open-vip-modal', handleOpenVip);
+        return () => window.removeEventListener('open-vip-modal', handleOpenVip);
+    }, []);
 
     useEffect(() => {
         const handleOpenChat = () => {
@@ -237,10 +246,22 @@ function AppContent() {
                         projectImages: parsedProjectImages,
                         toolsUsed: parsedToolsUsed,
                         category: post.category || '',
-                        viewsCount: parseInt(post.views_count, 10) || 0
+                        viewsCount: parseInt(post.views_count, 10) || 0,
+                        vipTier: post.vip_tier || 'free',
+                        vipBadge: post.vip_badge || null,
+                        isBoosted: Boolean(post.is_boosted),
+                        boostedUntil: post.boosted_until || null
                     };
                 });
-                const sortedPosts = formattedPosts.sort((a, b) => b.id - a.id);
+                const sortedPosts = formattedPosts.sort((a, b) => {
+                    const boostA = a.isBoosted ? 1 : 0;
+                    const boostB = b.isBoosted ? 1 : 0;
+                    if (boostB !== boostA) return boostB - boostA;
+                    const vipA = a.vipTier && a.vipTier !== 'free' ? 1 : 0;
+                    const vipB = b.vipTier && b.vipTier !== 'free' ? 1 : 0;
+                    if (vipB !== vipA) return vipB - vipA;
+                    return b.id - a.id;
+                });
                 setPosts(sortedPosts);
             } catch (error) {
                 console.error("Lỗi khi lấy dữ liệu bài viết:", error);
@@ -394,7 +415,14 @@ function AppContent() {
                 <Route path="/messages/:userId" element={<MessagesPage/>}/>
                 <Route path="/notifications" element={<NotificationsPage/>}/>
                 <Route path="/admin" element={<AdminPage/>}/>
+                <Route path="/payment/result" element={<PaymentResultPage />} />
             </Routes>
+
+            {/* Global VIP Upgrade Modal */}
+            <VipModal
+                isOpen={isVipModalOpen}
+                onClose={() => setIsVipModalOpen(false)}
+            />
 
             {currentUser && activeChat && (
                 <div style={{

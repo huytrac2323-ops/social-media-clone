@@ -45,7 +45,8 @@ import {
   Layers,
   Clock,
   LayoutGrid,
-  List
+  List,
+  Crown
 } from 'lucide-react';
 
 const API_URL = getApiBaseUrl();
@@ -774,6 +775,26 @@ function ProfilePage() {
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
                   )}
+                  {userProfile.vip_tier && userProfile.vip_tier !== 'free' && (
+                    <span
+                      title={userProfile.vip_tier === 'pro' ? 'Hội viên VIP Pro' : 'Hội viên VIP Creator'}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        borderRadius: '999px',
+                        background: userProfile.vip_tier === 'pro' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                        border: `1px solid ${userProfile.vip_tier === 'pro' ? '#38bdf8' : '#eab308'}`,
+                        color: userProfile.vip_tier === 'pro' ? '#38bdf8' : '#eab308',
+                        fontSize: '11px',
+                        fontWeight: '800'
+                      }}
+                    >
+                      <Crown size={12} color={userProfile.vip_tier === 'pro' ? '#38bdf8' : '#eab308'} />
+                      <span>{userProfile.vip_tier === 'pro' ? 'VIP PRO' : 'VIP CREATOR'}</span>
+                    </span>
+                  )}
                 </h1>
 
                 {userProfile.is_private && (
@@ -806,6 +827,30 @@ function ProfilePage() {
                     <button className="btn-profile-secondary" onClick={() => setIsEditModalOpen(true)}>
                       <Edit3 size={14} style={{ display: 'inline', marginRight: '6px' }} />
                       Chỉnh sửa hồ sơ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-vip-modal'))}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        background: userProfile.vip_tier && userProfile.vip_tier !== 'free'
+                          ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15))'
+                          : 'linear-gradient(135deg, #eab308, #f59e0b)',
+                        color: userProfile.vip_tier && userProfile.vip_tier !== 'free' ? 'var(--text-primary)' : '#000',
+                        border: userProfile.vip_tier && userProfile.vip_tier !== 'free' ? '1px solid rgba(56, 189, 248, 0.4)' : 'none',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(234, 179, 8, 0.25)'
+                      }}
+                      title="Nâng cấp hoặc quản lý gói VIP của bạn"
+                    >
+                      <Crown size={14} color={userProfile.vip_tier && userProfile.vip_tier !== 'free' ? '#eab308' : '#000'} />
+                      <span>{userProfile.vip_tier && userProfile.vip_tier !== 'free' ? 'Gói VIP' : 'Nâng cấp VIP'}</span>
                     </button>
                     <div className="profile-commission-badge" title="Sẵn sàng nhận dự án & báo giá">
                       <Briefcase size={13} />

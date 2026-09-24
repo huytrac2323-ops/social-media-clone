@@ -17,9 +17,11 @@ const getUsers = async (req, res) => {
             SELECT user_id, COALESCE(username, 'user_' || user_id) AS username, 
                    email, phone, (email_verified IS TRUE) AS email_verified, (phone_verified IS TRUE) AS phone_verified,
                    profile_photo_url, (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, 
-                   role, address, hometown, age, interests, bio, creator_type 
+                   role, address, hometown, age, interests, bio, creator_type,
+                   COALESCE(vip_tier, 'free') AS vip_tier, vip_badge, vip_expires_at, (ad_free IS TRUE) AS ad_free,
+                   COALESCE(post_boost_credits, 0) AS post_boost_credits
             FROM users 
-            ORDER BY created_at DESC
+            ORDER BY (vip_tier IS NOT NULL AND vip_tier != 'free') DESC, created_at DESC
         `);
         res.json(result.rows); // PostgreSQL trả kết quả về trong mảng .rows
     } catch (err) {
@@ -40,7 +42,9 @@ const getUserByUsername = async (req, res) => {
             email, phone, (email_verified IS TRUE) AS email_verified, (phone_verified IS TRUE) AS phone_verified,
             bio, profile_photo_url, (is_private IS TRUE) AS is_private, 
             (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, 
-            role, address, hometown, age, interests, creator_type
+            role, address, hometown, age, interests, creator_type,
+            COALESCE(vip_tier, 'free') AS vip_tier, vip_badge, vip_expires_at, (ad_free IS TRUE) AS ad_free,
+            COALESCE(post_boost_credits, 0) AS post_boost_credits
         `;
         if (isNumeric) {
             userResult = await pool.query(
@@ -93,6 +97,8 @@ const getUserByUsername = async (req, res) => {
                 age: userProfile.age,
                 interests: userProfile.interests,
                 is_verified: userProfile.is_verified,
+                vip_tier: userProfile.vip_tier,
+                vip_badge: userProfile.vip_badge,
                 creator_type: userProfile.creator_type,
                 is_private: true,
                 message: "Tài khoản riêng tư. Vui lòng kết bạn để xem bài viết."

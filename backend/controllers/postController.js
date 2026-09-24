@@ -26,8 +26,13 @@ const getPosts = async (req, res) => {
                 p.post_id, p.caption, p.photo_url, p.created_at,
                 p.post_type, p.title, p.project_images, p.tools_used, p.category,
                 COALESCE(p.views_count, 0) AS views_count,
+                COALESCE(p.is_boosted, FALSE) AS is_boosted,
+                p.boosted_until,
                 u.user_id, u.username, u.profile_photo_url,
                 (u.is_verified IS TRUE) AS is_verified,
+                COALESCE(u.vip_tier, 'free') AS vip_tier,
+                u.vip_badge,
+                (u.ad_free IS TRUE) AS ad_free,
                 COALESCE((SELECT COUNT(*)::int FROM post_likes pr WHERE pr.post_id = p.post_id), 0) AS like_count,
                 (SELECT COUNT(*) FROM shares s WHERE s.post_id = p.post_id) AS sharesCount,
                 ${currentUserId ? `EXISTS (SELECT 1 FROM post_likes pr WHERE pr.post_id = p.post_id AND pr.user_id = $1) AS is_liked_by_user,` : 'FALSE AS is_liked_by_user,'}
@@ -38,7 +43,9 @@ const getPosts = async (req, res) => {
                     SELECT json_build_object(
                         'post_id', op.post_id, 'caption', op.caption, 'photo_url', op.photo_url,
                         'username', ou.username, 'profile_photo_url', ou.profile_photo_url,
-                        'is_verified', (ou.is_verified IS TRUE)
+                        'is_verified', (ou.is_verified IS TRUE),
+                        'vip_tier', COALESCE(ou.vip_tier, 'free'),
+                        'vip_badge', ou.vip_badge
                     )
                     FROM post op JOIN users ou ON op.user_id = ou.user_id
                     WHERE op.post_id = p.shared_post_id
@@ -47,7 +54,9 @@ const getPosts = async (req, res) => {
                         (SELECT json_agg(json_build_object('comment_id', c.comment_id, 'comment_text', c.comment_text,
                                                            'created_at', c.created_at, 'user_id', cu.user_id, 'username',
                                                            cu.username,'profile_photo_url', cu.profile_photo_url,
-                                                           'is_verified', (cu.is_verified IS TRUE)))
+                                                           'is_verified', (cu.is_verified IS TRUE),
+                                                           'vip_tier', COALESCE(cu.vip_tier, 'free'),
+                                                           'vip_badge', cu.vip_badge))
                          FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
                                   JOIN users cu ON c.user_id = cu.user_id),
                         '[]'::json) AS comments
@@ -70,7 +79,10 @@ const getPosts = async (req, res) => {
             query += ` WHERE u.is_private IS NOT TRUE AND u.is_verified IS TRUE `;
         }
 
-        query += ` ORDER BY p.created_at DESC`;
+        query += ` ORDER BY 
+            (p.is_boosted IS TRUE AND (p.boosted_until IS NULL OR p.boosted_until > NOW())) DESC,
+            (u.vip_tier IS NOT NULL AND u.vip_tier != 'free') DESC,
+            p.created_at DESC`;
 
         const result = await pool.query(query, params);
         res.json(result.rows);
@@ -98,8 +110,13 @@ const getPostById = async (req, res) => {
             SELECT p.post_id, p.caption, p.photo_url, p.created_at,
                    p.post_type, p.title, p.project_images, p.tools_used, p.category,
                    COALESCE(p.views_count, 0) AS views_count,
+                   COALESCE(p.is_boosted, FALSE) AS is_boosted,
+                   p.boosted_until,
                    u.user_id, u.username, u.profile_photo_url,
                    (u.is_verified IS TRUE) AS is_verified,
+                   COALESCE(u.vip_tier, 'free') AS vip_tier,
+                   u.vip_badge,
+                   (u.ad_free IS TRUE) AS ad_free,
                    COALESCE((SELECT COUNT(*)::int FROM post_likes pl WHERE pl.post_id = p.post_id), 0) AS like_count,
                    ${currentUserId ? 'EXISTS (SELECT 1 FROM post_likes pl WHERE pl.post_id = p.post_id AND pl.user_id = $2) AS is_liked_by_user,' : 'FALSE AS is_liked_by_user,'}
                    ${currentUserId ? 'EXISTS (SELECT 1 FROM friends WHERE ((user_id = $2 AND friend_id = p.user_id) OR (user_id = p.user_id AND friend_id = $2)) AND status = \'accepted\') AS is_friend,' : 'FALSE AS is_friend,'}
@@ -108,15 +125,13 @@ const getPostById = async (req, res) => {
                            (SELECT json_agg(json_build_object(
                                    'comment_id', c.comment_id, 'comment_text', c.comment_text,
                                    'created_at', c.created_at, 'user_id', cu.user_id, 'username', cu.username,
-                                   'profile_photo_url', cu.profile_photo_url,
-                                   'is_verified', (cu.is_verified IS TRUE)
-                                            ))
+                                   'profile_photo_url', cu.profile_photo_url, 'is_verified', (cu.is_verified IS TRUE),
+                                   'vip_tier', COALESCE(cu.vip_tier, 'free'), 'vip_badge', cu.vip_badge))
                             FROM (SELECT * FROM comments WHERE post_id = p.post_id ORDER BY created_at ASC) c
                                      JOIN users cu ON c.user_id = cu.user_id),
                            '[]'::json) AS comments
             FROM post p JOIN users u ON p.user_id = u.user_id
-            WHERE p.post_id = $1
-            ${visibilityCondition}
+            WHERE p.post_id = $1 ${visibilityCondition}
         `;
 
         const params = currentUserId ? [postId, currentUserId] : [postId];

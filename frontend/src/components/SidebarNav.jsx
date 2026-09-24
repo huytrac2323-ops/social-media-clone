@@ -16,7 +16,9 @@ import {
     MessageCircle,
     ShieldCheck,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Crown,
+    Sparkles
 } from 'lucide-react';
 
 function SidebarNav({ onCreatePost }) {
@@ -124,9 +126,13 @@ function SidebarNav({ onCreatePost }) {
             <aside className={`app-sidebar-col ${isCollapsed ? 'collapsed' : ''}`} aria-label="Điều hướng chính">
                 <nav className="modern-sidebar">
                     {/* Brand Logo & Collapse Toggle */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', width: '100%', marginBottom: '14px', position: 'relative' }}>
+                    <div className="sidebar-brand-header">
                         <Link to="/" className="brand-logo-container" title="Trang chủ" style={{ marginBottom: 0 }}>
-                            <img src="/novagen-icon.jpg" alt="NovaGen" style={{ width: '34px', height: '34px', borderRadius: '10px', objectFit: 'cover' }} />
+                            <img
+                                src="/novagen-icon.jpg"
+                                alt="NovaGen"
+                                className="sidebar-brand-img"
+                            />
                             {!isCollapsed && (
                                 <span className="brand-logo-text" style={{ background: 'linear-gradient(135deg, #a855f7, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800', fontSize: '19px' }}>NovaGen</span>
                             )}
@@ -139,7 +145,7 @@ function SidebarNav({ onCreatePost }) {
                             title={isCollapsed ? "Mở rộng thanh menu" : "Thu gọn chỉ hiển thị Icon"}
                             aria-label={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
                         >
-                            {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+                            {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
                         </button>
                     </div>
 
@@ -231,6 +237,36 @@ function SidebarNav({ onCreatePost }) {
                                     </Link>
                                 </li>
 
+                                <li style={{ marginTop: '4px' }}>
+                                    <button
+                                        type="button"
+                                        className={`nav-link-item sidebar-vip-nav-btn ${currentUser?.vip_tier && currentUser?.vip_tier !== 'free' ? 'is-vip' : ''}`}
+                                        onClick={() => window.dispatchEvent(new CustomEvent('open-vip-modal'))}
+                                        title={currentUser?.vip_tier && currentUser?.vip_tier !== 'free' ? 'Đặc quyền VIP của bạn' : 'Nâng cấp Gói VIP'}
+                                    >
+                                        <Crown size={20} color={currentUser?.vip_tier === 'pro' ? '#38bdf8' : '#eab308'} />
+                                        {!isCollapsed && (
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                                <span style={{ fontWeight: 700, color: currentUser?.vip_tier === 'pro' ? '#38bdf8' : '#eab308' }}>
+                                                    {currentUser?.vip_tier === 'pro' ? 'VIP Pro' : (currentUser?.vip_tier === 'creator' ? 'VIP Creator' : 'Gói VIP')}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '9.5px',
+                                                    fontWeight: 800,
+                                                    padding: '2px 6px',
+                                                    borderRadius: '6px',
+                                                    background: currentUser?.vip_tier && currentUser?.vip_tier !== 'free' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                                                    color: currentUser?.vip_tier && currentUser?.vip_tier !== 'free' ? '#38bdf8' : '#eab308',
+                                                    border: '1px solid currentColor',
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {currentUser?.vip_tier && currentUser?.vip_tier !== 'free' ? 'Đang bật' : 'MỚI'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </button>
+                                </li>
+
                                 <li style={{ marginTop: '10px' }}>
                                     <button
                                         type="button"
@@ -260,7 +296,19 @@ function SidebarNav({ onCreatePost }) {
                                 <Avatar user={currentUser} size={36} />
                                 {!isCollapsed && (
                                     <div className="sidebar-user-meta">
-                                        <div className="sidebar-user-name">{currentUser.username || currentUser.full_name || 'Người dùng'}</div>
+                                        <div className="sidebar-user-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <span>{currentUser.username || currentUser.full_name || 'Người dùng'}</span>
+                                            {Boolean(currentUser.is_verified) && (
+                                                <svg className="verified-badge-icon" viewBox="0 0 24 24" width="13" height="13" fill="#0095f6" aria-label="Đã xác thực">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                </svg>
+                                            )}
+                                            {(currentUser.vip_tier && currentUser.vip_tier !== 'free') && (
+                                                <span title={currentUser.vip_tier === 'pro' ? 'VIP Pro' : 'VIP Creator'} style={{ display: 'inline-flex' }}>
+                                                    <Crown size={13} color={currentUser.vip_tier === 'pro' ? '#38bdf8' : '#eab308'} />
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="sidebar-user-role">@{currentUser.username || 'user'}</div>
                                     </div>
                                 )}

@@ -125,11 +125,12 @@ const createPaymentUrl = async (req, res) => {
         const tmnCode = process.env.VNP_TMN_CODE || 'CGXZLS0Z';
         const secretKey = process.env.VNP_HASH_SECRET || 'RAOEXHYVSDDIIENYWSLDIIZTANXUXZFJ';
         let vnpUrl = process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-        const returnUrl = process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/result';
+        const returnUrl = req.body.returnUrl || process.env.VNP_RETURN_URL || 'http://localhost:5173/payment/result';
 
         const date = new Date();
         const createDate = formatVnpDate(date);
-        const orderId = `${formatVnpDate(date)}_${userId}_${Math.floor(1000 + Math.random() * 9000)}`;
+        // Mã orderId chuẩn VNPAY: chỉ bao gồm chữ số và chữ cái, không chứa gạch dưới _
+        const orderId = `${createDate}${userId}${Math.floor(1000 + Math.random() * 9000)}`;
         const amount = selectedPackage.amount;
 
         // Lưu bản ghi giao dịch chờ thanh toán vào DB
@@ -140,12 +141,24 @@ const createPaymentUrl = async (req, res) => {
             ON CONFLICT (order_id) DO NOTHING
         `, [userId, orderId, amount, packageId, bankCode || 'ALL']);
 
-        let ipAddr = req.headers['x-forwarded-for'] ||
-            req.connection.remoteAddress ||
-            req.socket.remoteAddress ||
-            req.connection?.socket?.remoteAddress || '127.0.0.1';
-        if (ipAddr.includes(',')) ipAddr = ipAddr.split(',')[0].trim();
-        if (ipAddr === '::1') ipAddr = '127.0.0.1';
+        let rawIp = req.headers['x-forwarded-for'] ||
+            req.connection?.remoteAddress ||
+            req.socket?.remoteAddress ||
+            req.connection?.socket?.remoteAddress ||
+            '127.0.0.1';
+        if (typeof rawIp === 'string') {
+            if (rawIp.includes(',')) rawIp = rawIp.split(',')[0].trim();
+            if (rawIp.includes('::ffff:')) rawIp = rawIp.replace('::ffff:', '');
+            if (rawIp === '::1' || !/^(\d{1,3}\.){3}\d{1,3}$/.test(rawIp)) {
+                rawIp = '127.0.0.1';
+            }
+        } else {
+            rawIp = '127.0.0.1';
+        }
+
+        // vnp_OrderInfo chỉ chứa chữ cái không dấu, số, khoảng trắng (chuẩn API VNPAY)
+        const cleanPkgName = selectedPackage.id === 'vip_pro' ? 'VIP Pro' : 'VIP Creator';
+        const orderInfo = `Thanh toan ${cleanPkgName} ma ${orderId}`;
 
         let vnp_Params = {
             vnp_Version: '2.1.0',
@@ -154,30 +167,37 @@ const createPaymentUrl = async (req, res) => {
             vnp_Locale: 'vn',
             vnp_CurrCode: 'VND',
             vnp_TxnRef: orderId,
-            vnp_OrderInfo: `Thanh toan ${selectedPackage.name} user_${userId}`,
+            vnp_OrderInfo: orderInfo,
             vnp_OrderType: 'other',
-            vnp_Amount: amount * 100, // VNPAY tính theo đơn vị nhân 100
+            vnp_Amount: Math.round(Number(amount) * 100), // VNPAY tính theo đơn vị nhân 100
             vnp_ReturnUrl: returnUrl,
-            vnp_IpAddr: ipAddr,
+            vnp_IpAddr: rawIp,
             vnp_CreateDate: createDate
         };
 
-        if (bankCode) {
-            vnp_Params.vnp_BankCode = bankCode;
+        if (bankCode && bankCode.trim() !== '' && bankCode !== 'ALL') {
+            vnp_Params.vnp_BankCode = bankCode.trim();
         }
 
         vnp_Params = sortObject(vnp_Params);
 
-        const signData = querystring.stringify(vnp_Params, { encode: false });
+        // Chuỗi ký chuẩn VNPAY: nối các tham số đã sort bằng dấu & (không dùng querystring.stringify có thể lỗi separator)
+        const signData = Object.keys(vnp_Params)
+            .map(key => `${key}=${vnp_Params[key]}`)
+            .join('&');
+
         const hmac = crypto.createHmac('sha512', secretKey);
         const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
         vnp_Params.vnp_SecureHash = signed;
-        vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
+
+        const finalPaymentUrl = vnpUrl + '?' + Object.keys(vnp_Params)
+            .map(key => `${key}=${vnp_Params[key]}`)
+            .join('&');
 
         return res.status(200).json({
             success: true,
             orderId,
-            paymentUrl: vnpUrl,
+            paymentUrl: finalPaymentUrl,
             package: selectedPackage
         });
     } catch (err) {
@@ -200,7 +220,9 @@ const vnpayVerify = async (req, res) => {
 
         vnp_Params = sortObject(vnp_Params);
         const secretKey = process.env.VNP_HASH_SECRET || 'RAOEXHYVSDDIIENYWSLDIIZTANXUXZFJ';
-        const signData = querystring.stringify(vnp_Params, { encode: false });
+        const signData = Object.keys(vnp_Params)
+            .map(key => `${key}=${vnp_Params[key]}`)
+            .join('&');
         const hmac = crypto.createHmac('sha512', secretKey);
         const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
@@ -283,7 +305,9 @@ const vnpayIpn = async (req, res) => {
 
         vnp_Params = sortObject(vnp_Params);
         const secretKey = process.env.VNP_HASH_SECRET || 'RAOEXHYVSDDIIENYWSLDIIZTANXUXZFJ';
-        const signData = querystring.stringify(vnp_Params, { encode: false });
+        const signData = Object.keys(vnp_Params)
+            .map(key => `${key}=${vnp_Params[key]}`)
+            .join('&');
         const hmac = crypto.createHmac('sha512', secretKey);
         const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 

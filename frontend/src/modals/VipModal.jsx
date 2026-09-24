@@ -99,8 +99,9 @@ function VipModal({ isOpen, onClose }) {
                 },
                 body: JSON.stringify({
                     packageId: selectedPackageId,
-                    bankCode: bankCode || undefined,
-                    userId: currentUser.user_id || currentUser.id
+                    bankCode: bankCode && bankCode.trim() !== '' ? bankCode.trim() : undefined,
+                    userId: currentUser.user_id || currentUser.id,
+                    returnUrl: `${window.location.origin}/payment/result`
                 })
             });
 

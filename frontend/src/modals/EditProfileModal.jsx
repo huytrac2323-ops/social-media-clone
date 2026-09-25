@@ -127,37 +127,8 @@ function EditProfileModal({ user, onClose, navigate }) {
     }
   };
 
-  const handleTogglePrivacy = async () => {
-    const newPrivacyStatus = !isPrivate;
-    setIsPrivate(newPrivacyStatus);
-
-    try {
-      const response = await fetch(`${API_URL}/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: user.user_id || user.id,
-          is_private: newPrivacyStatus
-        })
-      });
-
-      if (!response.ok) {
-        setIsPrivate(!newPrivacyStatus);
-        alert('Có lỗi xảy ra khi cập nhật chế độ riêng tư!');
-      } else {
-        const data = await response.json();
-        if (data?.user) {
-          updateUser(data.user);
-        } else {
-          updateUser({ is_private: newPrivacyStatus });
-        }
-      }
-    } catch (err) {
-      console.error("Lỗi:", err);
-      setIsPrivate(!newPrivacyStatus);
-    }
+  const handleTogglePrivacy = () => {
+    setIsPrivate(prev => !prev);
   };
 
   const handleAvatarChange = (e) => {

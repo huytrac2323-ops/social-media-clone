@@ -693,6 +693,9 @@ function ProfilePage() {
 
   const { stats = {}, bio, posts = [] } = userProfile;
   const isOwnProfile = currentUser ? Number(currentUser.user_id) === Number(userProfile.user_id) : false;
+  const effectiveOpenForCollab = (isOwnProfile && currentUser?.open_for_collab !== undefined)
+    ? currentUser.open_for_collab
+    : userProfile?.open_for_collab;
 
   const formattedProfilePosts = (posts || []).map(p => {
     let parsedProjectImages = [];
@@ -852,22 +855,24 @@ function ProfilePage() {
                       <Crown size={14} color={userProfile.vip_tier && userProfile.vip_tier !== 'free' ? '#eab308' : '#000'} />
                       <span>{userProfile.vip_tier && userProfile.vip_tier !== 'free' ? 'Gói VIP' : 'Nâng cấp VIP'}</span>
                     </button>
-                    {userProfile.open_for_collab !== false ? (
-                      <div className="profile-commission-badge" title="Sẵn sàng nhận dự án & báo giá">
-                        <Briefcase size={13} />
-                        <span>Đang nhận dự án</span>
-                      </div>
-                    ) : (
-                      <div className="profile-commission-badge paused" style={{ background: 'rgba(100, 116, 139, 0.15)', borderColor: 'rgba(100, 116, 139, 0.3)', color: 'var(--text-muted)' }} title="Đang tạm ngưng nhận dự án (có thể bật lại trong Cài đặt & Tùy chọn)">
-                        <Briefcase size={13} />
-                        <span>Tạm ngưng nhận việc</span>
-                      </div>
+                    {userProfile.creator_type && (
+                      effectiveOpenForCollab !== false ? (
+                        <div className="profile-commission-badge" title="Sẵn sàng nhận dự án & báo giá">
+                          <Briefcase size={13} />
+                          <span>Đang nhận dự án</span>
+                        </div>
+                      ) : (
+                        <div className="profile-commission-badge paused" style={{ background: 'rgba(100, 116, 139, 0.15)', borderColor: 'rgba(100, 116, 139, 0.3)', color: 'var(--text-muted)' }} title="Đang tạm ngưng nhận dự án (có thể bật lại trong Cài đặt & Tùy chọn)">
+                          <Briefcase size={13} />
+                          <span>Tạm ngưng nhận việc</span>
+                        </div>
+                      )
                     )}
                   </div>
                 ) : (
                   currentUser && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                      {userProfile.open_for_collab !== false && (
+                      {userProfile.creator_type && effectiveOpenForCollab !== false && (
                         <button
                           type="button"
                           className="btn-profile-cta-hire"
@@ -1386,7 +1391,11 @@ function ProfilePage() {
       {/* EDIT PROFILE MODAL */}
       {isEditModalOpen && (
         <EditProfileModal
-          user={userProfile}
+          user={{
+            ...userProfile,
+            open_for_collab: effectiveOpenForCollab,
+            is_private: (isOwnProfile && currentUser?.is_private !== undefined) ? currentUser.is_private : userProfile?.is_private
+          }}
           onClose={() => {
             setIsEditModalOpen(false);
             fetchUserProfile();

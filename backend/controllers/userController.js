@@ -17,6 +17,7 @@ const getUsers = async (req, res) => {
             SELECT user_id, COALESCE(username, 'user_' || user_id) AS username, 
                    email, phone, (email_verified IS TRUE) AS email_verified, (phone_verified IS TRUE) AS phone_verified,
                    profile_photo_url, (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, 
+                   COALESCE(open_for_collab, true) AS open_for_collab,
                    role, address, hometown, age, interests, bio, creator_type,
                    COALESCE(vip_tier, 'free') AS vip_tier, vip_badge, vip_expires_at, (ad_free IS TRUE) AS ad_free,
                    COALESCE(post_boost_credits, 0) AS post_boost_credits
@@ -42,6 +43,7 @@ const getUserByUsername = async (req, res) => {
             email, phone, (email_verified IS TRUE) AS email_verified, (phone_verified IS TRUE) AS phone_verified,
             bio, profile_photo_url, (is_private IS TRUE) AS is_private, 
             (is_verified IS TRUE) AS is_verified, (is_banned IS TRUE) AS is_banned, 
+            COALESCE(open_for_collab, true) AS open_for_collab,
             role, address, hometown, age, interests, creator_type,
             COALESCE(vip_tier, 'free') AS vip_tier, vip_badge, vip_expires_at, (ad_free IS TRUE) AS ad_free,
             COALESCE(post_boost_credits, 0) AS post_boost_credits
@@ -100,6 +102,7 @@ const getUserByUsername = async (req, res) => {
                 vip_tier: userProfile.vip_tier,
                 vip_badge: userProfile.vip_badge,
                 creator_type: userProfile.creator_type,
+                open_for_collab: userProfile.open_for_collab,
                 is_private: true,
                 message: "Tài khoản riêng tư. Vui lòng kết bạn để xem bài viết."
             });
@@ -235,7 +238,7 @@ const updateProfile = async (req, res) => {
                     (is_private IS TRUE) AS is_private, 
                     (is_verified IS TRUE) AS is_verified, 
                     (is_banned IS TRUE) AS is_banned,
-                    (open_for_collab IS TRUE) AS open_for_collab,
+                    COALESCE(open_for_collab, true) AS open_for_collab,
                     role,
                     creator_type, address, hometown, age, interests 
              FROM users WHERE user_id = $1`, 

@@ -88,12 +88,19 @@ function AppContent() {
             }
         };
 
+        const handleCloseChat = () => {
+            closeChat();
+        };
 
-        // Lắng nghe sự kiện open-chat từ ProfilePage hoặc HomePage
+        // Lắng nghe sự kiện open-chat và close-chat
         window.addEventListener('open-chat', handleOpenChat);
+        window.addEventListener('close-chat', handleCloseChat);
 
         // Dọn dẹp sự kiện khi component unmount
-        return () => window.removeEventListener('open-chat', handleOpenChat);
+        return () => {
+            window.removeEventListener('open-chat', handleOpenChat);
+            window.removeEventListener('close-chat', handleCloseChat);
+        };
     }, []);
 
     // Ẩn floating ChatWidget khi đang mở khung chat riêng để tránh đè giao diện
@@ -356,7 +363,6 @@ function AppContent() {
     const closeChat = () => {
         setActiveChat(null);
         localStorage.removeItem('activeChatUser');
-        window.location.reload(); // Tải lại nhẹ để làm mới trạng thái hiển thị góc phải
     };
     return (
         <div className="app-root-wrapper">
@@ -458,7 +464,7 @@ function AppContent() {
                     >
                         ✕ Đóng chat ({activeChat.username})
                     </button>
-                    <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username}/>
+                    <ChatBox currentUser={currentUser} friendId={activeChat.user_id} friendName={activeChat.username} onClose={closeChat} />
                 </div>
             )}
         </div>

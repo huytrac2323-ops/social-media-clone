@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Send, Circle } from 'lucide-react';
+import { Send, Circle, X } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 const SOCKET_URL = API_URL.replace(/\/api$/, '');
 
 const socket = io(SOCKET_URL, { secure: true, transports: ['websocket', 'polling'] });
 
-export default function ChatBox({ currentUser, friendId, friendName }) {
+export default function ChatBox({ currentUser, friendId, friendName, onClose }) {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -131,11 +131,36 @@ export default function ChatBox({ currentUser, friendId, friendName }) {
                         {online ? 'Đang hoạt động' : 'Ngoại tuyến'}
                     </span>
                 </div>
-                {otherIsTyping && (
-                    <span style={{ color: 'var(--accent-primary)', fontSize: '11.5px', fontStyle: 'italic' }}>
-                        đang soạn tin...
-                    </span>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {otherIsTyping && (
+                        <span style={{ color: 'var(--accent-primary)', fontSize: '11.5px', fontStyle: 'italic' }}>
+                            đang soạn tin...
+                        </span>
+                    )}
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            title="Đóng chat"
+                            aria-label="Đóng chat"
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                padding: '3px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderRadius: '4px',
+                                transition: 'color 0.15s ease'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Messages Scroll Area */}

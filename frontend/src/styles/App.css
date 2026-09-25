@@ -2024,25 +2024,44 @@ input, textarea {
 }
 
 .btn-profile-secondary {
-  padding: 7px 18px;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 16px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  background: var(--bg-surface-secondary, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.16));
   color: var(--text-primary);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.18s ease;
-  transition: background-color 0.15s ease;
+  transition: all 0.2s ease;
+}
+
+[data-theme='light'] .btn-profile-secondary {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+[data-theme='light'] .btn-profile-secondary:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+[data-theme='dark'] .btn-profile-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+}
+[data-theme='dark'] .btn-profile-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 .btn-profile-secondary:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-light);
-  background: #333333;
+  filter: brightness(1.05);
 }
 
 .profile-stats-row {
@@ -2635,7 +2654,7 @@ input, textarea {
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  background: rgba(14, 18, 27, 0.7);
+  background: var(--bg-surface);
 }
 
 .messages-sidebar-header {
@@ -2676,7 +2695,7 @@ input, textarea {
   gap: 8px;
   margin: 12px 14px 8px;
   padding: 8px 12px;
-  background: var(--bg-input);
+  background: var(--bg-surface-secondary, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
 }
@@ -2698,8 +2717,8 @@ input, textarea {
 .messages-tab-selector {
   display: flex;
   gap: 6px;
-  padding: 4px 14px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 6px 14px 10px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .messages-tab-pill {
@@ -2708,7 +2727,7 @@ input, textarea {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 7px 10px;
+  padding: 8px 10px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -2721,13 +2740,14 @@ input, textarea {
 
 .messages-tab-pill:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.05));
 }
 
 .messages-tab-pill.active {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--bg-surface-secondary, rgba(255, 255, 255, 0.1));
+  border-color: var(--border-medium, rgba(255, 255, 255, 0.15));
   color: var(--text-primary);
+  font-weight: 700;
 }
 
 .messages-contacts-scroll {
@@ -2831,7 +2851,7 @@ input, textarea {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(10, 13, 19, 0.45);
+  background: var(--bg-main);
   min-width: 0;
 }
 
@@ -7152,10 +7172,12 @@ button:active:not(:disabled),
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  background: rgba(14, 18, 27, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(10, 15, 26, 0.85);
+  background-image: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 .behance-header-left {
@@ -7217,9 +7239,11 @@ button:active:not(:disabled),
 }
 
 .behance-nav-item.active {
-  color: var(--accent-primary);
-  background: rgba(59, 130, 246, 0.12);
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   font-weight: 700;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
 }
 
 .jobs-pill-hot {
@@ -7615,13 +7639,13 @@ button:active:not(:disabled),
 .social-feed-page-wrapper {
   min-height: 100vh;
   width: 100%;
-  background-color: #080c14;
+  background-color: #070912;
   background-image: 
-    radial-gradient(at 15% 10%, rgba(37, 99, 235, 0.12) 0px, transparent 55%),
-    radial-gradient(at 85% 15%, rgba(139, 92, 246, 0.12) 0px, transparent 55%),
-    radial-gradient(at 50% 60%, rgba(16, 185, 129, 0.05) 0px, transparent 65%),
-    radial-gradient(at 80% 85%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, rgba(236, 72, 153, 0.06) 0px, transparent 50%);
+    radial-gradient(at 10% 0%, rgba(37, 99, 235, 0.16) 0px, transparent 48%),
+    radial-gradient(at 90% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 48%),
+    radial-gradient(at 50% 32%, rgba(6, 182, 212, 0.07) 0px, transparent 52%),
+    radial-gradient(at 20% 70%, rgba(236, 72, 153, 0.06) 0px, transparent 48%),
+    radial-gradient(at 85% 90%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
   background-attachment: fixed;
   background-size: cover;
 }
@@ -7631,10 +7655,10 @@ button:active:not(:disabled),
 [data-theme="light"] .social-feed-page-wrapper {
   background-color: #f8fafc;
   background-image: 
-    radial-gradient(at 15% 10%, rgba(219, 234, 254, 0.7) 0px, transparent 55%),
-    radial-gradient(at 85% 15%, rgba(243, 232, 255, 0.7) 0px, transparent 55%),
-    radial-gradient(at 50% 60%, rgba(209, 250, 229, 0.4) 0px, transparent 65%),
-    radial-gradient(at 80% 85%, rgba(224, 242, 254, 0.5) 0px, transparent 50%);
+    radial-gradient(at 12% 0%, rgba(219, 234, 254, 0.85) 0px, transparent 50%),
+    radial-gradient(at 88% 0%, rgba(243, 232, 255, 0.85) 0px, transparent 50%),
+    radial-gradient(at 50% 30%, rgba(224, 242, 254, 0.55) 0px, transparent 55%),
+    radial-gradient(at 80% 85%, rgba(241, 245, 249, 0.9) 0px, transparent 50%);
   background-attachment: fixed;
   background-size: cover;
 }
@@ -7643,20 +7667,23 @@ button:active:not(:disabled),
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 24px 32px 14px;
+  padding: 20px 32px 14px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: rgba(11, 15, 23, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(11, 15, 25, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="light"] .behance-subheader-section {
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .behance-subheader-main-row {
@@ -7757,35 +7784,38 @@ button:active:not(:disabled),
 .behance-scope-tabs {
   display: flex;
   align-items: center;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
   padding: 4px;
-  gap: 2px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
 .behance-scope-btn {
-  padding: 7px 14px;
-  border-radius: 8px;
+  padding: 7px 16px;
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
 }
 
 .behance-scope-btn:hover {
-  color: var(--text-primary);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .behance-scope-btn.active {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  color: #ffffff !important;
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .behance-sort-dropdown-wrap {
@@ -7807,9 +7837,9 @@ button:active:not(:disabled),
 .behance-tags-scroll-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
-  padding: 4px 0;
+  padding: 6px 2px 10px;
   scrollbar-width: none;
 }
 
@@ -7817,205 +7847,127 @@ button:active:not(:disabled),
   display: none;
 }
 
+/* =================================================== */
+/* BEHANCE REALISTIC CATEGORY PILLS (IMAGE THUMBNAILS) */
+/* =================================================== */
+
 .behance-tag-pill {
-  padding: 7px 16px;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 22px;
   border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff !important;
+  background-color: #1e293b;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.behance-tag-pill span {
+  position: relative;
+  z-index: 2;
+  text-transform: lowercase;
 }
 
 .behance-tag-pill:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  border-color: var(--border-light);
+  transform: translateY(-2px) scale(1.03);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  filter: brightness(1.12);
 }
 
 .behance-tag-pill.active {
-  background: var(--accent-primary);
-  color: #fff;
-  border-color: var(--accent-primary);
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 2px #0284c7, 0 6px 20px rgba(56, 189, 248, 0.5) !important;
+  transform: translateY(-1px) scale(1.04);
 }
 
-/* =================================================== */
-/* COLORFUL CATEGORY BADGES & TAG PILLS               */
-/* =================================================== */
+/* All */
+.behance-tag-pill.tag-all {
+  background-image: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+}
 
-/* UI/UX Design (Cyan / Sky) */
+/* UI/UX */
 .behance-tag-pill.tag-uiux {
-  background: rgba(6, 182, 212, 0.1);
-  border-color: rgba(6, 182, 212, 0.3);
-  color: #38bdf8;
-}
-.behance-tag-pill.tag-uiux:hover {
-  background: rgba(6, 182, 212, 0.2);
-  border-color: #38bdf8;
-  color: #e0f2fe;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
-}
-.behance-tag-pill.tag-uiux.active {
-  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.45);
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1581291518655-9523c932deda?auto=format&fit=crop&w=260&q=80');
 }
 
-/* 3D & Motion (Purple / Violet) */
-.behance-tag-pill.tag-3dmotion {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: rgba(139, 92, 246, 0.3);
-  color: #c084fc;
-}
-.behance-tag-pill.tag-3dmotion:hover {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: #c084fc;
-  color: #f3e8ff;
-  box-shadow: 0 0 14px rgba(192, 132, 252, 0.3);
-}
-.behance-tag-pill.tag-3dmotion.active {
-  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.45);
-}
-
-/* Đồ họa & Thương hiệu (Emerald / Teal) */
-.behance-tag-pill.tag-graphic {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #34d399;
-}
-.behance-tag-pill.tag-graphic:hover {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: #34d399;
-  color: #d1fae5;
-  box-shadow: 0 0 14px rgba(52, 211, 153, 0.3);
-}
-.behance-tag-pill.tag-graphic.active {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
-}
-
-/* Branding & Logo (Amber / Orange) */
-.behance-tag-pill.tag-branding {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fbbf24;
-}
-.behance-tag-pill.tag-branding:hover {
-  background: rgba(245, 158, 11, 0.2);
-  border-color: #fbbf24;
-  color: #fef3c7;
-  box-shadow: 0 0 14px rgba(251, 191, 36, 0.3);
-}
-.behance-tag-pill.tag-branding.active {
-  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
-}
-
-/* Minh họa & Art (Rose / Pink) */
-.behance-tag-pill.tag-illustration {
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.3);
-  color: #fb7185;
-}
-.behance-tag-pill.tag-illustration:hover {
-  background: rgba(244, 63, 94, 0.2);
-  border-color: #fb7185;
-  color: #ffe4e6;
-  box-shadow: 0 0 14px rgba(251, 113, 133, 0.3);
-}
-.behance-tag-pill.tag-illustration.active {
-  background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.45);
-}
-
-/* Làm Video & Editor (Crimson / Red) */
-.behance-tag-pill.tag-video {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #f87171;
-}
-.behance-tag-pill.tag-video:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #f87171;
-  color: #fee2e2;
-  box-shadow: 0 0 14px rgba(248, 113, 113, 0.3);
-}
-.behance-tag-pill.tag-video.active {
-  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45);
-}
-
-/* Nhiếp ảnh (Indigo) */
-.behance-tag-pill.tag-photo {
-  background: rgba(99, 102, 241, 0.1);
-  border-color: rgba(99, 102, 241, 0.3);
-  color: #818cf8;
-}
-.behance-tag-pill.tag-photo:hover {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: #818cf8;
-  color: #e0e7ff;
-  box-shadow: 0 0 14px rgba(129, 140, 248, 0.3);
-}
-.behance-tag-pill.tag-photo.active {
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
-}
-
-/* Website & Tech (Sky / Blue) */
-.behance-tag-pill.tag-web {
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.3);
-  color: #60a5fa;
-}
-.behance-tag-pill.tag-web:hover {
-  background: rgba(37, 99, 235, 0.2);
-  border-color: #60a5fa;
-  color: #dbeafe;
-  box-shadow: 0 0 14px rgba(96, 165, 250, 0.3);
-}
-.behance-tag-pill.tag-web.active {
-  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.45);
-}
-
-/* Figma (Fuchsia) */
+/* Figma */
 .behance-tag-pill.tag-figma {
-  background: rgba(217, 70, 239, 0.1);
-  border-color: rgba(217, 70, 239, 0.3);
-  color: #e879f9;
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=260&q=80');
 }
-.behance-tag-pill.tag-figma:hover {
-  background: rgba(217, 70, 239, 0.2);
-  border-color: #e879f9;
-  color: #fae8ff;
-  box-shadow: 0 0 14px rgba(232, 121, 249, 0.3);
+
+/* Landing Page */
+.behance-tag-pill.tag-landing {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=260&q=80');
 }
-.behance-tag-pill.tag-figma.active {
-  background: linear-gradient(135deg, #a21caf 0%, #d946ef 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(217, 70, 239, 0.45);
+
+/* Website */
+.behance-tag-pill.tag-web {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=260&q=80');
+}
+
+/* User Interface */
+.behance-tag-pill.tag-ui {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=260&q=80');
+}
+
+/* UX */
+.behance-tag-pill.tag-ux {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=260&q=80');
+}
+
+/* User Experience */
+.behance-tag-pill.tag-userexp {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=260&q=80');
+}
+
+/* Branding */
+.behance-tag-pill.tag-branding {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=260&q=80');
+}
+
+/* Graphic Designer */
+.behance-tag-pill.tag-graphic {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=260&q=80');
+}
+
+/* WordPress */
+.behance-tag-pill.tag-wordpress {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=260&q=80');
+}
+
+/* 3D & Motion */
+.behance-tag-pill.tag-3dmotion {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=260&q=80');
+}
+
+/* Illustration */
+.behance-tag-pill.tag-illustration {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=260&q=80');
+}
+
+/* Video */
+.behance-tag-pill.tag-video {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=260&q=80');
+}
+
+/* Photography */
+.behance-tag-pill.tag-photo {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=260&q=80');
 }
 
 /* Category Badge on Project Card Thumbnail & Modal Details */
@@ -8520,9 +8472,11 @@ button:active:not(:disabled),
 /* 1. Header */
 [data-theme="light"] .behance-global-header,
 [data-theme="light"] .mobile-top-header {
-  background: rgba(255, 255, 255, 0.94) !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05) !important;
 }
 
 [data-theme="light"] .behance-search-bar {
@@ -8941,8 +8895,8 @@ button:active:not(:disabled),
 }
 
 [data-theme="light"] .behance-scope-tabs {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] .behance-scope-btn {
@@ -8954,9 +8908,9 @@ button:active:not(:disabled),
 }
 
 [data-theme="light"] .behance-scope-btn.active {
-  background: #e0e7ff !important;
-  color: #2563eb !important;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12) !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.25) !important;
 }
 
 [data-theme="light"] .behance-sort-select {
@@ -8966,15 +8920,20 @@ button:active:not(:disabled),
 }
 
 [data-theme="light"] .behance-tag-pill {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  color: #475569 !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18) !important;
 }
 
 [data-theme="light"] .behance-tag-pill:hover {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+  border-color: rgba(15, 23, 42, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22) !important;
+  filter: brightness(1.08) !important;
+}
+
+[data-theme="light"] .behance-tag-pill.active {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 2px #0284c7, 0 4px 16px rgba(2, 132, 199, 0.4) !important;
 }
 
 [data-theme="light"] .btn-behance-filter-toggle {

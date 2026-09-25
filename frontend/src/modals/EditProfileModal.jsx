@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/Modal.css';
 import { useAuth } from '../context/AuthContext.jsx';
-import { X, Camera, Lock, Globe, MapPin, Home, Calendar, Sparkles, Palette, Mail, Phone, CheckCircle2, AlertCircle, RefreshCw, KeyRound, ShieldCheck } from 'lucide-react';
+import { X, Camera, Lock, Globe, MapPin, Home, Calendar, Sparkles, Palette, Mail, Phone, CheckCircle2, AlertCircle, RefreshCw, KeyRound, ShieldCheck, Briefcase } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://social-media-clone-di9z.onrender.com/api';
 
@@ -22,6 +22,7 @@ function EditProfileModal({ user, onClose, navigate }) {
   const { updateUser } = useAuth();
   const [username, setUsername] = useState(user.username);
   const [bio, setBio] = useState(user.bio || '');
+  const [openForCollab, setOpenForCollab] = useState(user?.open_for_collab !== false);
   const [address, setAddress] = useState(user.address || '');
   const [hometown, setHometown] = useState(user.hometown || '');
   const [age, setAge] = useState(user.age ? String(user.age) : '');
@@ -188,7 +189,8 @@ function EditProfileModal({ user, onClose, navigate }) {
           age,
           interests,
           email: email.trim() || null,
-          phone: phone.trim() || null
+          phone: phone.trim() || null,
+          open_for_collab: openForCollab
         }),
       });
       const textData = await textResponse.json();
@@ -666,6 +668,39 @@ function EditProfileModal({ user, onClose, navigate }) {
               {isPrivate
                 ? 'Chế độ riêng tư: Chỉ bạn bè được duyệt mới có thể xem bài viết và thông tin chi tiết của bạn.'
                 : 'Chế độ công khai: Bất kỳ ai cũng có thể xem hồ sơ và các bài viết của bạn.'}
+            </p>
+          </div>
+
+          {/* TRẠNG THÁI NHẬN DỰ ÁN / TÌM VIỆC */}
+          <div className="privacy-setting" style={{ marginTop: '16px' }}>
+            <div className="privacy-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="privacy-label" style={{ fontWeight: '600', fontSize: '14px' }}>Trạng thái nhận dự án & hợp tác:</span>
+              <button
+                type="button"
+                onClick={() => setOpenForCollab(!openForCollab)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  borderRadius: '20px',
+                  border: openForCollab ? '1px solid #10b981' : '1px solid #64748b',
+                  background: openForCollab ? 'rgba(16,185,129,0.15)' : 'rgba(100,116,139,0.15)',
+                  color: openForCollab ? '#34d399' : '#94a3b8',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Briefcase size={14} />
+                <span>{openForCollab ? '🟢 Đang nhận dự án' : '⚪ Tạm ngưng nhận'}</span>
+              </button>
+            </div>
+            <p className="privacy-desc" style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              {openForCollab
+                ? 'Đang bật: Hồ sơ của bạn sẽ hiển thị trong trang "Tìm & Hợp tác NST" để khách hàng và nhà tuyển dụng kết nối.'
+                : 'Đang tắt: Ẩn hồ sơ khỏi danh sách tìm kiếm Nhà Sáng Tạo.'}
             </p>
           </div>
 

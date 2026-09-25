@@ -33,15 +33,20 @@ import {
 
 const CATEGORIES_LIST = [
   { id: 'all', label: 'Tất cả', tagClass: 'tag-all' },
-  { id: 'UI/UX Design', label: 'UI/UX Design', tagClass: 'tag-uiux' },
-  { id: 'Thiết kế đồ họa', label: 'Đồ họa & Thương hiệu', tagClass: 'tag-graphic' },
-  { id: '3D & Hoạt hình', label: '3D & Motion', tagClass: 'tag-3dmotion' },
-  { id: 'Minh họa & Art', label: 'Minh họa (Illustration)', tagClass: 'tag-illustration' },
-  { id: 'Làm Video & Editor', label: 'Video & Phim', tagClass: 'tag-video' },
-  { id: 'Nhiếp ảnh', label: 'Nhiếp ảnh', tagClass: 'tag-photo' },
-  { id: 'Website', label: 'Website & Web App', tagClass: 'tag-web' },
-  { id: 'Branding & Logo', label: 'Logo & Bộ nhận diện', tagClass: 'tag-branding' },
-  { id: 'Figma', label: 'Figma', tagClass: 'tag-figma' }
+  { id: 'ui/ux', label: 'ui/ux', tagClass: 'tag-uiux' },
+  { id: 'figma', label: 'figma', tagClass: 'tag-figma' },
+  { id: 'landing page', label: 'landing page', tagClass: 'tag-landing' },
+  { id: 'website', label: 'website', tagClass: 'tag-web' },
+  { id: 'user interface', label: 'user interface', tagClass: 'tag-ui' },
+  { id: 'ux', label: 'ux', tagClass: 'tag-ux' },
+  { id: 'user experience', label: 'user experience', tagClass: 'tag-userexp' },
+  { id: 'branding', label: 'branding', tagClass: 'tag-branding' },
+  { id: 'graphic designer', label: 'graphic designer', tagClass: 'tag-graphic' },
+  { id: 'wordpress', label: 'wordpress', tagClass: 'tag-wordpress' },
+  { id: '3D & Hoạt hình', label: '3d & motion', tagClass: 'tag-3dmotion' },
+  { id: 'Minh họa & Art', label: 'illustration', tagClass: 'tag-illustration' },
+  { id: 'Làm Video & Editor', label: 'video & editor', tagClass: 'tag-video' },
+  { id: 'Nhiếp ảnh', label: 'photography', tagClass: 'tag-photo' }
 ];
 
 const SCOPE_TABS = [
@@ -106,8 +111,10 @@ export default function BehanceProjectsPage({
   // Sync tab with URL
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['projects', 'creators', 'collaborations'].includes(tabParam)) {
+    if (tabParam === 'collaborations' || tabParam === 'creators') {
       setActiveScope(tabParam);
+    } else {
+      setActiveScope('projects');
     }
   }, [searchParams]);
 
@@ -115,7 +122,11 @@ export default function BehanceProjectsPage({
     setActiveScope(scopeId);
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
-      next.set('tab', scopeId);
+      if (scopeId === 'projects') {
+        next.delete('tab');
+      } else {
+        next.set('tab', scopeId);
+      }
       return next;
     });
   };
@@ -141,10 +152,42 @@ export default function BehanceProjectsPage({
     if (activeCategory !== 'all') {
       const catLower = activeCategory.toLowerCase();
       result = result.filter(p => {
-        const categoryMatch = p.category && p.category.toLowerCase().includes(catLower);
-        const toolMatch = p.toolsUsed && p.toolsUsed.some(t => t.toLowerCase().includes(catLower));
-        const titleMatch = p.title && p.title.toLowerCase().includes(catLower);
-        return categoryMatch || toolMatch || titleMatch;
+        const cat = (p.category || '').toLowerCase();
+        const tools = (p.toolsUsed || []).map(t => (typeof t === 'string' ? t.toLowerCase() : ''));
+        const title = (p.title || '').toLowerCase();
+        const tags = (p.tags || []).map(t => (typeof t === 'string' ? t.toLowerCase() : ''));
+        const desc = (p.description || '').toLowerCase();
+
+        if (catLower === 'ui/ux' || catLower === 'ux' || catLower === 'user interface' || catLower === 'user experience') {
+          return cat.includes('ui') || cat.includes('ux') || tools.some(t => t.includes('ui') || t.includes('ux') || t.includes('figma')) || title.includes('ui') || title.includes('ux') || tags.some(t => t.includes('ui') || t.includes('ux'));
+        }
+        if (catLower === 'landing page' || catLower === 'website' || catLower === 'wordpress') {
+          return cat.includes('web') || cat.includes('landing') || tools.some(t => t.includes('web') || t.includes('wp') || t.includes('wordpress')) || title.includes('landing') || title.includes('web') || desc.includes('web') || tags.some(t => t.includes('web') || t.includes('landing'));
+        }
+        if (catLower === 'figma') {
+          return tools.some(t => t.includes('figma')) || title.includes('figma') || cat.includes('figma') || tags.some(t => t.includes('figma'));
+        }
+        if (catLower === 'graphic designer' || catLower === 'branding') {
+          return cat.includes('đồ họa') || cat.includes('graphic') || cat.includes('brand') || cat.includes('logo') || title.includes('brand') || title.includes('logo') || tags.some(t => t.includes('brand') || t.includes('graphic'));
+        }
+        if (catLower === '3d & hoạt hình' || catLower === '3d & motion') {
+          return cat.includes('3d') || cat.includes('motion') || title.includes('3d');
+        }
+        if (catLower === 'minh họa & art' || catLower === 'illustration') {
+          return cat.includes('minh họa') || cat.includes('art') || cat.includes('illustration') || title.includes('illustration') || title.includes('vẽ');
+        }
+        if (catLower === 'làm video & editor' || catLower === 'video & editor') {
+          return cat.includes('video') || cat.includes('editor') || cat.includes('phim') || title.includes('video');
+        }
+        if (catLower === 'nhiếp ảnh' || catLower === 'photography') {
+          return cat.includes('ảnh') || cat.includes('photo') || title.includes('photo');
+        }
+
+        const categoryMatch = cat.includes(catLower);
+        const toolMatch = tools.some(t => t.includes(catLower));
+        const titleMatch = title.includes(catLower);
+        const tagsMatch = tags.some(t => t.includes(catLower));
+        return categoryMatch || toolMatch || titleMatch || tagsMatch;
       });
     }
 
@@ -312,7 +355,7 @@ export default function BehanceProjectsPage({
                 className={`behance-tag-pill ${cat.tagClass || ''} ${activeCategory === cat.id ? 'active' : ''}`}
                 onClick={() => setActiveCategory(cat.id)}
               >
-                {cat.id !== 'all' ? `#${cat.label}` : cat.label}
+                <span>{cat.label}</span>
               </button>
             ))}
           </div>

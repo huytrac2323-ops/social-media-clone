@@ -66,7 +66,11 @@ const getCreators = async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 30, 100);
 
     try {
-        let conditions = ['1=1'];
+        // Chỉ hiển thị Nhà Sáng Tạo thực thụ (có creator_type) và đang bật trạng thái nhận dự án (open_for_collab = TRUE)
+        let conditions = [
+            "creator_type IS NOT NULL AND TRIM(creator_type) != ''",
+            "COALESCE(open_for_collab, true) IS TRUE"
+        ];
         let params = [];
         let paramIndex = 1;
 

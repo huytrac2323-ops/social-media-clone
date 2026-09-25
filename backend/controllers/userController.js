@@ -156,6 +156,7 @@ const updateProfile = async (req, res) => {
             ? parseInt(age, 10)
             : (age === null || age === '' ? null : current.age);
         const newInterests = interests !== undefined ? (interests || null) : current.interests;
+        const newOpenForCollab = open_for_collab !== undefined ? Boolean(open_for_collab) : (current.open_for_collab !== false);
 
         // Xử lý email & phone
         let newEmail = current.email;
@@ -206,8 +207,9 @@ const updateProfile = async (req, res) => {
                  email = $9,
                  phone = $10,
                  email_verified = $11,
-                 phone_verified = $12
-             WHERE user_id = $13`,
+                 phone_verified = $12,
+                 open_for_collab = $13
+             WHERE user_id = $14`,
             [
                 newUsername, 
                 newBio, 
@@ -221,6 +223,7 @@ const updateProfile = async (req, res) => {
                 newPhone,
                 newEmailVerified,
                 newPhoneVerified,
+                newOpenForCollab,
                 user_id
             ]
         );
@@ -232,6 +235,7 @@ const updateProfile = async (req, res) => {
                     (is_private IS TRUE) AS is_private, 
                     (is_verified IS TRUE) AS is_verified, 
                     (is_banned IS TRUE) AS is_banned,
+                    (open_for_collab IS TRUE) AS open_for_collab,
                     role,
                     creator_type, address, hometown, age, interests 
              FROM users WHERE user_id = $1`, 
@@ -244,6 +248,37 @@ const updateProfile = async (req, res) => {
     } catch (err) {
         if (err.code === '23505') return res.status(409).send({ message: 'Username hoặc thông tin này đã được sử dụng.' });
         res.status(500).send({ message: "Lỗi server khi cập nhật thông tin", error: err.message });
+    }
+};
+
+// Bật/tắt trạng thái đang nhận dự án nhanh từ Cài đặt & Tùy chọn
+const toggleOpenForCollab = async (req, res) => {
+    const userId = req.user?.id || req.body.user_id || req.body.userId;
+    if (!userId) {
+        return res.status(401).json({ message: 'Vui lòng đăng nhập để thay đổi cài đặt.' });
+    }
+
+    try {
+        const currentRes = await pool.query('SELECT open_for_collab FROM users WHERE user_id = $1', [userId]);
+        if (currentRes.rows.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+        }
+
+        const currentVal = currentRes.rows[0].open_for_collab;
+        const nextStatus = req.body.open_for_collab !== undefined 
+            ? Boolean(req.body.open_for_collab) 
+            : !(currentVal === true);
+
+        await pool.query('UPDATE users SET open_for_collab = $1 WHERE user_id = $2', [nextStatus, userId]);
+
+        return res.json({
+            success: true,
+            open_for_collab: nextStatus,
+            message: nextStatus ? 'Đã bật trạng thái: Đang nhận dự án & Hợp tác!' : 'Đã chuyển sang trạng thái: Tạm ngưng nhận dự án.'
+        });
+    } catch (err) {
+        console.error('Lỗi toggleOpenForCollab:', err);
+        return res.status(500).json({ message: 'Lỗi server khi đổi trạng thái nhận dự án.', error: err.message });
     }
 };
 
@@ -418,4 +453,4 @@ const updateAvatar = async (req, res) => {
     }
 };
 
-module.exports = { getUsers, getUserByUsername, updateProfile, updateAvatar, sendContactOtp, verifyContactOtp };
+module.exports = { getUsers, getUserByUsername, updateProfile, updateAvatar, sendContactOtp, verifyContactOtp, toggleOpenForCollab };

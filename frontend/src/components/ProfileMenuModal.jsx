@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
+import { safeFetch } from '../utils/api';
 import {
   Bookmark,
   UserPlus,
@@ -12,12 +13,14 @@ import {
   Check,
   ChevronRight,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  Briefcase
 } from 'lucide-react';
 
 function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
   const {
     currentUser,
+    updateUser,
     savedAccounts,
     switchAccount,
     logout,
@@ -26,6 +29,38 @@ function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
   } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState('main'); // 'main' | 'accounts'
+  const [togglingCollab, setTogglingCollab] = useState(false);
+
+  const isOpenForCollab = currentUser?.open_for_collab !== false;
+
+  const handleToggleOpenForCollab = async () => {
+    if (!currentUser) return;
+    setTogglingCollab(true);
+    const nextStatus = !isOpenForCollab;
+    try {
+      const token = window.localStorage.getItem('token');
+      const res = await safeFetch('/profile/toggle-open-for-collab', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          user_id: currentUser.user_id || currentUser.id,
+          open_for_collab: nextStatus
+        })
+      });
+      if (res.ok) {
+        if (updateUser) {
+          updateUser({ open_for_collab: nextStatus });
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi đổi trạng thái nhận dự án:', err);
+    } finally {
+      setTogglingCollab(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -176,6 +211,67 @@ function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
                 </div>
                 <ChevronRight size={18} className="profile-menu-chevron" />
               </button>
+
+              {/* Option: Đang nhận dự án / Tìm việc làm (Collaborate & Hire) */}
+              <div className="profile-menu-item" style={{ cursor: 'default' }}>
+                <div
+                  className="profile-menu-item-icon"
+                  style={{
+                    background: isOpenForCollab ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                    color: isOpenForCollab ? '#10b981' : '#94a3b8'
+                  }}
+                >
+                  <Briefcase size={20} />
+                </div>
+                <div className="profile-menu-item-content">
+                  <div className="profile-menu-item-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Đang nhận dự án</span>
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      background: isOpenForCollab ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                      color: isOpenForCollab ? '#10b981' : '#94a3b8',
+                      fontWeight: '700'
+                    }}>
+                      {isOpenForCollab ? '🟢 Đang nhận' : '⚪ Tạm ngưng'}
+                    </span>
+                  </div>
+                  <div className="profile-menu-item-desc">
+                    {isOpenForCollab
+                      ? 'Hiển thị trong Tìm & Hợp tác NST để khách hàng liên hệ'
+                      : 'Ẩn hồ sơ khỏi danh sách tìm kiếm Nhà Sáng Tạo'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleOpenForCollab}
+                  disabled={togglingCollab}
+                  title={isOpenForCollab ? 'Bấm để tạm ngưng nhận dự án' : 'Bấm để bật nhận dự án'}
+                  style={{
+                    background: isOpenForCollab ? '#10b981' : '#475569',
+                    border: 'none',
+                    borderRadius: '999px',
+                    width: '46px',
+                    height: '26px',
+                    padding: '3px',
+                    cursor: togglingCollab ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isOpenForCollab ? 'flex-end' : 'flex-start',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0
+                  }}
+                >
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }} />
+                </button>
+              </div>
 
               {/* Option: Xin cấp Tích Xanh */}
               <button

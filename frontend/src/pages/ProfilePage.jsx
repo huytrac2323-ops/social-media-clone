@@ -852,28 +852,37 @@ function ProfilePage() {
                       <Crown size={14} color={userProfile.vip_tier && userProfile.vip_tier !== 'free' ? '#eab308' : '#000'} />
                       <span>{userProfile.vip_tier && userProfile.vip_tier !== 'free' ? 'Gói VIP' : 'Nâng cấp VIP'}</span>
                     </button>
-                    <div className="profile-commission-badge" title="Sẵn sàng nhận dự án & báo giá">
-                      <Briefcase size={13} />
-                      <span>Đang nhận dự án</span>
-                    </div>
+                    {userProfile.open_for_collab !== false ? (
+                      <div className="profile-commission-badge" title="Sẵn sàng nhận dự án & báo giá">
+                        <Briefcase size={13} />
+                        <span>Đang nhận dự án</span>
+                      </div>
+                    ) : (
+                      <div className="profile-commission-badge paused" style={{ background: 'rgba(100, 116, 139, 0.15)', borderColor: 'rgba(100, 116, 139, 0.3)', color: 'var(--text-muted)' }} title="Đang tạm ngưng nhận dự án (có thể bật lại trong Cài đặt & Tùy chọn)">
+                        <Briefcase size={13} />
+                        <span>Tạm ngưng nhận việc</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   currentUser && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        type="button"
-                        className="btn-profile-cta-hire"
-                        onClick={() => {
-                          localStorage.setItem('activeChatUser', JSON.stringify({
-                            user_id: userProfile.user_id || userProfile.id,
-                            username: userProfile.username
-                          }));
-                          window.dispatchEvent(new Event('open-chat'));
-                        }}
-                      >
-                        <Briefcase size={15} />
-                        <span>Nhắn tin báo giá / Mời hợp tác</span>
-                      </button>
+                      {userProfile.open_for_collab !== false && (
+                        <button
+                          type="button"
+                          className="btn-profile-cta-hire"
+                          onClick={() => {
+                            localStorage.setItem('activeChatUser', JSON.stringify({
+                              user_id: userProfile.user_id || userProfile.id,
+                              username: userProfile.username
+                            }));
+                            window.dispatchEvent(new Event('open-chat'));
+                          }}
+                        >
+                          <Briefcase size={15} />
+                          <span>Nhắn tin báo giá / Mời hợp tác</span>
+                        </button>
+                      )}
 
                       <button
                         type="button"

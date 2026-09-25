@@ -14,5 +14,6 @@ router.patch('/profile', userController.updateProfile);
 router.post('/profile/avatar', upload.single('avatar'), userController.updateAvatar);
 router.post('/profile/contact/send-otp', userController.sendContactOtp);
 router.post('/profile/contact/verify-otp', userController.verifyContactOtp);
+router.post('/profile/toggle-open-for-collab', userController.toggleOpenForCollab);
 
 module.exports = router;

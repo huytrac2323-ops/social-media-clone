@@ -50,9 +50,9 @@ const CATEGORIES_LIST = [
 ];
 
 const SCOPE_TABS = [
-  { id: 'projects', label: '🎨 Tác phẩm (Projects)' },
-  { id: 'creators', label: '👥 Nhà Sáng Tạo (Creators)' },
-  { id: 'collaborations', label: '💼 Tin Tìm NST & Hợp Tác' }
+  { id: 'projects', label: 'Tác phẩm (Projects)' },
+  { id: 'creators', label: 'Nhà Sáng Tạo (Creators)' },
+  { id: 'collaborations', label: 'Tin Tìm NST & Hợp Tác' }
 ];
 
 const CREATOR_FIELDS = [

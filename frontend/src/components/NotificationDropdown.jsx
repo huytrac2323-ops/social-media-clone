@@ -5,6 +5,7 @@ import Avatar from './Avatar.jsx';
 import {
   Bell,
   CheckCheck,
+  Check,
   Heart,
   MessageSquare,
   UserPlus,
@@ -40,7 +41,46 @@ function NotificationDropdown({ compact = false }) {
   const location = useLocation();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [friendActionStates, setFriendActionStates] = useState({});
   const dropdownRef = useRef(null);
+
+  const handleAcceptFriend = async (e, notif) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`${API_URL}/friends/accept`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser?.user_id,
+          friend_id: notif.sender_id
+        })
+      });
+      if (res.ok) {
+        setFriendActionStates(prev => ({ ...prev, [notif.notification_id]: 'accepted' }));
+      }
+    } catch (err) {
+      console.error('Lỗi chấp nhận kết bạn:', err);
+    }
+  };
+
+  const handleRejectFriend = async (e, notif) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`${API_URL}/friends/unfriend`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser?.user_id,
+          friend_id: notif.sender_id
+        })
+      });
+      if (res.ok) {
+        setFriendActionStates(prev => ({ ...prev, [notif.notification_id]: 'rejected' }));
+      }
+    } catch (err) {
+      console.error('Lỗi từ chối kết bạn:', err);
+    }
+  };
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -296,6 +336,8 @@ function NotificationDropdown({ compact = false }) {
             ) : (
               visibleNotifications.slice(0, 20).map((notif) => {
                 const isRead = notif.is_read || notif.isRead;
+                const isFriendReq = notif.type === 'friend_request' || notif.type === 'follow_request' || (notif.content && notif.content.toLowerCase().includes('kết bạn'));
+                const friendStatus = friendActionStates[notif.notification_id] || notif.friend_status;
                 return (
                   <div
                     key={notif.notification_id || notif.id}
@@ -380,6 +422,57 @@ function NotificationDropdown({ compact = false }) {
                       >
                         {formatRelativeTime(notif.created_at)}
                       </span>
+
+                      {/* Friend request action buttons */}
+                      {isFriendReq && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                          {friendStatus === 'accepted' ? (
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Check size={13} strokeWidth={2.5} /> Đã là bạn bè
+                            </span>
+                          ) : friendStatus === 'rejected' ? (
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                              Đã từ chối
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => handleAcceptFriend(e, notif)}
+                                style={{
+                                  padding: '4px 12px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  borderRadius: '6px',
+                                  background: '#2563eb',
+                                  color: '#fff',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)'
+                                }}
+                              >
+                                Chấp nhận
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleRejectFriend(e, notif)}
+                                style={{
+                                  padding: '4px 10px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  borderRadius: '6px',
+                                  background: 'var(--bg-elevated, rgba(255, 255, 255, 0.1))',
+                                  color: 'var(--text-secondary)',
+                                  border: '1px solid var(--border-subtle)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Từ chối
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Blue unread dot */}

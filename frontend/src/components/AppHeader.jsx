@@ -126,7 +126,6 @@ export default function AppHeader({
               to="/"
               className={`behance-nav-item ${(location.pathname === '/' || location.pathname === '/explore') && new URLSearchParams(location.search).get('tab') !== 'collaborations' ? 'active' : ''}`}
             >
-              <Sparkles size={16} />
               <span>Explore</span>
             </Link>
 
@@ -134,7 +133,6 @@ export default function AppHeader({
               to="/feed"
               className={`behance-nav-item ${location.pathname === '/feed' ? 'active' : ''}`}
             >
-              <Newspaper size={16} />
               <span>Bảng tin Bài viết</span>
             </Link>
 
@@ -142,7 +140,6 @@ export default function AppHeader({
               to="/?tab=collaborations"
               className={`behance-nav-item ${(location.pathname === '/' || location.pathname === '/explore') && new URLSearchParams(location.search).get('tab') === 'collaborations' ? 'active' : ''}`}
             >
-              <Briefcase size={16} />
               <span>Tìm & Hợp tác NST</span>
               <span className="jobs-pill-hot">HOT</span>
             </Link>

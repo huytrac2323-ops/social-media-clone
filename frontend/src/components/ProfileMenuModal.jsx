@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Trash2,
   ShieldCheck,
-  Briefcase
+  Briefcase,
+  Lock
 } from 'lucide-react';
 
 function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
@@ -30,8 +31,35 @@ function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
   const navigate = useNavigate();
   const [view, setView] = useState('main'); // 'main' | 'accounts'
   const [togglingCollab, setTogglingCollab] = useState(false);
+  const [togglingPrivacy, setTogglingPrivacy] = useState(false);
 
   const isOpenForCollab = currentUser?.open_for_collab !== false;
+  const isPrivateAccount = Boolean(currentUser?.is_private);
+
+  const handleTogglePrivacy = async () => {
+    if (!currentUser) return;
+    setTogglingPrivacy(true);
+    const nextStatus = !isPrivateAccount;
+    try {
+      const res = await safeFetch('/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUser.user_id || currentUser.id,
+          is_private: nextStatus
+        })
+      });
+      if (res.ok) {
+        if (updateUser) {
+          updateUser({ is_private: nextStatus });
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi đổi chế độ riêng tư:', err);
+    } finally {
+      setTogglingPrivacy(false);
+    }
+  };
 
   const handleToggleOpenForCollab = async () => {
     if (!currentUser) return;
@@ -259,6 +287,67 @@ function ProfileMenuModal({ isOpen, onClose, onRequestVerification }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: isOpenForCollab ? 'flex-end' : 'flex-start',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0
+                  }}
+                >
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }} />
+                </button>
+              </div>
+
+              {/* Option: Chế độ riêng tư (Private Account) */}
+              <div className="profile-menu-item" style={{ cursor: 'default' }}>
+                <div
+                  className="profile-menu-item-icon"
+                  style={{
+                    background: isPrivateAccount ? 'rgba(239, 68, 68, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                    color: isPrivateAccount ? '#ef4444' : '#94a3b8'
+                  }}
+                >
+                  <Lock size={20} />
+                </div>
+                <div className="profile-menu-item-content">
+                  <div className="profile-menu-item-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Tài khoản riêng tư</span>
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      background: isPrivateAccount ? 'rgba(239, 68, 68, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                      color: isPrivateAccount ? '#ef4444' : '#94a3b8',
+                      fontWeight: '700'
+                    }}>
+                      {isPrivateAccount ? '🔒 Riêng tư' : '🌐 Công khai'}
+                    </span>
+                  </div>
+                  <div className="profile-menu-item-desc">
+                    {isPrivateAccount
+                      ? 'Chỉ người được bạn đồng ý mới xem được trang và bài viết'
+                      : 'Mọi người đều có thể xem bài viết và trang cá nhân của bạn'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTogglePrivacy}
+                  disabled={togglingPrivacy}
+                  title={isPrivateAccount ? 'Bấm để chuyển sang công khai' : 'Bấm để bật chế độ riêng tư'}
+                  style={{
+                    background: isPrivateAccount ? '#ef4444' : '#475569',
+                    border: 'none',
+                    borderRadius: '999px',
+                    width: '46px',
+                    height: '26px',
+                    padding: '3px',
+                    cursor: togglingPrivacy ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isPrivateAccount ? 'flex-end' : 'flex-start',
                     transition: 'all 0.2s ease',
                     flexShrink: 0
                   }}

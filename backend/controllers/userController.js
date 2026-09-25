@@ -134,7 +134,7 @@ const getUserByUsername = async (req, res) => {
 
 // Cập nhật thông tin profile (hỗ trợ cập nhật đầy đủ hoặc từng phần)
 const updateProfile = async (req, res) => {
-    const { username, bio, user_id, is_private, creator_type, address, hometown, age, interests, email, phone } = req.body;
+    const { username, bio, user_id, is_private, creator_type, address, hometown, age, interests, email, phone, open_for_collab } = req.body;
     if (!user_id) return res.status(401).send({ message: 'Yêu cầu cần có user_id.' });
     try {
         // Lấy thông tin hiện tại từ database để tránh ghi đè null lên các trường không gửi

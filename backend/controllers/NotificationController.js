@@ -37,7 +37,12 @@ const getNotifications = async (req, res) => {
     try {
         const { userId } = req.params;
         const result = await pool.query(
-            'SELECT n.*, u.username, u.profile_photo_url FROM notifications n JOIN users u ON u.user_id = n.sender_id WHERE n.receiver_id = $1 ORDER BY n.created_at DESC LIMIT 50',
+            `SELECT n.*, u.username, u.profile_photo_url,
+                    (SELECT status FROM friends WHERE ((user_id = n.sender_id AND friend_id = n.receiver_id) OR (user_id = n.receiver_id AND friend_id = n.sender_id)) LIMIT 1) AS friend_status
+             FROM notifications n 
+             JOIN users u ON u.user_id = n.sender_id 
+             WHERE n.receiver_id = $1 
+             ORDER BY n.created_at DESC LIMIT 50`,
             [userId]
         );
         res.status(200).json(result.rows);

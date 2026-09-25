@@ -201,7 +201,7 @@ function EditProfileModal({ user, onClose, navigate }) {
       if (avatarFile) {
         const formData = new FormData();
         formData.append('avatar', avatarFile);
-        formData.append('user_id', user.user_id);
+        formData.append('user_id', user.user_id || user.id);
 
         const avatarResponse = await fetch(`${API_URL}/profile/avatar`, {
           method: 'POST',

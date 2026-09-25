@@ -985,13 +985,20 @@ function ProfilePage() {
               )}
 
               {/* Bio block */}
-              <div className="profile-bio-box">
-                <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  {userProfile.username}
-                </div>
-                <p style={{ color: '#cbd5e1', margin: 0 }}>
-                  {bio || "Chưa có tiểu sử cá nhân."}
-                </p>
+              <div className="profile-bio-box" style={{ marginBottom: '12px' }}>
+                {bio ? (
+                  <p className="profile-bio-text" style={{ color: 'var(--text-primary)', fontSize: '14.5px', lineHeight: '1.6', margin: '4px 0 6px 0', fontWeight: '500', wordBreak: 'break-word', whiteSpace: 'pre-line' }}>
+                    {bio}
+                  </p>
+                ) : isOwnProfile ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: '4px 0 6px 0', fontStyle: 'italic', cursor: 'pointer' }} onClick={() => setIsEditModalOpen(true)}>
+                    + Thêm tiểu sử giới thiệu về bản thân...
+                  </p>
+                ) : (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13.5px', margin: '4px 0 6px 0', fontStyle: 'italic' }}>
+                    Chưa có tiểu sử cá nhân.
+                  </p>
+                )}
 
                 {/* THÔNG TIN NƠI Ở, QUÊ QUÁN, ĐỘ TUỔI & SỞ THÍCH */}
                 {(userProfile.address || userProfile.hometown || userProfile.age || userProfile.interests) ? (
@@ -1380,7 +1387,10 @@ function ProfilePage() {
       {isEditModalOpen && (
         <EditProfileModal
           user={userProfile}
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            fetchUserProfile();
+          }}
           navigate={navigate}
         />
       )}

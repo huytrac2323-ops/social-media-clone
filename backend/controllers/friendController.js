@@ -41,7 +41,7 @@ const sendFriendRequest = async (req, res) => {
             await createNotification({
                 receiverId: friend_id,
                 senderId: user_id,
-                type: 'follow_request',
+                type: 'friend_request',
                 content: 'đã gửi lời mời kết bạn cho bạn.'
             });
         } catch (notifErr) {
@@ -82,7 +82,7 @@ const acceptFriendRequest = async (req, res) => {
             await createNotification({
                 receiverId: friend_id,
                 senderId: user_id,
-                type: 'follow',
+                type: 'friend_accept',
                 content: 'đã chấp nhận lời mời kết bạn của bạn.'
             });
         } catch (notifErr) {
